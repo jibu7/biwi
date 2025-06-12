@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, ChevronRight, ChevronDown } from 'lucide-react';
@@ -28,42 +28,39 @@ export default function ChartOfAccountsPage() {
     },
   });
 
-  // Build account hierarchy
+  // Build account hierarchy - Enhanced version
   const buildAccountTree = (accounts: GLAccount[]) => {
-    const accountMap = new Map<number, GLAccount & { children: GLAccount[] }>();
-    const rootAccounts: (GLAccount & { children: GLAccount[] })[] = [];
+    const rootAccounts: GLAccount[] = [];
+    const childrenMap = new Map<number, GLAccount[]>();
 
-    // Initialize all accounts with children array
     accounts.forEach(account => {
-      accountMap.set(account.id, { ...account, children: [] });
-    });
-
-    // Build the tree
-    accounts.forEach(account => {
-      const accountWithChildren = accountMap.get(account.id)!;
-      if (account.parent_account_id && accountMap.has(account.parent_account_id)) {
-        accountMap.get(account.parent_account_id)!.children.push(accountWithChildren);
+      if (account.parent_account_id) {
+        const siblings = childrenMap.get(account.parent_account_id) || [];
+        siblings.push(account);
+        childrenMap.set(account.parent_account_id, siblings);
       } else {
-        rootAccounts.push(accountWithChildren);
+        rootAccounts.push(account);
       }
     });
 
     // Sort accounts by account code
     const sortByCode = (a: GLAccount, b: GLAccount) => a.account_code.localeCompare(b.account_code);
     rootAccounts.sort(sortByCode);
-    accountMap.forEach(account => account.children.sort(sortByCode));
+    childrenMap.forEach(children => children.sort(sortByCode));
 
-    return rootAccounts;
+    return { rootAccounts, childrenMap };
   };
 
   const toggleExpanded = (accountId: number) => {
-    const newExpanded = new Set(expandedAccounts);
-    if (newExpanded.has(accountId)) {
-      newExpanded.delete(accountId);
-    } else {
-      newExpanded.add(accountId);
-    }
-    setExpandedAccounts(newExpanded);
+    setExpandedAccounts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(accountId)) {
+        newSet.delete(accountId);
+      } else {
+        newSet.add(accountId);
+      }
+      return newSet;
+    });
   };
 
   const handleDelete = async (account: GLAccount) => {
@@ -77,29 +74,20 @@ export default function ChartOfAccountsPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  const AccountRow = ({ 
-    account, 
-    level = 0 
-  }: { 
-    account: GLAccount & { children: GLAccount[] }; 
-    level?: number;
-  }) => {
-    const hasChildren = account.children.length > 0;
+  const renderAccount = (account: GLAccount, level = 0): React.ReactNode => {
+    const children = childrenMap.get(account.id) || [];
+    const hasChildren = children.length > 0;
     const isExpanded = expandedAccounts.has(account.id);
 
     return (
       <>
-        <tr className={cn(
-          "hover:bg-gray-50",
-          !account.is_active && "opacity-60 bg-gray-100"
-        )}>
+        <tr 
+          key={account.id}
+          className={cn(
+            "hover:bg-gray-50",
+            !account.is_active && "opacity-60 bg-gray-100"
+          )}
+        >
           <td className="px-6 py-3 text-sm font-medium text-gray-900" style={{ paddingLeft: `${24 + level * 24}px` }}>
             <div className="flex items-center">
               {hasChildren ? (
@@ -134,8 +122,13 @@ export default function ChartOfAccountsPage() {
               {account.account_type}
             </span>
           </td>
-          <td className="px-6 py-3 text-sm text-gray-900 text-right">
-            {formatCurrency(account.current_balance)}
+          <td className="px-6 py-3 text-sm text-gray-900 text-right font-mono">
+            {new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              minimumFractionDigits: 2,
+            }).format(Math.abs(account.current_balance))}
+            {account.current_balance < 0 && ' CR'}
           </td>
           <td className="px-6 py-3 text-sm text-gray-500">
             <div className="flex space-x-2">
@@ -171,18 +164,16 @@ export default function ChartOfAccountsPage() {
             </td>
           )}
         </tr>
-        {hasChildren && isExpanded && account.children.map((childAccount) => (
-          <AccountRow 
-            key={childAccount.id} 
-            account={childAccount as GLAccount & { children: GLAccount[] }} 
-            level={level + 1}
-          />
+        {hasChildren && isExpanded && children.map((childAccount) => (
+          <React.Fragment key={childAccount.id}>
+            {renderAccount(childAccount, level + 1)}
+          </React.Fragment>
         ))}
       </>
     );
   };
 
-  const accountTree = buildAccountTree(accounts);
+  const { rootAccounts, childrenMap } = buildAccountTree(accounts);
 
   if (isLoading) {
     return (
@@ -260,7 +251,7 @@ export default function ChartOfAccountsPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {accountTree.length === 0 ? (
+            {rootAccounts.length === 0 ? (
               <tr>
                 <td
                   colSpan={hasPermission(permissions.GL_SETUP_MANAGE) ? 6 : 5}
@@ -281,8 +272,10 @@ export default function ChartOfAccountsPage() {
                 </td>
               </tr>
             ) : (
-              accountTree.map((account) => (
-                <AccountRow key={account.id} account={account} />
+              rootAccounts.map((account) => (
+                <React.Fragment key={account.id}>
+                  {renderAccount(account)}
+                </React.Fragment>
               ))
             )}
           </tbody>
