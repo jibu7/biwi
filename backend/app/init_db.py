@@ -5,6 +5,7 @@ from app.config import settings
 from app import crud, schemas
 from app.models import core as models
 from app.models import gl as gl_models
+from app.models import ap as ap_models
 from app.core.security import get_password_hash
 from app.core.permissions import ALL_PERMISSIONS_LIST
 
@@ -86,6 +87,74 @@ def create_default_gl_accounts(db: Session, company_id: int):
     
     crud.gl.create_or_update_gl_defaults(db, defaults=gl_defaults, company_id=company_id)
     print("Created default GL accounts and defaults")
+
+# Create default AP transaction types
+def create_default_ap_transaction_types(db: Session, company_id: int):
+    """Create default AP transaction types"""
+    # Get GL accounts
+    ap_control = db.query(gl_models.GLAccount).filter(
+        gl_models.GLAccount.account_code == "2000",
+        gl_models.GLAccount.company_id == company_id
+    ).first()
+    
+    expense_account = db.query(gl_models.GLAccount).filter(
+        gl_models.GLAccount.account_code == "5000",
+        gl_models.GLAccount.company_id == company_id
+    ).first()
+    
+    cash_account = db.query(gl_models.GLAccount).filter(
+        gl_models.GLAccount.account_code == "1000",
+        gl_models.GLAccount.company_id == company_id
+    ).first()
+    
+    default_types = [
+        {
+            "name": "Supplier Invoice",
+            "base_type": "Supplier Invoice",
+            "default_gl_account_id": expense_account.id if expense_account else None,
+            "default_ap_control_gl_account_id": ap_control.id if ap_control else None,
+            "affects_balance_direction": "Credit"
+        },
+        {
+            "name": "Supplier Payment",
+            "base_type": "Payment",
+            "default_gl_account_id": cash_account.id if cash_account else None,
+            "default_ap_control_gl_account_id": ap_control.id if ap_control else None,
+            "affects_balance_direction": "Debit"
+        },
+        {
+            "name": "Debit Note",
+            "base_type": "Debit Note",
+            "default_gl_account_id": expense_account.id if expense_account else None,
+            "default_ap_control_gl_account_id": ap_control.id if ap_control else None,
+            "affects_balance_direction": "Debit"
+        }
+    ]
+    
+    for type_data in default_types:
+        existing = db.query(ap_models.APTransactionType).filter(
+            ap_models.APTransactionType.name == type_data["name"],
+            ap_models.APTransactionType.company_id == company_id
+        ).first()
+        
+        if not existing:
+            ap_type = ap_models.APTransactionType(
+                company_id=company_id,
+                **type_data
+            )
+            db.add(ap_type)
+    
+    db.commit()
+    
+    # Create AP defaults
+    ap_defaults_in = schemas.APDefaultsCreate(
+        default_ap_control_gl_account_id=ap_control.id if ap_control else None,
+        default_expense_gl_account_id=expense_account.id if expense_account else None,
+        default_payment_gl_account_id=cash_account.id if cash_account else None
+    )
+    
+    crud.ap.create_or_update_ap_defaults(db, defaults_in=ap_defaults_in, company_id=company_id)
+    print("Created default AP transaction types and defaults")
 
 def init_db():
     db = SessionLocal()
@@ -178,6 +247,9 @@ def init_db():
     
     # Create default GL accounts and defaults
     create_default_gl_accounts(db, company.id)
+    
+    # Create default AP transaction types
+    create_default_ap_transaction_types(db, company.id)
     
     db.close()
 

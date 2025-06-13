@@ -1,0 +1,200 @@
+import axiosInstance from '@/lib/axiosInstance';
+import {
+  Customer,
+  CustomerCreate,
+  CustomerUpdate,
+  SalesRepresentative,
+  SalesRepresentativeCreate,
+  SalesRepresentativeUpdate,
+  ARTransactionType,
+  ARTransactionTypeCreate,
+  ARTransactionTypeUpdate,
+  ARTransaction,
+  ARTransactionCreate,
+  ARTransactionUpdate,
+  ARAllocation,
+  ARAllocationCreate,
+  ARDefaults,
+  ARDefaultsUpdate,
+  CustomerAgingReportItem,
+  CustomerStatementItem,
+} from '@/types/ar';
+
+// Customer API functions
+export const customerService = {
+  getAll: async (): Promise<Customer[]> => {
+    const response = await axiosInstance.get('/ar/customers');
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<Customer> => {
+    const response = await axiosInstance.get(`/ar/customers/${id}`);
+    return response.data;
+  },
+
+  create: async (data: CustomerCreate): Promise<Customer> => {
+    const response = await axiosInstance.post('/ar/customers', data);
+    return response.data;
+  },
+
+  update: async (id: number, data: CustomerUpdate): Promise<Customer> => {
+    const response = await axiosInstance.put(`/ar/customers/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`/ar/customers/${id}`);
+  },
+};
+
+// Sales Representative API functions
+export const salesRepService = {
+  getAll: async (): Promise<SalesRepresentative[]> => {
+    const response = await axiosInstance.get('/ar/sales-representatives');
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<SalesRepresentative> => {
+    const response = await axiosInstance.get(`/ar/sales-representatives/${id}`);
+    return response.data;
+  },
+
+  create: async (data: SalesRepresentativeCreate): Promise<SalesRepresentative> => {
+    const response = await axiosInstance.post('/ar/sales-representatives', data);
+    return response.data;
+  },
+
+  update: async (id: number, data: SalesRepresentativeUpdate): Promise<SalesRepresentative> => {
+    const response = await axiosInstance.put(`/ar/sales-representatives/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`/ar/sales-representatives/${id}`);
+  },
+};
+
+// AR Transaction Type API functions
+export const arTransactionTypeService = {
+  getAll: async (): Promise<ARTransactionType[]> => {
+    const response = await axiosInstance.get('/ar/transaction-types');
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<ARTransactionType> => {
+    const response = await axiosInstance.get(`/ar/transaction-types/${id}`);
+    return response.data;
+  },
+
+  create: async (data: ARTransactionTypeCreate): Promise<ARTransactionType> => {
+    const response = await axiosInstance.post('/ar/transaction-types', data);
+    return response.data;
+  },
+
+  update: async (id: number, data: ARTransactionTypeUpdate): Promise<ARTransactionType> => {
+    const response = await axiosInstance.put(`/ar/transaction-types/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`/ar/transaction-types/${id}`);
+  },
+};
+
+// AR Transaction API functions
+export const arTransactionService = {
+  getAll: async (params?: {
+    customer_id?: number;
+    from_date?: string;
+    to_date?: string;
+    skip?: number;
+    limit?: number;
+  }): Promise<ARTransaction[]> => {
+    const response = await axiosInstance.get('/ar/transactions', { params });
+    return response.data;
+  },
+
+  getByType: async (baseType: string, params?: {
+    customer_id?: number;
+    from_date?: string;
+    to_date?: string;
+    skip?: number;
+    limit?: number;
+  }): Promise<ARTransaction[]> => {
+    const response = await axiosInstance.get('/ar/transactions', { 
+      params: { ...params, base_type: baseType } 
+    });
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<ARTransaction> => {
+    const response = await axiosInstance.get(`/ar/transactions/${id}`);
+    return response.data;
+  },
+
+  create: async (data: ARTransactionCreate): Promise<ARTransaction> => {
+    const response = await axiosInstance.post('/ar/transactions', data);
+    return response.data;
+  },
+
+  update: async (id: number, data: ARTransactionUpdate): Promise<ARTransaction> => {
+    const response = await axiosInstance.put(`/ar/transactions/${id}`, data);
+    return response.data;
+  },
+
+  post: async (id: number): Promise<ARTransaction> => {
+    const response = await axiosInstance.post(`/ar/transactions/${id}/post`);
+    return response.data;
+  },
+};
+
+// AR Allocation API functions
+export const arAllocationService = {
+  getAll: async (params?: {
+    customer_id?: number;
+    skip?: number;
+    limit?: number;
+  }): Promise<ARAllocation[]> => {
+    const response = await axiosInstance.get('/ar/allocations', { params });
+    return response.data;
+  },
+
+  create: async (data: ARAllocationCreate): Promise<ARAllocation> => {
+    const response = await axiosInstance.post('/ar/allocations', data);
+    return response.data;
+  },
+};
+
+// AR Defaults API functions
+export const arDefaultsService = {
+  get: async (): Promise<ARDefaults> => {
+    const response = await axiosInstance.get('/ar/defaults');
+    return response.data;
+  },
+
+  update: async (data: ARDefaultsUpdate): Promise<ARDefaults> => {
+    const response = await axiosInstance.put('/ar/defaults', data);
+    return response.data;
+  },
+};
+
+// AR Reports API functions
+export const arReportsService = {
+  getCustomerAging: async (asOfDate: string): Promise<CustomerAgingReportItem[]> => {
+    const response = await axiosInstance.get('/ar/reports/customer-aging', {
+      params: { as_of_date: asOfDate },
+    });
+    return response.data;
+  },
+
+  getCustomerStatement: async (
+    customerId: number,
+    fromDate: string,
+    toDate: string
+  ): Promise<CustomerStatementItem[]> => {
+    const response = await axiosInstance.get(`/ar/reports/customer-statement/${customerId}`, {
+      params: { from_date: fromDate, to_date: toDate },
+    });
+    return response.data;
+  },
+};

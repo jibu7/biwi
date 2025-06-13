@@ -1,0 +1,233 @@
+'use client';
+
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Eye, Filter } from 'lucide-react';
+import { apService } from '@/services/apService';
+import { Table } from '@/components/ui/Table';
+import { cn } from '@/lib/utils';
+
+export default function APTransactionsListPage() {
+  const [filters, setFilters] = useState({
+    supplier_id: '',
+    transaction_type_id: '',
+    start_date: '',
+    end_date: '',
+  });
+
+  const { data: transactions = [], isLoading } = useQuery({
+    queryKey: ['apTransactions', filters],
+    queryFn: () => apService.getAPTransactions({
+      supplier_id: filters.supplier_id ? parseInt(filters.supplier_id) : undefined,
+      transaction_type_id: filters.transaction_type_id ? parseInt(filters.transaction_type_id) : undefined,
+      start_date: filters.start_date || undefined,
+      end_date: filters.end_date || undefined,
+    }),
+  });
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: () => apService.getSuppliers(),
+  });
+
+  const { data: transactionTypes = [] } = useQuery({
+    queryKey: ['apTransactionTypes'],
+    queryFn: () => apService.getAPTransactionTypes(),
+  });
+
+  const columns = [
+    { header: 'Document #', accessor: 'document_number' as keyof typeof transactions[0] },
+    { 
+      header: 'Supplier', 
+      accessor: (transaction: typeof transactions[0]) => {
+        const supplier = suppliers.find(s => s.id === transaction.supplier_id);
+        return supplier ? `${supplier.supplier_code} - ${supplier.name}` : 'Unknown';
+      }
+    },
+    { 
+      header: 'Type', 
+      accessor: (transaction: typeof transactions[0]) => {
+        const type = transactionTypes.find(t => t.id === transaction.ap_transaction_type_id);
+        return type?.name || 'Unknown';
+      }
+    },
+    { 
+      header: 'Date', 
+      accessor: (transaction: typeof transactions[0]) => 
+        new Date(transaction.transaction_date).toLocaleDateString()
+    },
+    { 
+      header: 'Due Date', 
+      accessor: (transaction: typeof transactions[0]) => 
+        transaction.due_date ? new Date(transaction.due_date).toLocaleDateString() : '-'
+    },
+    {
+      header: 'Total Amount',
+      accessor: (transaction: typeof transactions[0]) => (
+        <span className={transaction.total_amount < 0 ? 'text-green-600' : 'text-red-600'}>
+          {new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+          }).format(Math.abs(transaction.total_amount))}
+        </span>
+      ),
+    },
+    {
+      header: 'Open Amount',
+      accessor: (transaction: typeof transactions[0]) => (
+        <span className={transaction.open_amount < 0 ? 'text-green-600' : 'text-red-600'}>
+          {new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+          }).format(Math.abs(transaction.open_amount))}
+        </span>
+      ),
+    },
+    {
+      header: 'Status',
+      accessor: (transaction: typeof transactions[0]) => (
+        <span
+          className={cn(
+            'px-2 py-1 text-xs rounded-full',
+            transaction.status === 'Open'
+              ? 'bg-yellow-100 text-yellow-800'
+              : transaction.status === 'Paid'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-gray-100 text-gray-800'
+          )}
+        >
+          {transaction.status}
+        </span>
+      ),
+    },
+    { header: 'Reference', accessor: 'reference' as keyof typeof transactions[0] },
+  ];
+
+  const actions = (transaction: typeof transactions[0]) => (
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => {
+          // Navigate to transaction detail view
+          console.log('View transaction:', transaction.id);
+        }}
+        className="text-blue-600 hover:text-blue-900"
+      >
+        <Eye className="h-4 w-4" />
+      </button>
+    </div>
+  );
+
+  const handleFilterChange = (field: string, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      supplier_id: '',
+      transaction_type_id: '',
+      start_date: '',
+      end_date: '',
+    });
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">AP Transactions</h1>
+        <p className="mt-1 text-sm text-gray-600">
+          View and manage accounts payable transactions
+        </p>
+      </div>
+
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center mb-4">
+          <Filter className="h-5 w-5 text-gray-400 mr-2" />
+          <h3 className="text-lg font-medium text-gray-900">Filters</h3>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Supplier
+            </label>
+            <select
+              value={filters.supplier_id}
+              onChange={(e) => handleFilterChange('supplier_id', e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="">All Suppliers</option>
+              {suppliers.map((supplier) => (
+                <option key={supplier.id} value={supplier.id}>
+                  {supplier.supplier_code} - {supplier.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Transaction Type
+            </label>
+            <select
+              value={filters.transaction_type_id}
+              onChange={(e) => handleFilterChange('transaction_type_id', e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="">All Types</option>
+              {transactionTypes.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={filters.start_date}
+              onChange={(e) => handleFilterChange('start_date', e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              End Date
+            </label>
+            <input
+              type="date"
+              value={filters.end_date}
+              onChange={(e) => handleFilterChange('end_date', e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <button
+            onClick={clearFilters}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <p className="text-sm text-gray-600">
+          Showing {transactions.length} transactions
+        </p>
+      </div>
+
+      <Table data={transactions} columns={columns} actions={actions} />
+    </div>
+  );
+}

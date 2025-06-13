@@ -1,6 +1,7 @@
 import { useAuth } from '@/store/authStore';
 import { roleService } from '@/services/roleService';
 import { useQuery } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
 import { Role } from '@/types';
 
 export const usePermissions = () => {
@@ -18,21 +19,24 @@ export const usePermissions = () => {
     enabled: !!user,
   });
 
-  const hasPermission = (permission: string): boolean => {
+  // Memoize the aggregated permissions to prevent unnecessary recalculations
+  const allPermissions = useMemo(() => {
+    return userRoles.flatMap(role => role.permissions || []);
+  }, [userRoles]);
+
+  const hasPermission = useCallback((permission: string): boolean => {
     if (!user) return false;
     if (user.is_superuser) return true;
     
-    // Aggregate all permissions from user's roles
-    const permissions = userRoles.flatMap(role => role.permissions || []);
-    return permissions.includes(permission);
-  };
+    return allPermissions.includes(permission);
+  }, [user, allPermissions]);
 
-  const hasAnyPermission = (permissions: string[]): boolean => {
+  const hasAnyPermission = useCallback((permissions: string[]): boolean => {
     if (!user) return false;
     if (user.is_superuser) return true;
     
     return permissions.some(permission => hasPermission(permission));
-  };
+  }, [user, hasPermission]);
 
   return {
     hasPermission,

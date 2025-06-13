@@ -247,19 +247,19 @@ def update_gl_defaults(
     current_user: models.User = Depends(get_current_active_user),
 ) -> Any:
     """Update GL defaults"""
-    return crud.gl.create_or_update_gl_defaults(db, defaults=defaults_in, company_id=current_user.company_id)
+    return crud.gl.create_or_update_gl_defaults(db, defaults_in=defaults_in, company_id=current_user.company_id)
 
 # GL Reports endpoints
-@router.get("/reports/trial-balance", response_model=schemas.TrialBalance, dependencies=[Depends(PermissionChecker([GL_REPORTS_VIEW]))])
+@router.get("/reports/trial-balance", response_model=List[schemas.TrialBalanceItem], dependencies=[Depends(PermissionChecker([GL_REPORTS_VIEW]))])
 def get_trial_balance(
     end_date: date = Query(..., description="As of date for trial balance"),
     current_user: models.User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> Any:
     """Get trial balance report"""
-    return crud.gl.get_trial_balance(db, company_id=current_user.company_id, as_of_date=end_date)
+    return crud.gl.calculate_trial_balance(db, company_id=current_user.company_id, end_date=end_date)
 
-@router.get("/reports/account-transactions", dependencies=[Depends(PermissionChecker([GL_REPORTS_VIEW]))])
+@router.get("/reports/account-transactions", response_model=List[schemas.AccountTransaction], dependencies=[Depends(PermissionChecker([GL_REPORTS_VIEW]))])
 def get_account_transactions(
     account_id: int = Query(..., description="GL Account ID"),
     start_date: date = Query(..., description="Start date"),

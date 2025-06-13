@@ -105,3 +105,31 @@ class PermissionChecker:
 
 def get_all_permissions() -> List[str]:
     return ALL_PERMISSIONS_LIST
+
+def require_permission(user: models.User, required_permission: str) -> None:
+    """
+    Check if a user has a specific permission. Raises HTTPException if not.
+    
+    Args:
+        user: The user to check permissions for
+        required_permission: The permission string to check
+        
+    Raises:
+        HTTPException: If user doesn't have the required permission
+    """
+    if user.is_superuser:
+        return
+    
+    # Get user's permissions from all roles
+    user_permissions = []
+    for user_role in user.roles:
+        role = user_role.role
+        if role and role.permissions:
+            user_permissions.extend(role.permissions)
+    
+    # Check if user has the required permission
+    if required_permission not in user_permissions:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission '{required_permission}' required"
+        )

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react'; // MODIFIED: Added useMemo
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import { glService } from '@/services/glService';
+import { GLAccount } from '@/types/gl';
 
 const journalLineSchema = z.object({
   gl_account_id: z.number().min(1, 'Account is required'),
@@ -21,40 +22,41 @@ const journalEntrySchema = z.object({
   reference: z.string().optional(),
   description: z.string().optional(),
   lines: z.array(journalLineSchema).min(2, 'At least two lines required'),
+}).refine((data) => {
+  const totalDebit = data.lines.reduce((sum, line) => sum + line.debit_amount, 0);
+  const totalCredit = data.lines.reduce((sum, line) => sum + line.credit_amount, 0);
+  return Math.abs(totalDebit - totalCredit) < 0.01;
+}, {
+  message: 'Journal entry must balance',
+  path: ['lines'],
 });
 
 type JournalEntryFormData = z.infer<typeof journalEntrySchema>;
 
 export default function NewJournalEntryPage() {
   const router = useRouter();
-  const [totals, setTotals] = useState({ debit: 0, credit: 0 });
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['glAccounts'],
     queryFn: () => glService.getGLAccounts(),
   });
 
-  // ADDED: Memoize defaultValues
-  const defaultEntryDate = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const defaultLines = useMemo(() => [
-    { gl_account_id: 0, description: '', debit_amount: 0, credit_amount: 0 },
-    { gl_account_id: 0, description: '', debit_amount: 0, credit_amount: 0 },
-  ], []);
-
-  const memoizedDefaultValues = useMemo(() => ({
-    entry_date: defaultEntryDate,
-    lines: defaultLines,
-  }), [defaultEntryDate, defaultLines]);
-
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors },
     watch,
+    formState: { errors },
   } = useForm<JournalEntryFormData>({
     resolver: zodResolver(journalEntrySchema),
-    defaultValues: memoizedDefaultValues, // MODIFIED: Use memoized defaultValues
+    defaultValues: {
+      entry_date: new Date().toISOString().split('T')[0],
+      lines: [
+        { gl_account_id: 0, description: '', debit_amount: 0, credit_amount: 0 },
+        { gl_account_id: 0, description: '', debit_amount: 0, credit_amount: 0 },
+      ],
+    },
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -62,31 +64,10 @@ export default function NewJournalEntryPage() {
     name: 'lines',
   });
 
-  const watchedLines = watch('lines');
-
-  useEffect(() => {
-    if (watchedLines) {
-      let newDebitTotal = 0;
-      let newCreditTotal = 0;
-      watchedLines.forEach(line => {
-        newDebitTotal += Number(line.debit_amount) || 0;
-        newCreditTotal += Number(line.credit_amount) || 0;
-      });
-
-      const roundedNewDebit = Math.round(newDebitTotal * 100) / 100;
-      const roundedNewCredit = Math.round(newCreditTotal * 100) / 100;
-
-      setTotals(prevTotals => {
-        const roundedCurrentDebit = Math.round(prevTotals.debit * 100) / 100;
-        const roundedCurrentCredit = Math.round(prevTotals.credit * 100) / 100;
-
-        if (roundedNewDebit !== roundedCurrentDebit || roundedNewCredit !== roundedCurrentCredit) {
-          return { debit: roundedNewDebit, credit: roundedNewCredit };
-        }
-        return prevTotals;
-      });
-    }
-  }, [watchedLines]); // Dependency array includes watchedLines
+  const watchLines = watch('lines');
+  const totalDebit = watchLines.reduce((sum, line) => sum + (line.debit_amount || 0), 0);
+  const totalCredit = watchLines.reduce((sum, line) => sum + (line.credit_amount || 0), 0);
+  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
 
   const createMutation = useMutation({
     mutationFn: glService.createJournalEntry,
@@ -96,22 +77,14 @@ export default function NewJournalEntryPage() {
   });
 
   const onSubmit = async (data: JournalEntryFormData) => {
-    const totalDebit = data.lines.reduce((sum, line) => sum + (Number(line.debit_amount) || 0), 0); // ADDED: Ensure Number conversion
-    const totalCredit = data.lines.reduce((sum, line) => sum + (Number(line.credit_amount) || 0), 0); // ADDED: Ensure Number conversion
-    
-    if (Math.abs(totalDebit - totalCredit) >= 0.01) {
-      alert('Journal entry must balance');
-      return;
-    }
-    
     await createMutation.mutateAsync(data);
   };
 
-  const isBalanced = Math.abs(totals.debit - totals.credit) < 0.01;
-
-  const handleAddLine = () => {
-    append({ gl_account_id: 0, description: '', debit_amount: 0, credit_amount: 0 });
-  };
+  const filteredAccounts = accounts.filter(
+    account =>
+      account.account_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      account.account_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="max-w-6xl">
@@ -165,7 +138,7 @@ export default function NewJournalEntryPage() {
             <h2 className="text-lg font-medium">Journal Lines</h2>
             <button
               type="button"
-              onClick={handleAddLine}
+              onClick={() => append({ gl_account_id: 0, description: '', debit_amount: 0, credit_amount: 0 })}
               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -226,7 +199,6 @@ export default function NewJournalEntryPage() {
                         {...register(`lines.${index}.debit_amount` as const, {
                           valueAsNumber: true,
                         })}
-                        // REMOVED: onChange handler
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-right"
                       />
                     </td>
@@ -237,7 +209,6 @@ export default function NewJournalEntryPage() {
                         {...register(`lines.${index}.credit_amount` as const, {
                           valueAsNumber: true,
                         })}
-                        // REMOVED: onChange handler
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-right"
                       />
                     </td>
@@ -264,13 +235,13 @@ export default function NewJournalEntryPage() {
                     {new Intl.NumberFormat('en-US', {
                       style: 'currency',
                       currency: 'USD',
-                    }).format(totals.debit)}
+                    }).format(totalDebit)}
                   </td>
                   <td className="px-6 py-3 text-right text-sm font-medium text-gray-900">
                     {new Intl.NumberFormat('en-US', {
                       style: 'currency',
                       currency: 'USD',
-                    }).format(totals.credit)}
+                    }).format(totalCredit)}
                   </td>
                   <td></td>
                 </tr>
@@ -285,7 +256,7 @@ export default function NewJournalEntryPage() {
                 {new Intl.NumberFormat('en-US', {
                   style: 'currency',
                   currency: 'USD',
-                }).format(Math.abs(totals.debit - totals.credit))}
+                }).format(Math.abs(totalDebit - totalCredit))}
               </p>
             </div>
           )}

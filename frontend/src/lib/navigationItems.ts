@@ -13,7 +13,8 @@ import {
   DollarSign,
   Globe,
   Percent,
-  GitBranch
+  GitBranch,
+  Settings
 } from 'lucide-react';
 import * as permissions from './permissions';
 
@@ -88,51 +89,86 @@ export const navItems: NavItem[] = [
         requiredPermission: permissions.AR_SETUP_MANAGE,
         children: [
           { 
-            label: "Customer Categories", 
-            href: "/maintenance/ar/customer-categories", 
+            label: "Customers", 
+            href: "/maintenance/ar/customers", 
             requiredPermission: permissions.AR_SETUP_MANAGE 
           },
           { 
-            label: "Payment Terms", 
-            href: "/maintenance/ar/payment-terms", 
+            label: "Sales Representatives", 
+            href: "/maintenance/ar/sales-reps", 
+            requiredPermission: permissions.AR_SETUP_MANAGE 
+          },
+          { 
+            label: "Transaction Types", 
+            href: "/maintenance/ar/transaction-types", 
+            requiredPermission: permissions.AR_SETUP_MANAGE 
+          },
+          { 
+            label: "Defaults", 
+            href: "/maintenance/ar/defaults", 
             requiredPermission: permissions.AR_SETUP_MANAGE 
           }
         ]
       },
       {
-        label: "Accounts Payable",
+        label: "AP Setup",
         href: "/maintenance/ap",
         icon: CreditCard,
         requiredPermission: permissions.AP_SETUP_MANAGE,
         children: [
           { 
-            label: "Supplier Categories", 
-            href: "/maintenance/ap/supplier-categories", 
+            label: "Suppliers", 
+            href: "/maintenance/ap/suppliers", 
             requiredPermission: permissions.AP_SETUP_MANAGE 
           },
           { 
-            label: "Payment Terms", 
-            href: "/maintenance/ap/payment-terms", 
+            label: "Transaction Types", 
+            href: "/maintenance/ap/transaction-types", 
             requiredPermission: permissions.AP_SETUP_MANAGE 
-          }
+          },
+          { 
+            label: "Defaults", 
+            href: "/maintenance/ap/defaults", 
+            requiredPermission: permissions.AP_SETUP_MANAGE 
+          },
         ]
       },
       {
-        label: "Inventory",
+        label: "Inventory Setup",
         href: "/maintenance/inventory",
         icon: Package,
         requiredPermission: permissions.INV_SETUP_MANAGE,
         children: [
           { 
-            label: "Product Categories", 
-            href: "/maintenance/inventory/product-categories", 
+            label: "Items", 
+            href: "/maintenance/inventory/items", 
+            requiredPermission: permissions.INV_SETUP_MANAGE 
+          },
+          { 
+            label: "Warehouses", 
+            href: "/maintenance/inventory/warehouses", 
             requiredPermission: permissions.INV_SETUP_MANAGE 
           },
           { 
             label: "Units of Measure", 
             href: "/maintenance/inventory/units-of-measure", 
             requiredPermission: permissions.INV_SETUP_MANAGE 
-          }
+          },
+          { 
+            label: "Transaction Types", 
+            href: "/maintenance/inventory/transaction-types", 
+            requiredPermission: permissions.INV_SETUP_MANAGE 
+          },
+          { 
+            label: "Barcodes", 
+            href: "/maintenance/inventory/barcodes", 
+            requiredPermission: permissions.INV_SETUP_MANAGE 
+          },
+          { 
+            label: "Defaults", 
+            href: "/maintenance/inventory/defaults", 
+            requiredPermission: permissions.INV_SETUP_MANAGE 
+          },
         ]
       },
       {
@@ -206,33 +242,62 @@ export const navItems: NavItem[] = [
         requiredPermission: permissions.AR_TRANSACTIONS_POST,
         children: [
           { 
-            label: "Customer Invoices", 
+            label: "Invoices", 
             href: "/transactions/ar/invoices", 
             requiredPermission: permissions.AR_TRANSACTIONS_POST 
           },
           { 
-            label: "Customer Receipts", 
+            label: "Credit Notes", 
+            href: "/transactions/ar/credit-notes", 
+            requiredPermission: permissions.AR_TRANSACTIONS_POST 
+          },
+          { 
+            label: "Receipts", 
             href: "/transactions/ar/receipts", 
+            requiredPermission: permissions.AR_TRANSACTIONS_POST 
+          },
+          { 
+            label: "Allocations", 
+            href: "/transactions/ar/allocations", 
+            requiredPermission: permissions.AR_TRANSACTIONS_POST 
+          },
+          { 
+            label: "All Transactions", 
+            href: "/transactions/ar/list", 
             requiredPermission: permissions.AR_TRANSACTIONS_POST 
           }
         ]
       },
       {
         label: "Accounts Payable",
-        icon: CreditCard,
         href: "/transactions/ap",
         requiredPermission: permissions.AP_TRANSACTIONS_POST,
         children: [
           { 
-            label: "Supplier Invoices", 
-            href: "/transactions/ap/invoices", 
+            label: "New Supplier Invoice", 
+            href: "/transactions/ap/invoices/new", 
             requiredPermission: permissions.AP_TRANSACTIONS_POST 
           },
           { 
-            label: "Supplier Payments", 
-            href: "/transactions/ap/payments", 
+            label: "New Debit Note (Return)", 
+            href: "/transactions/ap/debit-notes/new", 
             requiredPermission: permissions.AP_TRANSACTIONS_POST 
-          }
+          },
+          { 
+            label: "New Payment", 
+            href: "/transactions/ap/payments/new", 
+            requiredPermission: permissions.AP_TRANSACTIONS_POST 
+          },
+          { 
+            label: "Allocate Transactions", 
+            href: "/transactions/ap/allocations/new", 
+            requiredPermission: permissions.AP_TRANSACTIONS_POST 
+          },
+          { 
+            label: "View Transactions", 
+            href: "/transactions/ap/list", 
+            requiredPermission: permissions.AP_REPORTS_VIEW 
+          },
         ]
       },
       {
@@ -242,10 +307,20 @@ export const navItems: NavItem[] = [
         requiredPermission: permissions.INV_TRANSACTIONS_ADJUST,
         children: [
           { 
-            label: "Stock Adjustments", 
-            href: "/transactions/inventory/adjustments", 
+            label: "Adjustments", 
+            href: "/transactions/inventory/adjustments/new", 
             requiredPermission: permissions.INV_TRANSACTIONS_ADJUST 
-          }
+          },
+          { 
+            label: "Warehouse Transfers", 
+            href: "/transactions/inventory/transfers/new", 
+            requiredPermission: permissions.INV_TRANSACTIONS_ADJUST 
+          },
+          { 
+            label: "Inventory Counts", 
+            href: "/transactions/inventory/counts", 
+            requiredPermission: permissions.INV_TRANSACTIONS_ADJUST 
+          },
         ]
       },
       {
@@ -300,33 +375,73 @@ export const navItems: NavItem[] = [
         children: [
           { 
             label: "Customer Aging", 
-            href: "/reports/ar/customer-aging", 
+            href: "/reports/ar/aging", 
+            requiredPermission: permissions.AR_REPORTS_VIEW 
+          },
+          { 
+            label: "Customer Statement", 
+            href: "/reports/ar/statement", 
+            requiredPermission: permissions.AR_REPORTS_VIEW 
+          },
+          { 
+            label: "Customer Listing", 
+            href: "/reports/ar/customer-listing", 
             requiredPermission: permissions.AR_REPORTS_VIEW 
           }
         ]
       },
       {
-        label: "Accounts Payable",
+        label: "AP Reports",
         href: "/reports/ap",
         requiredPermission: permissions.AP_REPORTS_VIEW,
         children: [
           { 
-            label: "Supplier Aging", 
-            href: "/reports/ap/supplier-aging", 
+            label: "Age Analysis", 
+            href: "/reports/ap/age-analysis", 
             requiredPermission: permissions.AP_REPORTS_VIEW 
-          }
+          },
+          { 
+            label: "Supplier Listing", 
+            href: "/reports/ap/supplier-listing", 
+            requiredPermission: permissions.AP_REPORTS_VIEW 
+          },
+          { 
+            label: "Supplier Statement", 
+            href: "/reports/ap/statement", 
+            requiredPermission: permissions.AP_REPORTS_VIEW 
+          },
+          { 
+            label: "Allocation Report", 
+            href: "/reports/ap/allocation-report", 
+            requiredPermission: permissions.AP_REPORTS_VIEW 
+          },
         ]
       },
       {
-        label: "Inventory",
+        label: "Inventory Reports",
         href: "/reports/inventory",
         requiredPermission: permissions.INV_REPORTS_VIEW,
         children: [
           { 
-            label: "Stock Valuation", 
-            href: "/reports/inventory/stock-valuation", 
+            label: "Item Listing", 
+            href: "/reports/inventory/item-listing", 
             requiredPermission: permissions.INV_REPORTS_VIEW 
-          }
+          },
+          { 
+            label: "Stock Quantity", 
+            href: "/reports/inventory/stock-quantity", 
+            requiredPermission: permissions.INV_REPORTS_VIEW 
+          },
+          { 
+            label: "Movement Report", 
+            href: "/reports/inventory/movement", 
+            requiredPermission: permissions.INV_REPORTS_VIEW 
+          },
+          { 
+            label: "Valuation Report", 
+            href: "/reports/inventory/valuation", 
+            requiredPermission: permissions.INV_REPORTS_VIEW 
+          },
         ]
       },
       {
