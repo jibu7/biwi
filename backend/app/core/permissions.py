@@ -47,7 +47,12 @@ INV_SETUP_MANAGE = "inv:setup_manage"
 INV_TRANSACTIONS_ADJUST = "inv:transactions_adjust"
 INV_REPORTS_VIEW = "inv:reports_view"
 
-# OE Permissions (for future phases)
+# OE Permissions
+OE_SETUP_MANAGE = "oe:setup_manage"
+OE_SALES_ORDERS_MANAGE = "oe:sales_orders_manage"
+OE_PURCHASE_ORDERS_MANAGE = "oe:purchase_orders_manage"
+OE_GRV_PROCESS = "oe:grv_process"
+OE_REPORTS_VIEW = "oe:reports_view"
 OE_SETUP_MANAGE = "oe:setup_manage"
 OE_SALES_ORDERS_MANAGE = "oe:sales_orders_manage"
 OE_PURCHASE_ORDERS_MANAGE = "oe:purchase_orders_manage"

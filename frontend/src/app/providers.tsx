@@ -18,7 +18,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     loadAuthData();
-  }, [loadAuthData]);
+  }, []); // Empty dependency array - we only want to load auth data once on mount
 
   return (
     <QueryClientProvider client={queryClient}>

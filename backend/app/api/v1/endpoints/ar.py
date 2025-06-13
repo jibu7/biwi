@@ -30,7 +30,7 @@ def get_customers(
         if customer.sales_representative:
             customer.sales_representative_name = customer.sales_representative.name
         if customer.default_ar_gl_account:
-            customer.default_ar_gl_account_name = customer.default_ar_gl_account.name
+            customer.default_ar_gl_account_name = customer.default_ar_gl_account.account_name
     
     return customers
 
@@ -69,7 +69,7 @@ def get_customer(
     if customer.sales_representative:
         customer.sales_representative_name = customer.sales_representative.name
     if customer.default_ar_gl_account:
-        customer.default_ar_gl_account_name = customer.default_ar_gl_account.name
+        customer.default_ar_gl_account_name = customer.default_ar_gl_account.account_name
     
     return customer
 
@@ -206,9 +206,9 @@ def get_ar_transaction_types(
     # Add related data to response
     for transaction_type in transaction_types:
         if transaction_type.default_gl_account:
-            transaction_type.default_gl_account_name = transaction_type.default_gl_account.name
+            transaction_type.default_gl_account_name = transaction_type.default_gl_account.account_name
         if transaction_type.default_ar_control_gl_account:
-            transaction_type.default_ar_control_gl_account_name = transaction_type.default_ar_control_gl_account.name
+            transaction_type.default_ar_control_gl_account_name = transaction_type.default_ar_control_gl_account.account_name
     
     return transaction_types
 
@@ -245,9 +245,9 @@ def get_ar_transaction_type(
     
     # Add related data to response
     if transaction_type.default_gl_account:
-        transaction_type.default_gl_account_name = transaction_type.default_gl_account.name
+        transaction_type.default_gl_account_name = transaction_type.default_gl_account.account_name
     if transaction_type.default_ar_control_gl_account:
-        transaction_type.default_ar_control_gl_account_name = transaction_type.default_ar_control_gl_account.name
+        transaction_type.default_ar_control_gl_account_name = transaction_type.default_ar_control_gl_account.account_name
     
     return transaction_type
 
@@ -443,13 +443,13 @@ def get_ar_defaults(
     
     # Add related data to response
     if ar_defaults.default_ar_control_gl_account:
-        ar_defaults.default_ar_control_gl_account_name = ar_defaults.default_ar_control_gl_account.name
+        ar_defaults.default_ar_control_gl_account_name = ar_defaults.default_ar_control_gl_account.account_name
     if ar_defaults.default_sales_gl_account:
-        ar_defaults.default_sales_gl_account_name = ar_defaults.default_sales_gl_account.name
+        ar_defaults.default_sales_gl_account_name = ar_defaults.default_sales_gl_account.account_name
     if ar_defaults.default_receipt_gl_account:
-        ar_defaults.default_receipt_gl_account_name = ar_defaults.default_receipt_gl_account.name
+        ar_defaults.default_receipt_gl_account_name = ar_defaults.default_receipt_gl_account.account_name
     if ar_defaults.default_sales_discount_gl_account:
-        ar_defaults.default_sales_discount_gl_account_name = ar_defaults.default_sales_discount_gl_account.name
+        ar_defaults.default_sales_discount_gl_account_name = ar_defaults.default_sales_discount_gl_account.account_name
     
     return ar_defaults
 

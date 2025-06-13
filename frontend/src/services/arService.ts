@@ -23,27 +23,55 @@ import {
 // Customer API functions
 export const customerService = {
   getAll: async (): Promise<Customer[]> => {
-    const response = await axiosInstance.get('/ar/customers');
-    return response.data;
+    try {
+      const response = await axiosInstance.get('/ar/customers');
+      console.log('Customer API Response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      throw error;
+    }
   },
 
   getById: async (id: number): Promise<Customer> => {
-    const response = await axiosInstance.get(`/ar/customers/${id}`);
-    return response.data;
+    try {
+      const response = await axiosInstance.get(`/ar/customers/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching customer:', error);
+      throw error;
+    }
   },
 
   create: async (data: CustomerCreate): Promise<Customer> => {
-    const response = await axiosInstance.post('/ar/customers', data);
-    return response.data;
+    try {
+      console.log('Creating customer with data:', data);
+      const response = await axiosInstance.post('/ar/customers', data);
+      console.log('Customer created successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      throw error;
+    }
   },
 
   update: async (id: number, data: CustomerUpdate): Promise<Customer> => {
-    const response = await axiosInstance.put(`/ar/customers/${id}`, data);
-    return response.data;
+    try {
+      const response = await axiosInstance.put(`/ar/customers/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      throw error;
+    }
   },
 
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`/ar/customers/${id}`);
+    try {
+      await axiosInstance.delete(`/ar/customers/${id}`);
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+      throw error;
+    }
   },
 };
 

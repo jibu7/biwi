@@ -49,6 +49,16 @@ from .inventory import (
     InventoryValuationItem, InventoryMovementItem, StockQuantityItem
 )
 
+from .oe import (
+    SalesOrder, SalesOrderCreate, SalesOrderUpdate,
+    SalesOrderLine, SalesOrderLineCreate, SalesOrderLineUpdate,
+    PurchaseOrder, PurchaseOrderCreate, PurchaseOrderUpdate,
+    PurchaseOrderLine, PurchaseOrderLineCreate, PurchaseOrderLineUpdate,
+    GoodsReceivedVoucher, GoodsReceivedVoucherCreate, GoodsReceivedVoucherUpdate,
+    GoodsReceivedVoucherLine, GoodsReceivedVoucherLineCreate, GoodsReceivedVoucherLineUpdate,
+    OrderDefaults, OrderDefaultsCreate, OrderDefaultsUpdate
+)
+
 __all__ = [
     "Company", "CompanyCreate", "CompanyUpdate",
     "Role", "RoleCreate", "RoleUpdate", 
@@ -85,5 +95,12 @@ __all__ = [
     "InventoryDefaults", "InventoryDefaultsCreate", "InventoryDefaultsUpdate",
     "InventoryCountSession", "InventoryCountSessionCreate", "InventoryCountSessionUpdate",
     "InventoryCountLine", "InventoryCountLineUpdate",
-    "InventoryValuationItem", "InventoryMovementItem", "StockQuantityItem"
+    "InventoryValuationItem", "InventoryMovementItem", "StockQuantityItem",
+    "SalesOrder", "SalesOrderCreate", "SalesOrderUpdate",
+    "SalesOrderLine", "SalesOrderLineCreate", "SalesOrderLineUpdate",
+    "PurchaseOrder", "PurchaseOrderCreate", "PurchaseOrderUpdate",
+    "PurchaseOrderLine", "PurchaseOrderLineCreate", "PurchaseOrderLineUpdate",
+    "GoodsReceivedVoucher", "GoodsReceivedVoucherCreate", "GoodsReceivedVoucherUpdate",
+    "GoodsReceivedVoucherLine", "GoodsReceivedVoucherLineCreate", "GoodsReceivedVoucherLineUpdate",
+    "OrderDefaults", "OrderDefaultsCreate", "OrderDefaultsUpdate"
 ]

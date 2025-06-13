@@ -1,4 +1,4 @@
-from . import core, gl, ar, ap, inventory
+from . import core, gl, ar, ap, inventory, oe
 
 # Inventory imports
 from .inventory import (

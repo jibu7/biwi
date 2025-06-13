@@ -13,3 +13,7 @@ from .inventory import (
     InventoryItemLocation, InventoryTransactionType, InventoryTransaction,
     InventoryDefaults, InventoryCountSession, InventoryCountLine
 )
+from .oe import (
+    SalesOrder, SalesOrderLine, PurchaseOrder, PurchaseOrderLine,
+    GoodsReceivedVoucher, GoodsReceivedVoucherLine, OrderDefaults
+)

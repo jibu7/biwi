@@ -172,11 +172,16 @@ export const navItems: NavItem[] = [
         ]
       },
       {
-        label: "Order Entry",
+        label: "OE Setup",
         href: "/maintenance/oe",
         icon: ShoppingCart,
         requiredPermission: permissions.OE_SETUP_MANAGE,
         children: [
+          { 
+            label: "Order Defaults", 
+            href: "/maintenance/oe/defaults", 
+            requiredPermission: permissions.OE_SETUP_MANAGE 
+          },
           { 
             label: "Sales Order Types", 
             href: "/maintenance/oe/sales-order-types", 
@@ -326,22 +331,51 @@ export const navItems: NavItem[] = [
       {
         label: "Order Entry",
         icon: ShoppingCart,
-        href: "/transactions/oe",
         children: [
-          { 
-            label: "Sales Orders", 
-            href: "/transactions/oe/sales-orders", 
-            requiredPermission: permissions.OE_SALES_ORDERS_MANAGE 
+          {
+            label: "Sales Orders",
+            children: [
+              { 
+                label: "New Sales Order", 
+                href: "/transactions/oe/sales-orders/new", 
+                requiredPermission: permissions.OE_SALES_ORDERS_MANAGE 
+              },
+              { 
+                label: "View Sales Orders", 
+                href: "/transactions/oe/sales-orders", 
+                requiredPermission: permissions.OE_SALES_ORDERS_MANAGE 
+              }
+            ]
           },
-          { 
-            label: "Purchase Orders", 
-            href: "/transactions/oe/purchase-orders", 
-            requiredPermission: permissions.OE_PURCHASE_ORDERS_MANAGE 
+          {
+            label: "Purchase Orders",
+            children: [
+              { 
+                label: "New Purchase Order", 
+                href: "/transactions/oe/purchase-orders/new", 
+                requiredPermission: permissions.OE_PURCHASE_ORDERS_MANAGE 
+              },
+              { 
+                label: "View Purchase Orders", 
+                href: "/transactions/oe/purchase-orders", 
+                requiredPermission: permissions.OE_PURCHASE_ORDERS_MANAGE 
+              }
+            ]
           },
-          { 
-            label: "Goods Received Vouchers", 
-            href: "/transactions/oe/grv", 
-            requiredPermission: permissions.OE_GRV_PROCESS 
+          {
+            label: "Goods Received",
+            children: [
+              { 
+                label: "New Goods Received Voucher", 
+                href: "/transactions/oe/grvs/new", 
+                requiredPermission: permissions.OE_GRV_PROCESS 
+              },
+              { 
+                label: "View GRVs", 
+                href: "/transactions/oe/grvs", 
+                requiredPermission: permissions.OE_GRV_PROCESS 
+              }
+            ]
           }
         ]
       }
@@ -445,13 +479,23 @@ export const navItems: NavItem[] = [
         ]
       },
       {
-        label: "Order Entry",
+        label: "OE Reports",
         href: "/reports/oe",
         requiredPermission: permissions.OE_REPORTS_VIEW,
         children: [
           { 
-            label: "Sales Analysis", 
-            href: "/reports/oe/sales-analysis", 
+            label: "Sales Order Listing", 
+            href: "/reports/oe/sales-orders", 
+            requiredPermission: permissions.OE_REPORTS_VIEW 
+          },
+          { 
+            label: "Purchase Order Listing", 
+            href: "/reports/oe/purchase-orders", 
+            requiredPermission: permissions.OE_REPORTS_VIEW 
+          },
+          { 
+            label: "GRV Listing", 
+            href: "/reports/oe/grvs", 
             requiredPermission: permissions.OE_REPORTS_VIEW 
           }
         ]
