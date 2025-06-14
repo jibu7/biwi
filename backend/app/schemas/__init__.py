@@ -59,6 +59,12 @@ from .oe import (
     OrderDefaults, OrderDefaultsCreate, OrderDefaultsUpdate
 )
 
+from .common import (
+    Currency, CurrencyCreate, CurrencyUpdate,
+    TaxType, TaxTypeCreate, TaxTypeUpdate,
+    Branch, BranchCreate, BranchUpdate
+)
+
 __all__ = [
     "Company", "CompanyCreate", "CompanyUpdate",
     "Role", "RoleCreate", "RoleUpdate", 
@@ -102,5 +108,8 @@ __all__ = [
     "PurchaseOrderLine", "PurchaseOrderLineCreate", "PurchaseOrderLineUpdate",
     "GoodsReceivedVoucher", "GoodsReceivedVoucherCreate", "GoodsReceivedVoucherUpdate",
     "GoodsReceivedVoucherLine", "GoodsReceivedVoucherLineCreate", "GoodsReceivedVoucherLineUpdate",
-    "OrderDefaults", "OrderDefaultsCreate", "OrderDefaultsUpdate"
+    "OrderDefaults", "OrderDefaultsCreate", "OrderDefaultsUpdate",
+    "Currency", "CurrencyCreate", "CurrencyUpdate",
+    "TaxType", "TaxTypeCreate", "TaxTypeUpdate",
+    "Branch", "BranchCreate", "BranchUpdate"
 ]

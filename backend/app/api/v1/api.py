@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from .endpoints import auth, users, roles, companies, accounting_periods, gl, ar, ap, inventory, oe
+from .endpoints import auth, users, roles, companies, accounting_periods, gl, ar, ap, inventory, oe, common
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -20,3 +20,6 @@ api_router.include_router(inventory.router, prefix="/inventory", tags=["inventor
 
 # Order Entry endpoints (Phase 7)
 api_router.include_router(oe.router, prefix="/oe", tags=["order-entry"])
+
+# Common setup endpoints (Phase 8)
+api_router.include_router(common.router, prefix="/common", tags=["common-setup"])

@@ -53,11 +53,6 @@ OE_SALES_ORDERS_MANAGE = "oe:sales_orders_manage"
 OE_PURCHASE_ORDERS_MANAGE = "oe:purchase_orders_manage"
 OE_GRV_PROCESS = "oe:grv_process"
 OE_REPORTS_VIEW = "oe:reports_view"
-OE_SETUP_MANAGE = "oe:setup_manage"
-OE_SALES_ORDERS_MANAGE = "oe:sales_orders_manage"
-OE_PURCHASE_ORDERS_MANAGE = "oe:purchase_orders_manage"
-OE_GRV_PROCESS = "oe:grv_process"
-OE_REPORTS_VIEW = "oe:reports_view"
 
 # Common Setup Permissions (for future phases)
 COMMON_SETUP_CURRENCIES = "common:setup_currencies"

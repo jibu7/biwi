@@ -11,7 +11,7 @@ config = context.config
 
 # Import Base and models for autogenerate support
 from app.database.database import Base
-from app.models import core  # Import all models
+from app import models  # Import all models
 
 # Import settings and configure database URL
 from app.config import settings
