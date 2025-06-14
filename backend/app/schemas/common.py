@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 from decimal import Decimal
 
 
@@ -66,12 +66,10 @@ class TaxType(TaxTypeBase):
 
 # Branch Schemas
 class BranchBase(BaseModel):
-    name: str = Field(..., max_length=100, description="Branch name")
-    code: str = Field(..., max_length=10, description="Branch code")
-    address: Optional[str] = Field(None, max_length=255, description="Branch address")
-    phone: Optional[str] = Field(None, max_length=20, description="Phone number")
-    email: Optional[str] = Field(None, max_length=100, description="Email address")
-    manager_name: Optional[str] = Field(None, max_length=100, description="Manager name")
+    name: str = Field(..., description="Branch name")
+    address: Optional[Dict[str, Any]] = Field(None, description="Branch address (JSON)")
+    contact_info: Optional[Dict[str, Any]] = Field(None, description="Contact information (JSON)")
+    default_gl_segment_code: Optional[str] = Field(None, description="Default GL segment code")
     is_active: bool = Field(default=True, description="Whether branch is active")
 
 
@@ -81,11 +79,9 @@ class BranchCreate(BranchBase):
 
 class BranchUpdate(BaseModel):
     name: Optional[str] = None
-    code: Optional[str] = None
-    address: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    manager_name: Optional[str] = None
+    address: Optional[Dict[str, Any]] = None
+    contact_info: Optional[Dict[str, Any]] = None
+    default_gl_segment_code: Optional[str] = None
     is_active: Optional[bool] = None
 
 

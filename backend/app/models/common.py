@@ -48,17 +48,14 @@ class Branch(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    name = Column(String(100), nullable=False)
-    code = Column(String(10), nullable=False)
-    address = Column(String(255), nullable=True)
-    phone = Column(String(20), nullable=True)
-    email = Column(String(100), nullable=True)
-    manager_name = Column(String(100), nullable=True)
+    name = Column(String, nullable=False)
+    address = Column(JSONB, nullable=True)
+    contact_info = Column(JSONB, nullable=True)
+    default_gl_segment_code = Column(String, nullable=True)  # For segmented GL reporting
     is_active = Column(Boolean, default=True)
     
     company = relationship("Company", foreign_keys=[company_id])
     
     __table_args__ = (
-        UniqueConstraint('code', 'company_id', name='uq_branch_code_company'),
         UniqueConstraint('name', 'company_id', name='uq_branch_name_company'),
     )
