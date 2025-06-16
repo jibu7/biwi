@@ -119,7 +119,7 @@ export default function ReportsPage() {
             No Reports Available
           </h3>
           <p className="text-gray-600">
-            You don't have permission to access any report modules. 
+            You don&apos;t have permission to access any report modules. 
             Contact your administrator to request access.
           </p>
         </div>

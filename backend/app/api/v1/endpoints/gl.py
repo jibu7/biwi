@@ -257,7 +257,8 @@ def get_trial_balance(
     db: Session = Depends(get_db),
 ) -> Any:
     """Get trial balance report"""
-    return crud.gl.calculate_trial_balance(db, company_id=current_user.company_id, end_date=end_date)
+    trial_balance = crud.gl.get_trial_balance(db, company_id=current_user.company_id, as_of_date=end_date)
+    return trial_balance.accounts
 
 @router.get("/reports/account-transactions", response_model=List[schemas.AccountTransaction], dependencies=[Depends(PermissionChecker([GL_REPORTS_VIEW]))])
 def get_account_transactions(

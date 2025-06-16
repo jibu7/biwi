@@ -1,7 +1,13 @@
 from fastapi import APIRouter
-from .endpoints import auth, users, roles, companies, accounting_periods, gl, ar, ap, inventory, oe, common
+from .endpoints import auth, users, roles, companies, accounting_periods, gl, ar, ap, inventory, oe, common, reporting
 
 api_router = APIRouter(prefix="/api/v1")
+
+# Health check endpoint
+@api_router.get("/health")
+async def health_check():
+    return {"status": "ok", "message": "Backend is healthy"}
+
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(roles.router, prefix="/roles", tags=["roles"])
@@ -23,3 +29,6 @@ api_router.include_router(oe.router, prefix="/oe", tags=["order-entry"])
 
 # Common setup endpoints (Phase 8)
 api_router.include_router(common.router, prefix="/common", tags=["common-setup"])
+
+# Financial reporting endpoints (Phase 9)
+api_router.include_router(reporting.router, prefix="/reporting", tags=["reporting"])

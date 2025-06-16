@@ -165,6 +165,7 @@ def delete_ar_transaction_type(db: Session, transaction_type_id: int, company_id
 # AR Transaction CRUD
 def get_ar_transactions(db: Session, company_id: int, customer_id: Optional[int] = None,
                        from_date: Optional[date] = None, to_date: Optional[date] = None,
+                       base_type: Optional[str] = None,
                        skip: int = 0, limit: int = 100) -> List[ARTransaction]:
     query = db.query(ARTransaction)\
         .filter(ARTransaction.company_id == company_id)\
@@ -181,6 +182,10 @@ def get_ar_transactions(db: Session, company_id: int, customer_id: Optional[int]
     
     if to_date:
         query = query.filter(ARTransaction.transaction_date <= to_date)
+    
+    if base_type:
+        query = query.join(ARTransactionType)\
+            .filter(ARTransactionType.base_type == base_type)
     
     return query.order_by(desc(ARTransaction.transaction_date)).offset(skip).limit(limit).all()
 
@@ -200,21 +205,25 @@ def create_ar_transaction(db: Session, transaction: ARTransactionCreate, company
     if not transaction_type:
         raise ValueError("Invalid transaction type")
     
-    # Generate sequential document number
-    last_transaction = db.query(ARTransaction)\
-        .filter(and_(
-            ARTransaction.company_id == company_id,
-            ARTransaction.ar_transaction_type_id == transaction.ar_transaction_type_id
-        ))\
-        .order_by(desc(ARTransaction.id))\
-        .first()
-    
-    if last_transaction and last_transaction.document_number.isdigit():
-        next_number = int(last_transaction.document_number) + 1
+    # Use provided document number or generate sequential number
+    if transaction.document_number:
+        document_number = transaction.document_number
     else:
-        next_number = 1
-    
-    document_number = f"{next_number:06d}"  # 6-digit padded number
+        # Generate sequential document number
+        last_transaction = db.query(ARTransaction)\
+            .filter(and_(
+                ARTransaction.company_id == company_id,
+                ARTransaction.ar_transaction_type_id == transaction.ar_transaction_type_id
+            ))\
+            .order_by(desc(ARTransaction.id))\
+            .first()
+        
+        if last_transaction and last_transaction.document_number.isdigit():
+            next_number = int(last_transaction.document_number) + 1
+        else:
+            next_number = 1
+        
+        document_number = f"{next_number:06d}"  # 6-digit padded number
     
     db_transaction = ARTransaction(
         company_id=company_id,
@@ -349,7 +358,7 @@ def post_ar_transaction_to_gl(db: Session, transaction_id: int, company_id: int)
     db.refresh(db_transaction)
     return db_transaction
 
-def post_ar_transaction(db: Session, transaction_id: int, company_id: int) -> Optional[ARTransaction]:
+def post_ar_transaction(db: Session, transaction_id: int, company_id: int, user_id: int = 1) -> Optional[ARTransaction]:
     """Post AR transaction to GL and update customer balance"""
     from app.crud.gl import create_gl_journal_entry
     from app.schemas.gl import GLJournalEntryCreate, GLJournalEntryLineCreate
@@ -429,7 +438,7 @@ def post_ar_transaction(db: Session, transaction_id: int, company_id: int) -> Op
         )
         
         try:
-            gl_entry = create_gl_journal_entry(db, gl_entry_data, company_id)
+            gl_entry = create_gl_journal_entry(db, gl_entry_data, company_id, user_id)
             
             # Update transaction
             db_transaction.linked_gl_journal_entry_id = gl_entry.id

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,13 +19,24 @@ const accountSchema = z.object({
 
 type AccountFormData = z.infer<typeof accountSchema>;
 
-export default function EditGLAccountPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function EditGLAccountPage({ params }: PageProps) {
   const router = useRouter();
-  const accountId = parseInt(params.id);
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
+
+  useEffect(() => {
+    params.then(setResolvedParams);
+  }, [params]);
+
+  const accountId = resolvedParams ? parseInt(resolvedParams.id) : 0;
 
   const { data: account, isLoading } = useQuery({
     queryKey: ['glAccount', accountId],
     queryFn: () => glService.getGLAccount(accountId),
+    enabled: accountId > 0,
   });
 
   const { data: accounts = [] } = useQuery({

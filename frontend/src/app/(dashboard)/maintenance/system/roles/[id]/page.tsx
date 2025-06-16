@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,14 +19,25 @@ const roleSchema = z.object({
 
 type RoleFormData = z.infer<typeof roleSchema>;
 
-export default function EditRolePage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function EditRolePage({ params }: PageProps) {
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
+
+  useEffect(() => {
+    params.then(setResolvedParams);
+  }, [params]);
+
   const router = useRouter();
   const queryClient = useQueryClient();
-  const roleId = parseInt(params.id);
+  const roleId = resolvedParams ? parseInt(resolvedParams.id) : 0;
   
   const { data: role, isLoading, error } = useQuery({
     queryKey: ['role', roleId],
     queryFn: () => roleService.getRole(roleId),
+  enabled: roleId > 0,
   });
 
   const {

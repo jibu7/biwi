@@ -2,21 +2,19 @@
 export interface SalesOrder {
   id: number;
   company_id: number;
-  order_number: string;
+  document_number: string;
   order_date: string;
   customer_id: number;
-  customer_po_reference?: string;
+  reference?: string;
   sales_representative_id?: number;
-  status: 'DRAFT' | 'CONFIRMED' | 'INVOICED' | 'CANCELLED';
-  currency_code: string;
-  exchange_rate: number;
-  subtotal: number;
-  tax_amount: number;
+  status: 'DRAFT' | 'CONFIRMED' | 'INVOICED' | 'CANCELLED' | 'Draft';
+  currency_code?: string;
+  exchange_rate?: number;
+  subtotal?: number;
+  tax_amount?: number;
   total_amount: number;
   notes?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  ar_invoice_id?: number;
   
   // Related data
   customer_name?: string;
@@ -40,21 +38,22 @@ export interface SalesOrderLine {
 
 export interface SalesOrderCreate {
   customer_id: number;
-  customer_po_reference?: string;
+  order_date: string;
+  reference?: string;
   sales_representative_id?: number;
-  order_date?: string;
-  currency_code?: string;
-  exchange_rate?: number;
   notes?: string;
+  shipping_address?: any;
+  billing_address?: any;
   lines: SalesOrderLineCreate[];
 }
 
 export interface SalesOrderLineCreate {
   item_id: number;
-  quantity: number;
+  description: string;
+  quantity_ordered: number;
   unit_price: number;
   discount_percentage?: number;
-  notes?: string;
+  tax_type_id?: number;
 }
 
 // Purchase Order Types

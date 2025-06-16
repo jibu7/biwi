@@ -9,7 +9,7 @@ const transactionItems = [
   {
     title: 'Adjustments',
     description: 'Adjust inventory quantities up or down',
-    href: '/transactions/inventory/adjustments/new',
+    href: '/transactions/inventory/adjustments',
     icon: Plus,
     permission: INV_TRANSACTIONS_ADJUST,
     color: 'bg-green-100 text-green-600',
@@ -48,7 +48,7 @@ export default function InventoryTransactionsPage() {
       <div className="container mx-auto py-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to perform inventory transactions.</p>
+          <p className="text-gray-600">You don&apos;t have permission to perform inventory transactions.</p>
         </div>
       </div>
     );

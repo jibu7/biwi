@@ -306,7 +306,7 @@ export const navItems: NavItem[] = [
         children: [
           { 
             label: "Adjustments", 
-            href: "/transactions/inventory/adjustments/new", 
+            href: "/transactions/inventory/adjustments", 
             requiredPermission: permissions.INV_TRANSACTIONS_ADJUST 
           },
           { 
@@ -380,9 +380,24 @@ export const navItems: NavItem[] = [
     children: [
       {
         label: "Financial Reports",
-        href: "/reports/gl",
-        requiredPermission: permissions.GL_REPORTS_VIEW,
+        href: "/reports/financial",
+        requiredPermission: permissions.REPORTING_FINANCIAL_STATEMENTS,
         children: [
+          { 
+            label: "Balance Sheet", 
+            href: "/reports/financial/balance-sheet", 
+            requiredPermission: permissions.REPORTING_FINANCIAL_STATEMENTS 
+          },
+          { 
+            label: "Income Statement", 
+            href: "/reports/financial/income-statement", 
+            requiredPermission: permissions.REPORTING_FINANCIAL_STATEMENTS 
+          },
+          { 
+            label: "Cash Flow Statement", 
+            href: "/reports/financial/cash-flow", 
+            requiredPermission: permissions.REPORTING_FINANCIAL_STATEMENTS 
+          },
           { 
             label: "Trial Balance", 
             href: "/reports/gl/trial-balance", 
@@ -396,10 +411,42 @@ export const navItems: NavItem[] = [
         ]
       },
       {
-        label: "Accounts Receivable",
-        href: "/reports/ar",
-        requiredPermission: permissions.AR_REPORTS_VIEW,
+        label: "GL Advanced Reports",
+        href: "/reports/gl/advanced",
+        requiredPermission: permissions.REPORTING_ADVANCED_GL,
         children: [
+          { 
+            label: "Chart of Accounts", 
+            href: "/reports/gl/chart-of-accounts", 
+            requiredPermission: permissions.REPORTING_ADVANCED_GL 
+          },
+          { 
+            label: "Cashbook", 
+            href: "/reports/gl/cashbook", 
+            requiredPermission: permissions.REPORTING_ADVANCED_GL 
+          },
+          { 
+            label: "Bank Reconciliation", 
+            href: "/reports/gl/bank-reconciliation", 
+            requiredPermission: permissions.REPORTING_BANK_RECONCILIATION 
+          }
+        ]
+      },
+      {
+        label: "AR Advanced Reports",
+        href: "/reports/ar/advanced",
+        requiredPermission: permissions.REPORTING_ADVANCED_AR,
+        children: [
+          { 
+            label: "Detailed Age Analysis", 
+            href: "/reports/ar/detailed-age-analysis", 
+            requiredPermission: permissions.REPORTING_ADVANCED_AR 
+          },
+          { 
+            label: "Customer Analysis", 
+            href: "/reports/ar/customer-analysis", 
+            requiredPermission: permissions.REPORTING_ADVANCED_AR 
+          },
           { 
             label: "Customer Aging", 
             href: "/reports/ar/aging", 
@@ -418,10 +465,20 @@ export const navItems: NavItem[] = [
         ]
       },
       {
-        label: "AP Reports",
-        href: "/reports/ap",
-        requiredPermission: permissions.AP_REPORTS_VIEW,
+        label: "AP Advanced Reports",
+        href: "/reports/ap/advanced",
+        requiredPermission: permissions.REPORTING_ADVANCED_AP,
         children: [
+          { 
+            label: "Detailed Age Analysis", 
+            href: "/reports/ap/detailed-age-analysis", 
+            requiredPermission: permissions.REPORTING_ADVANCED_AP 
+          },
+          { 
+            label: "Supplier Analysis", 
+            href: "/reports/ap/supplier-analysis", 
+            requiredPermission: permissions.REPORTING_ADVANCED_AP 
+          },
           { 
             label: "Age Analysis", 
             href: "/reports/ap/age-analysis", 
@@ -490,6 +547,23 @@ export const navItems: NavItem[] = [
             label: "GRV Listing", 
             href: "/reports/oe/grvs", 
             requiredPermission: permissions.OE_REPORTS_VIEW 
+          }
+        ]
+      },
+      {
+        label: "Report Management",
+        href: "/reports/management",
+        requiredPermission: permissions.REPORTING_TEMPLATES_MANAGE,
+        children: [
+          { 
+            label: "Report Templates", 
+            href: "/reports/management/templates", 
+            requiredPermission: permissions.REPORTING_TEMPLATES_MANAGE 
+          },
+          { 
+            label: "Scheduled Reports", 
+            href: "/reports/management/scheduled", 
+            requiredPermission: permissions.REPORTING_TEMPLATES_MANAGE 
           }
         ]
       }

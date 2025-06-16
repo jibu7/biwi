@@ -103,7 +103,7 @@ class ARTransactionBase(BaseModel):
         return v
 
 class ARTransactionCreate(ARTransactionBase):
-    pass
+    document_number: Optional[str] = None
 
 class ARTransactionUpdate(BaseModel):
     transaction_date: Optional[date] = None
@@ -119,6 +119,8 @@ class ARTransaction(ARTransactionBase):
     is_posted_to_gl: bool
     status: str
     linked_gl_journal_entry_id: Optional[int] = None
+    customer_name: Optional[str] = None
+    ar_transaction_type_name: Optional[str] = None
     
     class Config:
         from_attributes = True

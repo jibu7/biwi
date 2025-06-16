@@ -178,8 +178,16 @@ class InventoryTransaction(InventoryTransactionBase):
     total_value: Decimal
     linked_gl_journal_entry_id: Optional[int] = None
     
+    # Related objects
+    item: Optional["InventoryItem"] = None
+    warehouse: Optional["Warehouse"] = None
+    transaction_type: Optional["InventoryTransactionType"] = None
+    
     class Config:
         from_attributes = True
+
+# Update models to resolve forward references
+InventoryTransaction.model_rebuild()
 
 # Inventory Adjustment Schema
 class InventoryAdjustmentCreate(BaseModel):
@@ -281,6 +289,10 @@ class InventoryMovementItem(BaseModel):
 class StockQuantityItem(BaseModel):
     item_code: str
     description: str
+    costing_method: str
+    standard_cost: Decimal
+    average_cost: Decimal
+    selling_price: Decimal
     warehouse_name: str
     quantity_on_hand: Decimal
     quantity_committed: Decimal

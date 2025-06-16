@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Download, Package } from 'lucide-react';
 import { getItemListing } from '@/services/inventoryService';
+import { safeCurrency, safeToFixed } from '@/lib/formatters';
 
 export default function ItemListingReportPage() {
   const [activeOnly, setActiveOnly] = useState(true);
@@ -21,9 +22,9 @@ export default function ItemListingReportPage() {
       item.description,
       item.item_type,
       item.unit_of_measure?.abbreviation || '',
-      item.standard_cost,
-      item.average_cost,
-      item.selling_price,
+      safeToFixed(typeof item.standard_cost === 'number' ? item.standard_cost : null),
+      safeToFixed(typeof item.average_cost === 'number' ? item.average_cost : null),
+      safeToFixed(typeof item.selling_price === 'number' ? item.selling_price : null),
       item.is_active ? 'Yes' : 'No',
     ]);
 
@@ -116,13 +117,13 @@ export default function ItemListingReportPage() {
                   {item.unit_of_measure?.abbreviation}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  ${item.standard_cost?.toFixed(2) || '0.00'}
+                  {safeCurrency(typeof item.standard_cost === 'number' ? item.standard_cost : null)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  ${item.average_cost?.toFixed(2) || '0.00'}
+                  {safeCurrency(typeof item.average_cost === 'number' ? item.average_cost : null)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  ${item.selling_price?.toFixed(2) || '0.00'}
+                  {safeCurrency(typeof item.selling_price === 'number' ? item.selling_price : null)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                   <span

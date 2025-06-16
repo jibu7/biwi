@@ -140,7 +140,7 @@ export default function MaintenancePage() {
             No Maintenance Modules Available
           </h3>
           <p className="text-gray-600">
-            You don't have permission to access any maintenance modules. 
+            You don&apos;t have permission to access any maintenance modules. 
             Contact your administrator to request access.
           </p>
         </div>

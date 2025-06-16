@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -26,11 +27,12 @@ export default function EditAPTransactionTypePage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
-  const transactionTypeId = parseInt(params.id as string);
+  const transactionTypeId = resolvedParams ? parseInt(resolvedParams.id as string) : 0;
 
   const { data: transactionType, isLoading } = useQuery({
     queryKey: ['apTransactionType', transactionTypeId],
     queryFn: () => apService.getAPTransactionType(transactionTypeId),
+  enabled: transactionTypeId > 0,
   });
 
   const { data: glAccounts = [] } = useQuery({

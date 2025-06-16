@@ -369,7 +369,13 @@ async def list_inventory_transactions(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(PermissionChecker([INV_REPORTS_VIEW]))
 ):
-    query = db.query(models.InventoryTransaction).filter(
+    from sqlalchemy.orm import joinedload
+    
+    query = db.query(models.InventoryTransaction).options(
+        joinedload(models.InventoryTransaction.item),
+        joinedload(models.InventoryTransaction.warehouse),
+        joinedload(models.InventoryTransaction.transaction_type)
+    ).filter(
         models.InventoryTransaction.company_id == current_user.company_id
     )
     

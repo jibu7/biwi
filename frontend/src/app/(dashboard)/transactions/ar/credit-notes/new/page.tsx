@@ -106,7 +106,7 @@ export default function NewCreditNotePage() {
           <FileText className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-semibold text-gray-900">Access Denied</h3>
           <p className="mt-1 text-sm text-gray-500">
-            You don't have permission to create credit notes.
+            You don&apos;t have permission to create credit notes.
           </p>
           <Link
             href="/transactions/ar/credit-notes"

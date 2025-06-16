@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 from decimal import Decimal
 from datetime import date, timedelta
@@ -6,6 +6,7 @@ from app import models, schemas
 from app.crud import ar as crud_ar
 from app.crud import ap as crud_ap
 from app.crud import inventory as crud_inventory
+from app.crud import gl as crud_gl
 
 # Sales Order Processing
 def create_sales_order(
@@ -38,11 +39,15 @@ def create_sales_order(
     # Create SO lines and calculate total
     total_amount = Decimal(0)
     for line_in in so_in.lines:
+        # Handle optional fields safely
+        discount_percentage = line_in.discount_percentage or Decimal(0)
+        tax_amount = getattr(line_in, 'tax_amount', None) or Decimal(0)
+        
         line_total = (
             line_in.quantity_ordered * 
             line_in.unit_price * 
-            (1 - line_in.discount_percentage / 100) + 
-            line_in.tax_amount
+            (1 - discount_percentage / 100) + 
+            tax_amount
         )
         
         db_line = models.SalesOrderLine(
@@ -51,9 +56,9 @@ def create_sales_order(
             description=line_in.description,
             quantity_ordered=line_in.quantity_ordered,
             unit_price=line_in.unit_price,
-            discount_percentage=line_in.discount_percentage,
+            discount_percentage=discount_percentage,
             tax_type_id=line_in.tax_type_id,
-            tax_amount=line_in.tax_amount,
+            tax_amount=tax_amount,
             line_total=line_total
         )
         db.add(db_line)
@@ -88,7 +93,10 @@ def convert_so_to_ar_invoice(
     user_id: int
 ) -> models.ARTransaction:
     # Get SO with lines
-    so = db.query(models.SalesOrder).filter(
+    so = db.query(models.SalesOrder).options(
+        joinedload(models.SalesOrder.lines).joinedload(models.SalesOrderLine.item),
+        joinedload(models.SalesOrder.customer)
+    ).filter(
         models.SalesOrder.id == so_id,
         models.SalesOrder.company_id == company_id
     ).first()
@@ -99,13 +107,24 @@ def convert_so_to_ar_invoice(
     if so.status == "Invoiced":
         raise ValueError("Sales Order already invoiced")
     
+    # Get AR transaction type for Invoice
+    ar_trans_type = db.query(models.ARTransactionType).filter(
+        models.ARTransactionType.company_id == company_id,
+        models.ARTransactionType.base_type == "Invoice",
+        models.ARTransactionType.is_active == True
+    ).first()
+    
+    if not ar_trans_type:
+        raise ValueError("No active Invoice transaction type found")
+
     # Create AR Invoice
     ar_transaction_data = schemas.ARTransactionCreate(
         customer_id=so.customer_id,
-        ar_transaction_type_id=1,  # Assuming 1 is Invoice type
+        ar_transaction_type_id=ar_trans_type.id,
         transaction_date=date.today(),
         due_date=date.today() + timedelta(days=30),  # Based on payment terms
         reference=so.reference,
+        document_number=f"INV-{so.document_number}",
         total_amount=so.total_amount
     )
     
@@ -113,43 +132,162 @@ def convert_so_to_ar_invoice(
         db, ar_transaction_data, company_id
     )
     
-    # Process inventory for each line
+    # Get AR defaults for GL accounts
+    ar_defaults = db.query(models.ARDefaults).filter(
+        models.ARDefaults.company_id == company_id
+    ).first()
+    
+    if not ar_defaults:
+        raise ValueError("AR defaults not configured")
+    
+    # Get inventory defaults
+    inv_defaults = db.query(models.InventoryDefaults).filter(
+        models.InventoryDefaults.company_id == company_id
+    ).first()
+    
+    if not inv_defaults:
+        raise ValueError("Inventory defaults not configured")
+    
+    # Get the inventory transaction type for sales
+    sale_trans_type = db.query(models.InventoryTransactionType).filter(
+        models.InventoryTransactionType.company_id == company_id,
+        models.InventoryTransactionType.base_type == "SaleToCustomer"
+    ).first()
+    
+    if not sale_trans_type:
+        raise ValueError("Sales inventory transaction type not found")
+    
+    # Collect GL entries for invoice and COGS
+    gl_lines = []
+    total_cogs = Decimal('0.00')
+    
+    # Process inventory and calculate COGS for each line
     for line in so.lines:
         item = db.query(models.InventoryItem).filter(
             models.InventoryItem.id == line.item_id
         ).first()
         
         if item and item.item_type == "Stock":
-            # Create inventory transaction
-            inv_adjustment = schemas.InventoryAdjustmentCreate(
-                item_id=line.item_id,
-                warehouse_id=1,  # Default warehouse, should be configurable
-                quantity=-line.quantity_ordered,  # Negative for sale
-                unit_cost=item.average_cost,
-                inventory_transaction_type_id=5,  # "SaleToCustomer"
-                reason="Sale to Customer - SO Invoice"
-            )
-            crud_inventory.process_inventory_adjustment(
-                db, inv_adjustment, company_id, user_id
-            )
+            # Calculate COGS using current average cost
+            line_cogs = line.quantity_ordered * (item.average_cost or Decimal('0.00'))
+            total_cogs += line_cogs
             
-            # Update committed quantity
+            # Get default warehouse from inventory defaults
+            default_warehouse_id = inv_defaults.default_warehouse_id or 1
+            
+            # Update inventory quantities and calculate COGS
             item_location = db.query(models.InventoryItemLocation).filter(
-                models.InventoryItemLocation.item_id == item.id,
+                models.InventoryItemLocation.item_id == line.item_id,
+                models.InventoryItemLocation.warehouse_id == default_warehouse_id,
                 models.InventoryItemLocation.company_id == company_id
             ).first()
-            if item_location:
-                item_location.quantity_committed -= line.quantity_ordered
+            
+            if not item_location:
+                raise ValueError(f"Item {item.item_code} not found in default warehouse")
+            
+            # Check if we have enough stock
+            if item_location.quantity_on_hand < line.quantity_ordered:
+                raise ValueError(f"Insufficient stock for item {item.item_code}")
+            
+            # Calculate COGS using current average cost
+            line_cogs = line.quantity_ordered * (item.average_cost or Decimal('0.00'))
+            total_cogs += line_cogs
+            
+            # Update inventory quantities
+            item_location.quantity_on_hand -= line.quantity_ordered
+            item_location.quantity_committed -= line.quantity_ordered
+            
+            # Create inventory transaction record
+            inv_transaction = models.InventoryTransaction(
+                company_id=company_id,
+                item_id=line.item_id,
+                warehouse_id=default_warehouse_id,
+                inventory_transaction_type_id=sale_trans_type.id,
+                transaction_date=date.today(),
+                quantity=-line.quantity_ordered,  # Negative for reduction
+                unit_cost=item.average_cost or Decimal('0.00'),
+                total_value=-line_cogs,  # Negative for reduction
+                reference_document_type="SO_Invoice",
+                reference_document_id=so.id,
+                notes=f"Sale to Customer - SO Invoice {so.document_number}"
+            )
+            db.add(inv_transaction)
         
         # Update line invoiced quantity
         line.quantity_invoiced = line.quantity_ordered
+    
+    # Create GL Journal Entry for the invoice
+    # 1. Debit AR Control, Credit Sales
+    gl_lines.append(schemas.GLJournalEntryLineCreate(
+        gl_account_id=ar_defaults.default_ar_control_gl_account_id,
+        description=f"AR Invoice {ar_invoice.document_number} - {so.customer.name}",
+        debit_amount=so.total_amount,
+        credit_amount=Decimal('0.00')
+    ))
+    
+    gl_lines.append(schemas.GLJournalEntryLineCreate(
+        gl_account_id=ar_defaults.default_sales_gl_account_id,
+        description=f"Sales - {so.customer.name}",
+        debit_amount=Decimal('0.00'),
+        credit_amount=so.total_amount
+    ))
+    
+    # 2. If there are stock items, create COGS entry
+    if total_cogs > 0:
+        # Get inventory GL account from defaults
+        inv_defaults = db.query(models.InventoryDefaults).filter(
+            models.InventoryDefaults.company_id == company_id
+        ).first()
+        
+        if not inv_defaults:
+            raise ValueError("Inventory defaults not configured")
+        
+        # COGS entry (debit)
+        if inv_defaults.default_cogs_gl_account_id:
+            gl_lines.append(schemas.GLJournalEntryLineCreate(
+                gl_account_id=inv_defaults.default_cogs_gl_account_id,
+                description=f"COGS - Invoice {ar_invoice.document_number}",
+                debit_amount=total_cogs,
+                credit_amount=Decimal('0.00')
+            ))
+        
+        # Inventory reduction entry (credit)
+        if inv_defaults.default_inventory_gl_account_id:
+            gl_lines.append(schemas.GLJournalEntryLineCreate(
+                gl_account_id=inv_defaults.default_inventory_gl_account_id,
+                description=f"Inventory reduction - Invoice {ar_invoice.document_number}",
+                debit_amount=Decimal('0.00'),
+                credit_amount=total_cogs
+            ))
+    
+    # Create the GL journal entry
+    if gl_lines:
+        gl_entry_data = schemas.GLJournalEntryCreate(
+            entry_date=date.today(),
+            reference=f"AR-INV-{ar_invoice.document_number}",
+            description=f"Sales Invoice {ar_invoice.document_number} - {so.customer.name}",
+            lines=gl_lines
+        )
+        
+        gl_entry = crud_gl.create_gl_journal_entry(
+            db, gl_entry_data, company_id, user_id
+        )
+        
+        # Post the journal entry immediately
+        crud_gl.post_gl_journal_entry(db, gl_entry.id, company_id)
+        
+        # Link GL entry to AR transaction
+        ar_invoice.linked_gl_journal_entry_id = gl_entry.id
+    
+    # Post the AR transaction to update its status from Draft to Posted
+    posted_ar_invoice = crud_ar.post_ar_transaction(db, ar_invoice.id, company_id, user_id)
     
     # Update SO status
     so.status = "Invoiced"
     so.ar_invoice_id = ar_invoice.id
     
     db.commit()
-    return ar_invoice
+    return posted_ar_invoice if posted_ar_invoice else ar_invoice
 
 # Purchase Order Processing
 def create_purchase_order(
@@ -428,6 +566,10 @@ def get_sales_orders(
 ) -> List[models.SalesOrder]:
     query = db.query(models.SalesOrder).filter(
         models.SalesOrder.company_id == company_id
+    ).options(
+        # Load related customer and sales rep data
+        joinedload(models.SalesOrder.customer),
+        joinedload(models.SalesOrder.sales_representative)
     )
     
     if status:

@@ -87,7 +87,7 @@ export default function CustomerListingPage() {
   if (!hasPermission(AR_REPORTS_VIEW)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-600">You don't have permission to view AR reports.</p>
+        <p className="text-gray-600">You don&apos;t have permission to view AR reports.</p>
       </div>
     );
   }

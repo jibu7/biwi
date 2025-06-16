@@ -21,7 +21,6 @@ import { AR_TRANSACTIONS_POST, AR_REPORTS_VIEW } from '@/lib/permissions';
 export default function ARAllocationsPage() {
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredAllocations, setFilteredAllocations] = useState<ARAllocation[]>([]);
 
   const { data: allocations = [], isLoading, error, refetch } = useQuery({
     queryKey: ['ar-allocations'],
@@ -29,15 +28,11 @@ export default function ARAllocationsPage() {
     enabled: hasPermission(AR_REPORTS_VIEW),
   });
 
-  useEffect(() => {
-    if (allocations && Array.isArray(allocations)) {
-      const filtered = allocations.filter((allocation: ARAllocation) =>
-        allocation.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        allocation.id.toString().includes(searchTerm)
-      );
-      setFilteredAllocations(filtered);
-    }
-  }, [allocations, searchTerm]);
+  // Compute filtered allocations directly in render instead of using useEffect
+  const filteredAllocations = allocations.filter((allocation: ARAllocation) =>
+    allocation.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    allocation.id.toString().includes(searchTerm)
+  );
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -61,7 +56,7 @@ export default function ARAllocationsPage() {
           <ArrowUpDown className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-semibold text-gray-900">Access Denied</h3>
           <p className="mt-1 text-sm text-gray-500">
-            You don't have permission to view AR allocations.
+            You don&apos;t have permission to view AR allocations.
           </p>
         </div>
       </div>

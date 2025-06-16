@@ -98,7 +98,7 @@ export default function OEMaintenancePage() {
             No Order Entry Setup Available
           </h3>
           <p className="text-gray-600">
-            You don't have permission to access order entry setup. 
+            You don&apos;t have permission to access order entry setup. 
             Contact your administrator to request access.
           </p>
         </div>

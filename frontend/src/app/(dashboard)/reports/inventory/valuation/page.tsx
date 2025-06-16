@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Download, DollarSign } from 'lucide-react';
 import { getInventoryValuation, getWarehouses } from '@/services/inventoryService';
+import { safeCurrency, safeQuantity, safeSum } from '@/lib/formatters';
 
 export default function InventoryValuationReportPage() {
   const [selectedWarehouse, setSelectedWarehouse] = useState<number | undefined>(undefined);
@@ -26,9 +27,9 @@ export default function InventoryValuationReportPage() {
       item.item_code,
       item.description,
       item.warehouse_name,
-      item.quantity_on_hand,
-      item.average_cost,
-      item.total_value,
+      safeQuantity(typeof item.quantity_on_hand === 'number' ? item.quantity_on_hand : null),
+      safeCurrency(typeof item.average_cost === 'number' ? item.average_cost : null),
+      safeCurrency(typeof item.total_value === 'number' ? item.total_value : null),
     ]);
 
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -45,8 +46,10 @@ export default function InventoryValuationReportPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  const totalValue = valuationItems.reduce((sum, item) => sum + item.total_value, 0);
-  const totalQuantity = valuationItems.reduce((sum, item) => sum + item.quantity_on_hand, 0);
+  const validTotalValues = valuationItems.map(item => typeof item.total_value === 'number' ? item.total_value : 0);
+  const validQuantities = valuationItems.map(item => typeof item.quantity_on_hand === 'number' ? item.quantity_on_hand : 0);
+  const totalValue = safeSum(validTotalValues);
+  const totalQuantity = safeSum(validQuantities);
 
   if (isLoading) return <div>Loading...</div>;
 
@@ -158,13 +161,13 @@ export default function InventoryValuationReportPage() {
                   {item.warehouse_name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                  {item.quantity_on_hand.toFixed(2)}
+                  {safeQuantity(typeof item.quantity_on_hand === 'number' ? item.quantity_on_hand : null)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  ${item.average_cost.toFixed(2)}
+                  {safeCurrency(typeof item.average_cost === 'number' ? item.average_cost : null)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600 text-right">
-                  ${item.total_value.toFixed(2)}
+                  {safeCurrency(typeof item.total_value === 'number' ? item.total_value : null)}
                 </td>
               </tr>
             ))}

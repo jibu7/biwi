@@ -304,6 +304,7 @@ def get_ar_transactions(
     customer_id: Optional[int] = None,
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
+    base_type: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -312,7 +313,7 @@ def get_ar_transactions(
     """Get AR transactions with optional filtering"""
     require_permission(current_user, AR_TRANSACTIONS_POST)
     transactions = crud.ar.get_ar_transactions(
-        db, current_user.company_id, customer_id, from_date, to_date, skip, limit
+        db, current_user.company_id, customer_id, from_date, to_date, base_type, skip, limit
     )
     
     # Add related data to response

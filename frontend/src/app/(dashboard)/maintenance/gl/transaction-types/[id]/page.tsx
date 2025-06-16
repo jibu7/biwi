@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,11 +23,12 @@ export default function EditTransactionTypePage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
-  const id = Number(params.id);
+  const id = resolvedParams ? Number(resolvedParams.id) : 0;
 
   const { data: transactionType } = useQuery({
     queryKey: ['glTransactionType', id],
     queryFn: () => glService.getGLTransactionType(id),
+  enabled: id > 0,
   });
 
   const { data: accounts = [] } = useQuery({

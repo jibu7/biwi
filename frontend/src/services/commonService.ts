@@ -16,7 +16,7 @@ export interface CurrencyCreate {
   code: string;
   name: string;
   symbol?: string;
-  exchange_rate_to_base?: number;
+  exchange_rate_to_base?: string | number;
   is_base_currency?: boolean;
   is_active?: boolean;
 }

@@ -70,7 +70,7 @@ export default function ARInvoicesPage() {
           <FileText className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-semibold text-gray-900">Access Denied</h3>
           <p className="mt-1 text-sm text-gray-500">
-            You don't have permission to view AR invoices.
+            You don&apos;t have permission to view AR invoices.
           </p>
         </div>
       </div>
@@ -251,7 +251,7 @@ export default function ARInvoicesPage() {
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center space-x-2">
                         <Link
-                          href={`/transactions/ar/invoices/${invoice.id}`}
+                          href={`/transactions/ar/transactions/${invoice.id}`}
                           className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                           title="View invoice"
                         >
@@ -259,7 +259,7 @@ export default function ARInvoicesPage() {
                         </Link>
                         {hasPermission(AR_TRANSACTIONS_POST) && invoice.status === 'Draft' && (
                           <Link
-                            href={`/transactions/ar/invoices/${invoice.id}/edit`}
+                            href={`/transactions/ar/transactions/${invoice.id}/edit`}
                             className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                             title="Edit invoice"
                           >

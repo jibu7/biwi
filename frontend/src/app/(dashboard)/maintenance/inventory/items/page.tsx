@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { getInventoryItems, deleteInventoryItem } from '@/services/inventoryService';
 import { usePermissions } from '@/hooks/usePermissions';
 import { INV_SETUP_MANAGE } from '@/lib/permissions';
+import { safeCurrency } from '@/lib/formatters';
 
 export default function InventoryItemsPage() {
   const router = useRouter();
@@ -24,6 +25,11 @@ export default function InventoryItemsPage() {
     mutationFn: deleteInventoryItem,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+      alert('Item successfully deactivated');
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.detail || 'Failed to delete item. It may have stock on hand.';
+      alert(errorMessage);
     },
   });
 
@@ -34,11 +40,12 @@ export default function InventoryItemsPage() {
   );
 
   const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this item?')) {
+    if (confirm('Are you sure you want to deactivate this item? This will set it as inactive but preserve the data.')) {
       try {
         await deleteMutation.mutateAsync(id);
       } catch (error) {
-        alert('Failed to delete item. It may have stock on hand.');
+        // Error is handled by onError callback above
+        console.error('Delete failed:', error);
       }
     }
   };
@@ -117,10 +124,10 @@ export default function InventoryItemsPage() {
                   {item.unit_of_measure?.abbreviation}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  ${item.average_cost.toFixed(2)}
+                  {safeCurrency(item.average_cost)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  ${item.selling_price.toFixed(2)}
+                  {safeCurrency(item.selling_price)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                   <span
@@ -144,8 +151,9 @@ export default function InventoryItemsPage() {
                       </Link>
                       <button
                         onClick={() => handleDelete(item.id)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
                         disabled={deleteMutation.isPending}
+                        title="Deactivate item"
                       >
                         <Trash2 size={18} />
                       </button>

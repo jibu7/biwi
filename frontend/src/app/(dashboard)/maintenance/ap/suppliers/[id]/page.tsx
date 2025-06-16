@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -36,11 +37,12 @@ export default function EditSupplierPage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
-  const supplierId = parseInt(params.id as string);
+  const supplierId = resolvedParams ? parseInt(resolvedParams.id as string) : 0;
 
   const { data: supplier, isLoading } = useQuery({
     queryKey: ['supplier', supplierId],
     queryFn: () => apService.getSupplier(supplierId),
+  enabled: supplierId > 0,
   });
 
   const { data: glAccounts = [] } = useQuery({

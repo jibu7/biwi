@@ -85,7 +85,7 @@ export default function ARTransactionTypesPage() {
   if (!hasPermission(AR_SETUP_MANAGE)) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">You don't have permission to manage AR transaction types.</p>
+        <p className="text-gray-500">You don&apos;t have permission to manage AR transaction types.</p>
       </div>
     );
   }

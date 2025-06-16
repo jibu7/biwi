@@ -6,6 +6,8 @@ export interface GLAccount {
   account_type: 'Asset' | 'Liability' | 'Equity' | 'Income' | 'Expense';
   parent_account_id?: number;
   current_balance: number;
+  balance: number; // for reporting/display purposes
+  description?: string; // account description
   is_active: boolean;
   is_control_account: boolean;
 }

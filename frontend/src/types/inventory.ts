@@ -246,6 +246,10 @@ export interface InventoryValuationItem {
 export interface StockQuantityItem {
   item_code: string;
   description: string;
+  costing_method: string;
+  standard_cost: number;
+  average_cost: number;
+  selling_price: number;
   warehouse_name: string;
   quantity_on_hand: number;
   quantity_committed: number;

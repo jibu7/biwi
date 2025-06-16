@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,7 +21,7 @@ type WarehouseFormData = z.infer<typeof warehouseSchema>;
 export default function EditWarehousePage() {
   const router = useRouter();
   const params = useParams();
-  const warehouseId = Number(params.id);
+  const warehouseId = params?.id ? Number(params.id) : 0;
   const queryClient = useQueryClient();
 
   const { data: warehouse, isLoading } = useQuery({

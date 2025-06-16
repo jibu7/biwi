@@ -22,11 +22,9 @@ const salesOrderLineSchema = z.object({
 
 const salesOrderSchema = z.object({
   customer_id: z.number().min(1, 'Customer is required'),
-  customer_po_reference: z.string().optional(),
+  reference: z.string().optional(),
   sales_representative_id: z.number().optional(),
   order_date: z.string().min(1, 'Order date is required'),
-  currency_code: z.string().min(1, 'Currency is required'),
-  exchange_rate: z.number().min(0.01, 'Exchange rate must be greater than 0').optional(),
   notes: z.string().optional(),
   lines: z.array(salesOrderLineSchema).min(1, 'At least one line item is required'),
 });
@@ -63,8 +61,6 @@ export default function NewSalesOrderPage() {
     resolver: zodResolver(salesOrderSchema),
     defaultValues: {
       order_date: new Date().toISOString().split('T')[0],
-      currency_code: 'USD',
-      exchange_rate: 1.0,
       lines: [{ item_id: 0, quantity: 1, unit_price: 0, discount_percentage: 0, notes: '' }],
     },
   });
@@ -75,7 +71,6 @@ export default function NewSalesOrderPage() {
   });
 
   const watchedLines = watch('lines');
-  const watchedCurrency = watch('currency_code');
 
   // Calculate totals
   const lineCalculations = watchedLines.map(line => {
@@ -103,17 +98,17 @@ export default function NewSalesOrderPage() {
     setIsSubmitting(true);
     try {
       const salesOrderData: SalesOrderCreate = {
-        ...data,
+        customer_id: data.customer_id,
+        order_date: data.order_date,
         sales_representative_id: data.sales_representative_id || undefined,
-        customer_po_reference: data.customer_po_reference || undefined,
-        exchange_rate: data.exchange_rate || 1.0,
+        reference: data.reference || undefined,
         notes: data.notes || undefined,
-        lines: data.lines.map(line => ({
+        lines: data.lines.map((line) => ({
           item_id: line.item_id,
-          quantity: line.quantity,
+          description: items.find(item => item.id === line.item_id)?.description || `Item ${line.item_id}`,
+          quantity_ordered: line.quantity,
           unit_price: line.unit_price,
           discount_percentage: line.discount_percentage || 0,
-          notes: line.notes || undefined,
         })),
       };
       
@@ -139,13 +134,6 @@ export default function NewSalesOrderPage() {
       setValue(`lines.${index}.unit_price`, selectedItem.selling_price || 0);
     }
   };
-
-  const currencies = [
-    { code: 'USD', name: 'US Dollar' },
-    { code: 'EUR', name: 'Euro' },
-    { code: 'GBP', name: 'British Pound' },
-    { code: 'CAD', name: 'Canadian Dollar' },
-  ];
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -211,7 +199,7 @@ export default function NewSalesOrderPage() {
               </label>
               <input
                 type="text"
-                {...register('customer_po_reference')}
+                {...register('reference')}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 placeholder="Customer's PO number"
               />
@@ -232,35 +220,6 @@ export default function NewSalesOrderPage() {
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Currency *
-              </label>
-              <select
-                {...register('currency_code')}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              >
-                {currencies.map((currency) => (
-                  <option key={currency.code} value={currency.code}>
-                    {currency.code} - {currency.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Exchange Rate
-              </label>
-              <input
-                type="number"
-                step="0.000001"
-                {...register('exchange_rate', { valueAsNumber: true })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                placeholder="1.000000"
-              />
             </div>
           </div>
 
@@ -373,7 +332,7 @@ export default function NewSalesOrderPage() {
                     </td>
                     <td className="py-2 pr-2">
                       <div className="text-sm font-medium text-gray-900 min-w-[100px]">
-                        {watchedCurrency} {lineCalculations[index]?.lineTotal.toFixed(2) || '0.00'}
+                        ${lineCalculations[index]?.lineTotal.toFixed(2) || '0.00'}
                       </div>
                     </td>
                     <td className="py-2 pr-2">
@@ -414,16 +373,16 @@ export default function NewSalesOrderPage() {
             <div className="w-80">
               <div className="flex justify-between py-2">
                 <span className="text-sm text-gray-600">Subtotal:</span>
-                <span className="text-sm font-medium">{watchedCurrency} {orderSubtotal.toFixed(2)}</span>
+                <span className="text-sm font-medium">${orderSubtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-sm text-gray-600">Tax (10%):</span>
-                <span className="text-sm font-medium">{watchedCurrency} {taxAmount.toFixed(2)}</span>
+                <span className="text-sm font-medium">${taxAmount.toFixed(2)}</span>
               </div>
               <div className="border-t border-gray-200 pt-2">
                 <div className="flex justify-between py-2">
                   <span className="text-lg font-medium">Total:</span>
-                  <span className="text-lg font-bold text-blue-600">{watchedCurrency} {orderTotal.toFixed(2)}</span>
+                  <span className="text-lg font-bold text-blue-600">${orderTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>

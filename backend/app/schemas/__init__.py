@@ -65,6 +65,13 @@ from .common import (
     Branch, BranchCreate, BranchUpdate
 )
 
+from .reporting import (
+    FinancialStatementLine, BalanceSheetData, IncomeStatementData, CashFlowData,
+    ReportTemplate, ReportTemplateCreate, ReportTemplateBase,
+    BankReconciliation, BankReconciliationCreate, BankReconciliationBase,
+    ARAgingDetail, APAgingDetail
+)
+
 __all__ = [
     "Company", "CompanyCreate", "CompanyUpdate",
     "Role", "RoleCreate", "RoleUpdate", 
@@ -111,5 +118,9 @@ __all__ = [
     "OrderDefaults", "OrderDefaultsCreate", "OrderDefaultsUpdate",
     "Currency", "CurrencyCreate", "CurrencyUpdate",
     "TaxType", "TaxTypeCreate", "TaxTypeUpdate",
-    "Branch", "BranchCreate", "BranchUpdate"
+    "Branch", "BranchCreate", "BranchUpdate",
+    "FinancialStatementLine", "BalanceSheetData", "IncomeStatementData", "CashFlowData",
+    "ReportTemplate", "ReportTemplateCreate", "ReportTemplateBase",
+    "BankReconciliation", "BankReconciliationCreate", "BankReconciliationBase",
+    "ARAgingDetail", "APAgingDetail"
 ]

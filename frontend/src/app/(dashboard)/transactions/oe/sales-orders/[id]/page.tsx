@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Edit, Save, X, FileText } from 'lucide-react';
 import { salesOrderService } from '@/services/oeService';
 import { SalesOrder, SalesOrderLine } from '@/types/oe';
+import { safeCurrency } from '@/lib/formatters';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -128,6 +129,28 @@ export default function SalesOrderDetailPage({ params }: PageProps) {
                 Edit
               </button>
             )}
+            
+            {isEditing && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    // Handle save logic here
+                    setIsEditing(false);
+                  }}
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -229,13 +252,13 @@ export default function SalesOrderDetailPage({ params }: PageProps) {
                     {line.quantity}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {salesOrder.currency_code} {line.unit_price.toFixed(2)}
+                    {safeCurrency(line.unit_price)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {line.discount_percentage}%
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {salesOrder.currency_code} {line.line_total.toFixed(2)}
+                    {safeCurrency(line.line_total)}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     {line.notes || '-'}
@@ -256,20 +279,20 @@ export default function SalesOrderDetailPage({ params }: PageProps) {
             <div className="flex justify-between py-2">
               <span className="text-sm text-gray-600">Subtotal:</span>
               <span className="text-sm font-medium">
-                {salesOrder.currency_code} {salesOrder.subtotal.toFixed(2)}
+                {safeCurrency(salesOrder.subtotal)}
               </span>
             </div>
             <div className="flex justify-between py-2">
               <span className="text-sm text-gray-600">Tax:</span>
               <span className="text-sm font-medium">
-                {salesOrder.currency_code} {salesOrder.tax_amount.toFixed(2)}
+                {safeCurrency(salesOrder.tax_amount)}
               </span>
             </div>
             <div className="border-t border-gray-200 pt-2">
               <div className="flex justify-between py-2">
                 <span className="text-lg font-medium">Total:</span>
                 <span className="text-lg font-bold text-blue-600">
-                  {salesOrder.currency_code} {salesOrder.total_amount.toFixed(2)}
+                  {safeCurrency(salesOrder.total_amount)}
                 </span>
               </div>
             </div>

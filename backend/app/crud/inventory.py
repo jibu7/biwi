@@ -352,7 +352,7 @@ def process_inventory_adjustment(
         ))
     
     # Create GL journal entry
-    gl_entry = crud_gl.create_journal_entry(
+    gl_entry = crud_gl.create_gl_journal_entry(
         db,
         schemas.GLJournalEntryCreate(
             entry_date=adjustment_in.transaction_date or date.today(),
@@ -730,11 +730,15 @@ def get_stock_quantities(
     company_id: int,
     warehouse_id: Optional[int]
 ) -> List[dict]:
-    """Get current stock quantities"""
+    """Get current stock quantities with cost information"""
     
     query = db.query(
         models.InventoryItem.item_code,
         models.InventoryItem.description,
+        models.InventoryItem.costing_method,
+        models.InventoryItem.standard_cost,
+        models.InventoryItem.average_cost,
+        models.InventoryItem.selling_price,
         models.Warehouse.name.label("warehouse_name"),
         models.InventoryItemLocation.quantity_on_hand,
         models.InventoryItemLocation.quantity_committed,
@@ -760,6 +764,10 @@ def get_stock_quantities(
         {
             "item_code": r.item_code,
             "description": r.description,
+            "costing_method": r.costing_method,
+            "standard_cost": float(r.standard_cost) if r.standard_cost else 0.0,
+            "average_cost": float(r.average_cost) if r.average_cost else 0.0,
+            "selling_price": float(r.selling_price) if r.selling_price else 0.0,
             "warehouse_name": r.warehouse_name,
             "quantity_on_hand": r.quantity_on_hand,
             "quantity_committed": r.quantity_committed,

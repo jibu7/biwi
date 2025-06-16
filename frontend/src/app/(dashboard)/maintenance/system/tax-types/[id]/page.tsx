@@ -24,11 +24,12 @@ export default function EditTaxTypePage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
-  const taxTypeId = Number(params.id);
+  const taxTypeId = resolvedParams ? Number(resolvedParams.id) : 0;
 
   const { data: taxType, isLoading } = useQuery({
     queryKey: ['taxType', taxTypeId],
     queryFn: () => commonService.getTaxType(taxTypeId),
+  enabled: taxTypeId > 0,
   });
 
   const {

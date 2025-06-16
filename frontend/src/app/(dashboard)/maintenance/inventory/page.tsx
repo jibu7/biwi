@@ -58,7 +58,7 @@ export default function InventoryMaintenancePage() {
       <div className="container mx-auto py-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to access inventory setup.</p>
+          <p className="text-gray-600">You don&apos;t have permission to access inventory setup.</p>
         </div>
       </div>
     );

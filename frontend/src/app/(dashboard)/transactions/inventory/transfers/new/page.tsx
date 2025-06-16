@@ -12,6 +12,7 @@ import {
   getWarehouses,
 } from '@/services/inventoryService';
 import { WarehouseTransferCreate } from '@/types/inventory';
+import { safeCurrency } from '@/lib/formatters';
 
 const transferSchema = z.object({
   item_id: z.number().min(1, 'Item is required'),
@@ -193,7 +194,7 @@ export default function NewWarehouseTransferPage() {
               step="0.01"
               {...register('unit_cost', { valueAsNumber: true })}
               className="w-full px-3 py-2 border rounded-md"
-              placeholder={selectedItem ? `Current: $${selectedItem.average_cost.toFixed(2)}` : ''}
+              placeholder={selectedItem ? `Current: ${safeCurrency(typeof selectedItem.average_cost === 'number' ? selectedItem.average_cost : null, '')}` : ''}
             />
             {errors.unit_cost && (
               <p className="text-red-500 text-sm mt-1">{errors.unit_cost.message}</p>
@@ -221,7 +222,7 @@ export default function NewWarehouseTransferPage() {
             <h3 className="font-medium mb-2">Item Information</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>Current Average Cost:</div>
-              <div>${selectedItem.average_cost.toFixed(2)}</div>
+              <div>{safeCurrency(typeof selectedItem.average_cost === 'number' ? selectedItem.average_cost : null)}</div>
               <div>Item Type:</div>
               <div>{selectedItem.item_type}</div>
               <div>UoM:</div>

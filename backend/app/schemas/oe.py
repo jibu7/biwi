@@ -14,8 +14,13 @@ class SalesOrderLineBase(BaseModel):
     tax_amount: Optional[Decimal] = 0
     line_total: Decimal
 
-class SalesOrderLineCreate(SalesOrderLineBase):
-    pass
+class SalesOrderLineCreate(BaseModel):
+    item_id: int
+    description: str
+    quantity_ordered: Decimal
+    unit_price: Decimal
+    discount_percentage: Optional[Decimal] = 0
+    tax_type_id: Optional[int] = None
 
 class SalesOrderLineUpdate(BaseModel):
     item_id: Optional[int] = None
@@ -31,6 +36,10 @@ class SalesOrderLine(SalesOrderLineBase):
     id: int
     sales_order_id: int
     quantity_invoiced: Decimal
+    
+    # Related item data
+    item_code: Optional[str] = None
+    item_description: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -46,7 +55,14 @@ class SalesOrderBase(BaseModel):
     billing_address: Optional[dict] = None
     sales_representative_id: Optional[int] = None
 
-class SalesOrderCreate(SalesOrderBase):
+class SalesOrderCreate(BaseModel):
+    customer_id: int
+    order_date: date
+    reference: Optional[str] = None
+    notes: Optional[str] = None
+    shipping_address: Optional[dict] = None
+    billing_address: Optional[dict] = None
+    sales_representative_id: Optional[int] = None
     lines: List[SalesOrderLineCreate] = []
 
 class SalesOrderUpdate(BaseModel):
@@ -67,6 +83,14 @@ class SalesOrder(SalesOrderBase):
     document_number: str
     ar_invoice_id: Optional[int] = None
     lines: List[SalesOrderLine] = []
+    
+    # Related data
+    customer_name: Optional[str] = None
+    sales_representative_name: Optional[str] = None
+    currency_code: Optional[str] = "USD"
+    exchange_rate: Optional[Decimal] = 1.0
+    subtotal: Optional[Decimal] = None
+    tax_amount: Optional[Decimal] = None
 
     class Config:
         from_attributes = True

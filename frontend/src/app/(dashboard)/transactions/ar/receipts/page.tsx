@@ -70,7 +70,7 @@ export default function ARReceiptsPage() {
           <FileText className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-semibold text-gray-900">Access Denied</h3>
           <p className="mt-1 text-sm text-gray-500">
-            You don't have permission to view AR receipts.
+            You don&apos;t have permission to view AR receipts.
           </p>
         </div>
       </div>
@@ -238,7 +238,7 @@ export default function ARReceiptsPage() {
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center space-x-2">
                         <Link
-                          href={`/transactions/ar/receipts/${receipt.id}`}
+                          href={`/transactions/ar/transactions/${receipt.id}`}
                           className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                           title="View receipt"
                         >
@@ -246,7 +246,7 @@ export default function ARReceiptsPage() {
                         </Link>
                         {hasPermission(AR_TRANSACTIONS_POST) && receipt.status === 'Draft' && (
                           <Link
-                            href={`/transactions/ar/receipts/${receipt.id}/edit`}
+                            href={`/transactions/ar/transactions/${receipt.id}/edit`}
                             className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                             title="Edit receipt"
                           >

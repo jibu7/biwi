@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,7 +35,7 @@ export default function EditInventoryItemPage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
-  const itemId = parseInt(params.id as string);
+  const itemId = params ? parseInt(params.id as string) : 0;
 
   const { data: item, isLoading: loadingItem } = useQuery({
     queryKey: ['inventory-item', itemId],
@@ -58,6 +59,19 @@ export default function EditInventoryItemPage() {
       queryClient.invalidateQueries({ queryKey: ['inventory-item', itemId] });
       router.push('/maintenance/inventory/items');
       router.refresh();
+    },
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: () => updateInventoryItem(itemId, { is_active: !item?.is_active }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-item', itemId] });
+      alert(`Item successfully ${!item?.is_active ? 'activated' : 'deactivated'}`);
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.detail || 'Failed to update item status';
+      alert(errorMessage);
     },
   });
 
@@ -94,6 +108,13 @@ export default function EditInventoryItemPage() {
   }, [item, reset]);
 
   const itemType = watch('item_type');
+
+  const handleToggleActive = () => {
+    const action = item?.is_active ? 'deactivate' : 'activate';
+    if (confirm(`Are you sure you want to ${action} this item?`)) {
+      toggleActiveMutation.mutate();
+    }
+  };
 
   const onSubmit = async (data: InventoryItemFormData) => {
     try {

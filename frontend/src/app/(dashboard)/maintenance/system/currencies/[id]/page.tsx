@@ -19,14 +19,25 @@ const currencyUpdateSchema = z.object({
 
 type CurrencyUpdateFormData = z.infer<typeof currencyUpdateSchema>;
 
-export default function EditCurrencyPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function EditCurrencyPage({ params }: PageProps) {
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
+
+  useEffect(() => {
+    params.then(setResolvedParams);
+  }, [params]);
+
   const router = useRouter();
   const queryClient = useQueryClient();
-  const currencyId = parseInt(params.id);
+  const currencyId = resolvedParams ? parseInt(resolvedParams.id) : 0;
 
   const { data: currency, isLoading } = useQuery({
     queryKey: ['currency', currencyId],
     queryFn: () => commonService.getCurrency(currencyId),
+  enabled: currencyId > 0,
   });
 
   const {

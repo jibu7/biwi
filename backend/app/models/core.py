@@ -16,6 +16,11 @@ class Company(Base):
     users = relationship("User", back_populates="company")
     roles = relationship("Role", back_populates="company")
     accounting_periods = relationship("AccountingPeriod", back_populates="company")
+    
+    # Reporting relationships
+    report_templates = relationship("ReportTemplate", back_populates="company")
+    report_schedules = relationship("ReportSchedule", back_populates="company")
+    bank_reconciliations = relationship("BankReconciliation", back_populates="company")
 
 class Role(Base):
     __tablename__ = "roles"

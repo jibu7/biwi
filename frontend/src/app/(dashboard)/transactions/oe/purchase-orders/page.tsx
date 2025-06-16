@@ -13,6 +13,7 @@ import {
 import { purchaseOrderService } from '@/services/oeService';
 import { apService } from '@/services/apService';
 import { Supplier } from '@/types/ap';
+import { safeCurrency } from '@/lib/formatters';
 
 export default function PurchaseOrdersPage() {
   const router = useRouter();
@@ -197,7 +198,7 @@ export default function PurchaseOrdersPage() {
                       {getStatusBadge(order.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.currency_code} {order.total_amount.toFixed(2)}
+                      {safeCurrency(order.total_amount)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">

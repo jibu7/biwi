@@ -15,6 +15,7 @@ import {
 import { salesOrderService } from '@/services/oeService';
 import { customerService } from '@/services/arService';
 import { SalesOrder } from '@/types/oe';
+import { safeCurrency } from '@/lib/formatters';
 
 export default function SalesOrdersPage() {
   const router = useRouter();
@@ -43,9 +44,9 @@ export default function SalesOrdersPage() {
   const filteredSalesOrders = useMemo(() => {
     return salesOrders.filter((order) => {
       const matchesSearch = 
-        order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customer_po_reference?.toLowerCase().includes(searchTerm.toLowerCase());
+        (order.document_number && order.document_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.reference && order.reference.toLowerCase().includes(searchTerm.toLowerCase()));
       
       const matchesCustomer = selectedCustomer === '' || order.customer_id === selectedCustomer;
       const matchesStatus = selectedStatus === '' || order.status === selectedStatus;
@@ -190,11 +191,11 @@ export default function SalesOrdersPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {order.order_number}
+                          {order.document_number}
                         </div>
-                        {order.customer_po_reference && (
+                        {order.reference && (
                           <div className="text-sm text-gray-500">
-                            PO: {order.customer_po_reference}
+                            PO: {order.reference}
                           </div>
                         )}
                       </div>
@@ -216,7 +217,7 @@ export default function SalesOrdersPage() {
                       {getStatusBadge(order.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.currency_code} {order.total_amount.toFixed(2)}
+                      {safeCurrency(order.total_amount, order.currency_code || 'USD')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
@@ -227,16 +228,14 @@ export default function SalesOrdersPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
-                        {order.status === 'CONFIRMED' && (
-                          <button
-                            onClick={() => handleConvertToInvoice(order.id)}
-                            disabled={convertToInvoiceMutation.isPending}
-                            className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                            title="Convert to Invoice"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleConvertToInvoice(order.id)}
+                          disabled={convertToInvoiceMutation.isPending}
+                          className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                          title="Convert to Invoice"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -267,7 +266,7 @@ export default function SalesOrdersPage() {
           },
           {
             label: 'Total Value',
-            value: `${filteredSalesOrders[0]?.currency_code || 'USD'} ${filteredSalesOrders.reduce((sum, o) => sum + o.total_amount, 0).toFixed(2)}`,
+            value: safeCurrency(filteredSalesOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0), filteredSalesOrders[0]?.currency_code || 'USD'),
             color: 'text-green-600',
           },
         ].map((stat, index) => (

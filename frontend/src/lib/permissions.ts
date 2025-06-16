@@ -51,3 +51,11 @@ export const OE_REPORTS_VIEW = "oe:reports_view";
 export const COMMON_SETUP_CURRENCIES = "common:setup_currencies";
 export const COMMON_SETUP_TAXES = "common:setup_taxes";
 export const COMMON_SETUP_BRANCHES = "common:setup_branches";
+
+// Reporting Permissions
+export const REPORTING_FINANCIAL_STATEMENTS = "reporting:financial_statements";
+export const REPORTING_ADVANCED_GL = "reporting:advanced_gl";
+export const REPORTING_ADVANCED_AR = "reporting:advanced_ar";
+export const REPORTING_ADVANCED_AP = "reporting:advanced_ap";
+export const REPORTING_TEMPLATES_MANAGE = "reporting:templates_manage";
+export const REPORTING_BANK_RECONCILIATION = "reporting:bank_reconciliation";

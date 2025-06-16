@@ -333,7 +333,7 @@ export default function CompanyDetailsPage() {
             <AlertCircle className="h-5 w-5 text-yellow-400" />
             <div className="ml-3">
               <p className="text-sm text-yellow-700">
-                You don't have permission to modify company details. Contact your administrator if you need to make changes.
+                You don&apos;t have permission to modify company details. Contact your administrator if you need to make changes.
               </p>
             </div>
           </div>

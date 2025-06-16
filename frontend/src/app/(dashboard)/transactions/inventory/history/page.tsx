@@ -7,6 +7,7 @@ import { Search, Filter, Download, RefreshCw } from 'lucide-react';
 import { getInventoryTransactions, getInventoryItems, getWarehouses } from '@/services/inventoryService';
 import { usePermissions } from '@/hooks/usePermissions';
 import { INV_REPORTS_VIEW } from '@/lib/permissions';
+import { safeQuantity, safeCurrency } from '@/lib/formatters';
 
 export default function InventoryHistoryPage() {
   const { hasPermission } = usePermissions();
@@ -50,7 +51,7 @@ export default function InventoryHistoryPage() {
       <div className="container mx-auto py-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to view inventory reports.</p>
+          <p className="text-gray-600">You don&apos;t have permission to view inventory reports.</p>
         </div>
       </div>
     );
@@ -338,15 +339,17 @@ export default function InventoryHistoryPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-mono">
                       <span className={transaction.quantity > 0 ? 'text-green-600' : 'text-red-600'}>
-                        {transaction.quantity > 0 ? '+' : ''}{transaction.quantity.toFixed(2)}
+                        {transaction.quantity > 0 ? '+' : ''}{safeQuantity(typeof transaction.quantity === 'number' ? transaction.quantity : null)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-mono">
-                      ${(transaction.unit_cost || 0).toFixed(2)}
+                      {safeCurrency(transaction.unit_cost)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-mono">
                       <span className={transaction.quantity > 0 ? 'text-green-600' : 'text-red-600'}>
-                        ${((transaction.unit_cost || 0) * Math.abs(transaction.quantity)).toFixed(2)}
+                        {safeCurrency(typeof transaction.unit_cost === 'number' && typeof transaction.quantity === 'number' 
+                          ? transaction.unit_cost * Math.abs(transaction.quantity)
+                          : 0)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

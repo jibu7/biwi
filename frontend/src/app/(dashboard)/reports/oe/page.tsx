@@ -99,7 +99,7 @@ export default function OEReportsPage() {
             No Order Entry Reports Available
           </h3>
           <p className="text-gray-600">
-            You don't have permission to access order entry reports. 
+            You don&apos;t have permission to access order entry reports. 
             Contact your administrator to request access.
           </p>
         </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import React, { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -15,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Branch } from '@/types/common';
 import { COMMON_SETUP_BRANCHES } from '@/lib/permissions';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/store/authStore';
 import { ArrowLeft } from 'lucide-react';
 
 const branchFormSchema = z.object({
@@ -35,7 +36,7 @@ type BranchFormValues = z.infer<typeof branchFormSchema>;
 export default function EditBranchPage() {
   const router = useRouter();
   const params = useParams();
-  const branchIdStr = params.id as string;
+  const branchIdStr = resolvedParams?.id as string;
   const branchId = Number(branchIdStr);
   const queryClient = useQueryClient();
   const { hasPermission } = useAuth();
@@ -103,7 +104,7 @@ export default function EditBranchPage() {
 
   const onSubmit = (data: BranchFormValues) => {
     if (!hasPermission(`${COMMON_SETUP_BRANCHES}:edit`)) {
-      toast.error("You don't have permission to edit branches.");
+      toast.error("You don&apos;t have permission to edit branches.");
       return;
     }
     updateBranchMutation.mutate(data);

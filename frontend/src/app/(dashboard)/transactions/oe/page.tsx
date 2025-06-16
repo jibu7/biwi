@@ -99,7 +99,7 @@ export default function OETransactionsPage() {
             No Order Entry Transactions Available
           </h3>
           <p className="text-gray-600">
-            You don't have permission to access order entry transactions. 
+            You don&apos;t have permission to access order entry transactions. 
             Contact your administrator to request access.
           </p>
         </div>

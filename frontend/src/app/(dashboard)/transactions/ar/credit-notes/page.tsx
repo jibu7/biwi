@@ -70,7 +70,7 @@ export default function ARCreditNotesPage() {
           <FileText className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-semibold text-gray-900">Access Denied</h3>
           <p className="mt-1 text-sm text-gray-500">
-            You don't have permission to view AR credit notes.
+            You don&apos;t have permission to view AR credit notes.
           </p>
         </div>
       </div>
@@ -238,7 +238,7 @@ export default function ARCreditNotesPage() {
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center space-x-2">
                         <Link
-                          href={`/transactions/ar/credit-notes/${creditNote.id}`}
+                          href={`/transactions/ar/transactions/${creditNote.id}`}
                           className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                           title="View credit note"
                         >
@@ -246,7 +246,7 @@ export default function ARCreditNotesPage() {
                         </Link>
                         {hasPermission(AR_TRANSACTIONS_POST) && creditNote.status === 'Draft' && (
                           <Link
-                            href={`/transactions/ar/credit-notes/${creditNote.id}/edit`}
+                            href={`/transactions/ar/transactions/${creditNote.id}/edit`}
                             className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                             title="Edit credit note"
                           >

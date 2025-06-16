@@ -120,7 +120,7 @@ export default function SystemMaintenancePage() {
             No System Modules Available
           </h3>
           <p className="text-gray-600">
-            You don't have permission to access any system modules. 
+            You don&apos;t have permission to access any system modules. 
             Contact your administrator to request access.
           </p>
         </div>

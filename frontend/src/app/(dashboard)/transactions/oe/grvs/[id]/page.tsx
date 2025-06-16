@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Edit, Save, X, FileText, Package } from 'lucide-react';
 import { grvService } from '@/services/oeService';
 import { GoodsReceivedVoucher, GoodsReceivedVoucherLine } from '@/types/oe';
+import { safeCurrency } from '@/lib/formatters';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -244,10 +245,10 @@ export default function GRVDetailPage({ params }: PageProps) {
                     {line.quantity_received}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${line.unit_price.toFixed(2)}
+                    {safeCurrency(line.unit_price)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${calculateLineTotal(line).toFixed(2)}
+                    {safeCurrency(calculateLineTotal(line))}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {line.notes || '-'}
@@ -265,7 +266,7 @@ export default function GRVDetailPage({ params }: PageProps) {
           <div className="w-64 space-y-2">
             <div className="border-t pt-2 flex justify-between">
               <span className="text-base font-medium">Total Value:</span>
-              <span className="text-base font-bold">${totalAmount.toFixed(2)}</span>
+              <span className="text-base font-bold">{safeCurrency(totalAmount)}</span>
             </div>
           </div>
         </div>

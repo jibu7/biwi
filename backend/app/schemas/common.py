@@ -14,7 +14,8 @@ class CurrencyBase(BaseModel):
 
 
 class CurrencyCreate(CurrencyBase):
-    company_id: int
+    # company_id must NOT be required from the frontend
+    pass
 
 
 class CurrencyUpdate(BaseModel):
@@ -44,7 +45,8 @@ class TaxTypeBase(BaseModel):
 
 
 class TaxTypeCreate(TaxTypeBase):
-    company_id: int
+    # company_id must NOT be required from the frontend
+    pass
 
 
 class TaxTypeUpdate(BaseModel):
@@ -74,7 +76,8 @@ class BranchBase(BaseModel):
 
 
 class BranchCreate(BranchBase):
-    company_id: int
+    # company_id must NOT be required from the frontend
+    pass
 
 
 class BranchUpdate(BaseModel):

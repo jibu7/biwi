@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,7 +22,7 @@ type UnitOfMeasureFormData = z.infer<typeof unitOfMeasureSchema>;
 export default function EditUnitOfMeasurePage() {
   const router = useRouter();
   const params = useParams();
-  const unitId = Number(params.id);
+  const unitId = resolvedParams ? Number(resolvedParams.id) : 0;
   const queryClient = useQueryClient();
 
   const { data: unit, isLoading } = useQuery({

@@ -74,7 +74,7 @@ export default function ARDefaultsPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Access Denied</h3>
-          <p className="text-gray-600">You don't have permission to manage AR defaults.</p>
+          <p className="text-gray-600">You don&apos;t have permission to manage AR defaults.</p>
         </div>
       </div>
     );

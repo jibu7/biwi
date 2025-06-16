@@ -8,10 +8,10 @@ import { z } from 'zod';
 import { commonService, CurrencyCreate } from '@/services/commonService';
 
 const currencySchema = z.object({
-  code: z.string().min(3).max(3).toUpperCase(),
-  name: z.string().min(1),
+  code: z.string().min(3, "Currency code must be exactly 3 characters").max(3, "Currency code must be exactly 3 characters").transform(val => val.toUpperCase()),
+  name: z.string().min(1, "Currency name is required"),
   symbol: z.string().optional(),
-  exchange_rate_to_base: z.number().min(0.000001).optional(),
+  exchange_rate_to_base: z.number().min(0.000001, "Exchange rate must be greater than 0").optional(),
   is_base_currency: z.boolean().optional(),
   is_active: z.boolean().optional(),
 });
@@ -44,17 +44,22 @@ export default function NewCurrencyPage() {
       queryClient.invalidateQueries({ queryKey: ['currencies'] });
       router.push('/maintenance/system/currencies');
     },
+    onError: (error) => {
+      console.error('Error creating currency:', error);
+    },
   });
 
   const onSubmit = (data: CurrencyFormData) => {
+    console.log('Form data:', data);
     const currencyData: CurrencyCreate = {
       code: data.code,
       name: data.name,
       symbol: data.symbol,
-      exchange_rate_to_base: data.is_base_currency ? 1.0 : data.exchange_rate_to_base,
-      is_base_currency: data.is_base_currency,
-      is_active: data.is_active,
+      exchange_rate_to_base: (data.is_base_currency ? '1.000000' : (typeof data.exchange_rate_to_base === 'number' && !isNaN(data.exchange_rate_to_base) ? data.exchange_rate_to_base.toFixed(6) : '1.000000')),
+      is_base_currency: !!data.is_base_currency,
+      is_active: !!data.is_active,
     };
+    console.log('Currency data to send:', currencyData);
     createMutation.mutate(currencyData);
   };
 
@@ -65,6 +70,14 @@ export default function NewCurrencyPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
+        {createMutation.error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-600 text-sm">
+              Error: {createMutation.error instanceof Error ? createMutation.error.message : 'Failed to create currency'}
+            </p>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>

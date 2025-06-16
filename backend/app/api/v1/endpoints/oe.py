@@ -38,9 +38,23 @@ async def list_sales_orders(
         PermissionChecker([OE_SALES_ORDERS_MANAGE])
     )
 ):
-    return crud.oe.get_sales_orders(
+    sales_orders = crud.oe.get_sales_orders(
         db, current_user.company_id, skip, limit
     )
+    
+    # Add customer names and other computed fields
+    result = []
+    for so in sales_orders:
+        so_dict = so.__dict__.copy()
+        so_dict['customer_name'] = so.customer.name if so.customer else None
+        so_dict['sales_representative_name'] = so.sales_representative.name if so.sales_representative else None
+        so_dict['currency_code'] = "USD"  # Default for now
+        so_dict['exchange_rate'] = 1.0
+        so_dict['subtotal'] = so.total_amount
+        so_dict['tax_amount'] = 0  # Calculate if needed
+        result.append(so_dict)
+    
+    return result
 
 @router.get("/sales-orders/{so_id}", response_model=schemas.SalesOrder)
 async def get_sales_order(
@@ -50,13 +64,74 @@ async def get_sales_order(
         PermissionChecker([OE_SALES_ORDERS_MANAGE])
     )
 ):
-    so = db.query(models.SalesOrder).filter(
+    from sqlalchemy.orm import joinedload
+    
+    so = db.query(models.SalesOrder).options(
+        joinedload(models.SalesOrder.customer),
+        joinedload(models.SalesOrder.sales_representative),
+        joinedload(models.SalesOrder.lines).joinedload(models.SalesOrderLine.item)
+    ).filter(
         models.SalesOrder.id == so_id,
         models.SalesOrder.company_id == current_user.company_id
     ).first()
+    
     if not so:
         raise HTTPException(status_code=404, detail="Sales Order not found")
-    return so
+    
+    # Calculate subtotal and tax
+    from decimal import Decimal
+    subtotal = sum(line.line_total for line in so.lines) if so.lines else Decimal('0')
+    tax_amount = subtotal * Decimal('0.1')  # 10% tax
+    
+    # Build response with computed fields
+    from types import SimpleNamespace
+    
+    # Create a copy of the sales order with additional fields
+    result = SimpleNamespace()
+    result.id = so.id
+    result.company_id = so.company_id
+    result.customer_id = so.customer_id
+    result.order_date = so.order_date
+    result.reference = so.reference
+    result.document_number = so.document_number
+    result.status = so.status
+    result.total_amount = so.total_amount
+    result.notes = so.notes
+    result.shipping_address = so.shipping_address
+    result.billing_address = so.billing_address
+    result.sales_representative_id = so.sales_representative_id
+    result.ar_invoice_id = so.ar_invoice_id
+    
+    # Add computed fields
+    result.customer_name = so.customer.name if so.customer else None
+    result.sales_representative_name = so.sales_representative.name if so.sales_representative else None
+    result.currency_code = "USD"  # Default for now
+    result.exchange_rate = Decimal('1.0')
+    result.subtotal = subtotal
+    result.tax_amount = tax_amount
+    result.created_at = getattr(so, 'created_at', None)
+    result.updated_at = getattr(so, 'updated_at', None)
+    
+    # Add lines with item details
+    result.lines = []
+    for line in so.lines:
+        line_obj = SimpleNamespace()
+        line_obj.id = line.id
+        line_obj.sales_order_id = line.sales_order_id
+        line_obj.item_id = line.item_id
+        line_obj.description = line.description
+        line_obj.quantity_ordered = line.quantity_ordered
+        line_obj.quantity_invoiced = line.quantity_invoiced
+        line_obj.unit_price = line.unit_price
+        line_obj.discount_percentage = line.discount_percentage
+        line_obj.tax_type_id = line.tax_type_id
+        line_obj.tax_amount = line.tax_amount
+        line_obj.line_total = line.line_total
+        line_obj.item_code = line.item.item_code if line.item else None
+        line_obj.item_description = line.item.description if line.item else None
+        result.lines.append(line_obj)
+    
+    return result
 
 @router.put("/sales-orders/{so_id}", response_model=schemas.SalesOrder)
 async def update_sales_order(
@@ -96,6 +171,108 @@ async def convert_so_to_invoice(
         return ar_invoice
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/sales-orders/{so_id}/debug-conversion")
+async def debug_so_conversion(
+    so_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(
+        PermissionChecker([OE_SALES_ORDERS_MANAGE])
+    )
+):
+    """Debug endpoint to check if a sales order can be converted to invoice"""
+    try:
+        # Get SO with lines
+        so = db.query(models.SalesOrder).options(
+            joinedload(models.SalesOrder.lines).joinedload(models.SalesOrderLine.item),
+            joinedload(models.SalesOrder.customer)
+        ).filter(
+            models.SalesOrder.id == so_id,
+            models.SalesOrder.company_id == current_user.company_id
+        ).first()
+        
+        if not so:
+            return {"status": "error", "message": "Sales Order not found"}
+        
+        issues = []
+        
+        # Check SO status
+        if so.status == "Invoiced":
+            issues.append("Sales Order already invoiced")
+        
+        # Check AR transaction type
+        ar_trans_type = db.query(models.ARTransactionType).filter(
+            models.ARTransactionType.company_id == current_user.company_id,
+            models.ARTransactionType.base_type == "Invoice",
+            models.ARTransactionType.is_active == True
+        ).first()
+        
+        if not ar_trans_type:
+            issues.append("No active Invoice transaction type found")
+        
+        # Check AR defaults
+        ar_defaults = db.query(models.ARDefaults).filter(
+            models.ARDefaults.company_id == current_user.company_id
+        ).first()
+        
+        if not ar_defaults:
+            issues.append("AR defaults not configured")
+        else:
+            if not ar_defaults.default_ar_control_gl_account_id:
+                issues.append("AR Control GL account not configured")
+            if not ar_defaults.default_sales_gl_account_id:
+                issues.append("Sales GL account not configured")
+        
+        # Check inventory defaults
+        inv_defaults = db.query(models.InventoryDefaults).filter(
+            models.InventoryDefaults.company_id == current_user.company_id
+        ).first()
+        
+        if not inv_defaults:
+            issues.append("Inventory defaults not configured")
+        else:
+            if not inv_defaults.default_cogs_gl_account_id:
+                issues.append("COGS GL account not configured")
+            if not inv_defaults.default_inventory_gl_account_id:
+                issues.append("Inventory GL account not configured")
+        
+        # Check inventory availability for each line
+        line_issues = []
+        for line in so.lines:
+            item = line.item
+            if item and item.item_type == "Stock":
+                # Check inventory location
+                item_location = db.query(models.InventoryItemLocation).filter(
+                    models.InventoryItemLocation.item_id == item.id,
+                    models.InventoryItemLocation.company_id == current_user.company_id
+                ).first()
+                
+                if not item_location:
+                    line_issues.append(f"Item {item.item_code}: No inventory location found")
+                else:
+                    available = item_location.quantity_on_hand - item_location.quantity_committed
+                    if available < line.quantity_ordered:
+                        line_issues.append(f"Item {item.item_code}: Insufficient inventory (available: {available}, needed: {line.quantity_ordered})")
+                
+                if not item.average_cost:
+                    line_issues.append(f"Item {item.item_code}: No average cost set")
+        
+        return {
+            "status": "success" if not issues and not line_issues else "warning",
+            "so_id": so_id,
+            "so_number": so.document_number,
+            "so_status": so.status,
+            "customer": so.customer.name if so.customer else None,
+            "total_amount": float(so.total_amount),
+            "general_issues": issues,
+            "line_issues": line_issues,
+            "ar_transaction_type": ar_trans_type.name if ar_trans_type else None,
+            "ar_defaults_configured": ar_defaults is not None,
+            "inventory_defaults_configured": inv_defaults is not None
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 # Purchase Orders
 @router.post("/purchase-orders", response_model=schemas.PurchaseOrder)

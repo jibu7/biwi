@@ -131,7 +131,7 @@ export default function CustomersPage() {
             <AlertCircle className="h-8 w-8 text-red-600" />
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h3>
-          <p className="text-gray-600">You don't have permission to manage customers.</p>
+          <p className="text-gray-600">You don&apos;t have permission to manage customers.</p>
         </div>
       </div>
     );
@@ -455,15 +455,15 @@ export default function CustomersPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-3">
                           <Link
-                            href={`/maintenance/ar/customers/${customer.id}`}
+                            href={`/maintenance/ar/customers/${customer.id}/view`}
                             className="text-blue-600 hover:text-blue-900 transition-colors"
                             title="View Details"
                           >
                             <Eye className="h-5 w-5" />
                           </Link>
                           <Link
-                            href={`/maintenance/ar/customers/${customer.id}/edit`}
-                            className="text-gray-600 hover:text-gray-900 transition-colors"
+                            href={`/maintenance/ar/customers/${customer.id}`}
+                            className="text-green-600 hover:text-green-900 transition-colors"
                             title="Edit Customer"
                           >
                             <Edit className="h-5 w-5" />
