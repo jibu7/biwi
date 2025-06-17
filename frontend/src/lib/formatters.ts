@@ -132,3 +132,19 @@ export function getUnitCost(
       return 0;
   }
 }
+
+/**
+ * Safely format a date to a readable string
+ * @param value - The date value to format (can be string or Date)
+ * @returns Formatted date string
+ */
+export function formatDate(value: string | Date | null | undefined): string {
+  if (!value) return 'N/A';
+  
+  try {
+    const date = typeof value === 'string' ? new Date(value) : value;
+    return date.toLocaleDateString();
+  } catch (error) {
+    return 'Invalid Date';
+  }
+}

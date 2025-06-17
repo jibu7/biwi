@@ -345,6 +345,10 @@ def get_trial_balance(db: Session, company_id: int, as_of_date: date) -> schemas
     for account in accounts:
         balance = account.current_balance
         
+        # Handle None balance by treating it as 0
+        if balance is None:
+            balance = Decimal('0.00')
+        
         if balance == 0:
             continue
             

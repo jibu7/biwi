@@ -16,8 +16,14 @@ export default function TrialBalancePage() {
 
   // Safely calculate totals - ensure trialBalance is an array
   const safeTrialBalance = Array.isArray(trialBalance) ? trialBalance : [];
-  const totalDebit = safeTrialBalance.reduce((sum, item) => sum + (item.debit_balance || 0), 0);
-  const totalCredit = safeTrialBalance.reduce((sum, item) => sum + (item.credit_balance || 0), 0);
+  const totalDebit = safeTrialBalance.reduce((sum, item) => {
+    const debitBalance = parseFloat(String(item.debit_balance || '0'));
+    return sum + (isNaN(debitBalance) ? 0 : debitBalance);
+  }, 0);
+  const totalCredit = safeTrialBalance.reduce((sum, item) => {
+    const creditBalance = parseFloat(String(item.credit_balance || '0'));
+    return sum + (isNaN(creditBalance) ? 0 : creditBalance);
+  }, 0);
 
   const handleExport = () => {
     // Implement CSV export functionality

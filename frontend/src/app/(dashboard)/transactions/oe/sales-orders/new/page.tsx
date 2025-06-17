@@ -81,7 +81,7 @@ export default function NewSalesOrderPage() {
   });
 
   const orderSubtotal = lineCalculations.reduce((sum, calc) => sum + calc.lineTotal, 0);
-  const taxAmount = orderSubtotal * 0.1; // Assuming 10% tax rate
+  const taxAmount = 0; // Tax calculation will be handled by backend based on configured tax types
   const orderTotal = orderSubtotal + taxAmount;
 
   const createMutation = useMutation({
@@ -376,7 +376,7 @@ export default function NewSalesOrderPage() {
                 <span className="text-sm font-medium">${orderSubtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between py-2">
-                <span className="text-sm text-gray-600">Tax (10%):</span>
+                <span className="text-sm text-gray-600">Tax:</span>
                 <span className="text-sm font-medium">${taxAmount.toFixed(2)}</span>
               </div>
               <div className="border-t border-gray-200 pt-2">

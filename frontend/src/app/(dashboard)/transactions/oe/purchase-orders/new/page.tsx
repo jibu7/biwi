@@ -86,7 +86,7 @@ export default function NewPurchaseOrderPage() {
   };
 
   const subtotal = watchedLines.reduce((sum, line) => sum + calculateLineTotal(line), 0);
-  const taxAmount = subtotal * 0.1; // Assuming 10% tax
+  const taxAmount = 0; // Tax calculation will be handled by backend based on configured tax types
   const totalAmount = subtotal + taxAmount;
 
   const onSubmit = async (data: PurchaseOrderFormData) => {
@@ -345,7 +345,7 @@ export default function NewPurchaseOrderPage() {
                 <span className="text-sm font-medium">${subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Tax (10%):</span>
+                <span className="text-sm text-gray-600">Tax:</span>
                 <span className="text-sm font-medium">${taxAmount.toFixed(2)}</span>
               </div>
               <div className="border-t pt-2 flex justify-between">

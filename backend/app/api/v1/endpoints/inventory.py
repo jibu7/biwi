@@ -390,6 +390,27 @@ async def list_inventory_transactions(
     
     return query.offset(skip).limit(limit).all()
 
+@router.get("/transactions/{transaction_id}", response_model=schemas.InventoryTransaction)
+async def get_inventory_transaction(
+    transaction_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(PermissionChecker([INV_REPORTS_VIEW]))
+):
+    from sqlalchemy.orm import joinedload
+    
+    transaction = db.query(models.InventoryTransaction).options(
+        joinedload(models.InventoryTransaction.item),
+        joinedload(models.InventoryTransaction.warehouse),
+        joinedload(models.InventoryTransaction.transaction_type)
+    ).filter(
+        models.InventoryTransaction.id == transaction_id,
+        models.InventoryTransaction.company_id == current_user.company_id
+    ).first()
+    
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Inventory transaction not found")
+    return transaction
+
 # Inventory Reports endpoints
 @router.get("/reports/valuation", response_model=List[schemas.InventoryValuationItem])
 async def get_inventory_valuation_report(

@@ -165,7 +165,26 @@ export const updateInventoryDefaults = async (data: InventoryDefaultsUpdate): Pr
 
 // Inventory Adjustments
 export const processInventoryAdjustment = async (data: InventoryAdjustmentCreate): Promise<InventoryTransaction> => {
-  const response = await axiosInstance.post(`${API_PREFIX}/adjustments`, data);
+  const url = `${API_PREFIX}/adjustments`;
+  console.log('🔍 DEBUG: processInventoryAdjustment called with:', {
+    url,
+    fullUrl: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1'}${url}`,
+    data
+  });
+  
+  try {
+    const response = await axiosInstance.post(url, data);
+    console.log('🔍 DEBUG: processInventoryAdjustment success:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('🔍 DEBUG: processInventoryAdjustment error:', error);
+    throw error;
+  }
+};
+
+// Get single inventory transaction
+export const getInventoryTransaction = async (id: number): Promise<InventoryTransaction> => {
+  const response = await axiosInstance.get(`${API_PREFIX}/transactions/${id}`);
   return response.data;
 };
 

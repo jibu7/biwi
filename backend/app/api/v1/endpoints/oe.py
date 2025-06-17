@@ -81,7 +81,7 @@ async def get_sales_order(
     # Calculate subtotal and tax
     from decimal import Decimal
     subtotal = sum(line.line_total for line in so.lines) if so.lines else Decimal('0')
-    tax_amount = subtotal * Decimal('0.1')  # 10% tax
+    tax_amount = Decimal('0')  # Tax calculation should be based on configured tax types, not hardcoded
     
     # Build response with computed fields
     from types import SimpleNamespace
