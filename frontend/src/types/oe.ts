@@ -97,19 +97,25 @@ export interface PurchaseOrderLine {
 
 export interface PurchaseOrderCreate {
   supplier_id: number;
-  supplier_reference?: string;
-  order_date?: string;
-  currency_code?: string;
-  exchange_rate?: number;
+  order_date: string;
+  expected_delivery_date?: string;
+  reference?: string;
+  status?: string;
+  total_amount: number;
   notes?: string;
+  delivery_address_warehouse_id: number;
   lines: PurchaseOrderLineCreate[];
 }
 
 export interface PurchaseOrderLineCreate {
   item_id: number;
-  quantity: number;
+  description: string;
+  quantity_ordered: number;
   unit_price: number;
   discount_percentage?: number;
+  tax_type_id?: number;
+  tax_amount?: number;
+  line_total: number;
   notes?: string;
 }
 

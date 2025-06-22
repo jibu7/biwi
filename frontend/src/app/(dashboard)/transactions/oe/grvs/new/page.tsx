@@ -6,7 +6,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, AlertTriangle, Package, Truck, CreditCard } from 'lucide-react';
 import { grvService, purchaseOrderService } from '@/services/oeService';
 import { apService } from '@/services/apService';
 import { getInventoryItems } from '@/services/inventoryService';
@@ -171,6 +171,48 @@ function NewGRVPageContent() {
           Back
         </button>
         <h1 className="text-2xl font-bold text-gray-900">New Goods Received Voucher</h1>
+      </div>
+
+      {/* GRV Process Guide */}
+      <div className="rounded-lg border p-4 bg-green-50">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+              <Truck className="h-3 w-3 text-green-600" />
+            </div>
+          </div>
+          <div className="text-sm">
+            <p className="font-medium text-green-900">Step 4.2: Receive Goods via GRV - Record Delivery</p>
+            <div className="text-green-800 mt-1 space-y-1">
+              <p><strong>When to Use:</strong> When supplier delivers goods from a Purchase Order</p>
+              <p><strong>Process:</strong> Link to PO → Verify quantities → Record condition → Save GRV</p>
+              <p><strong>Impact:</strong> Increases inventory quantity & creates GRV Accrual liability</p>
+            </div>
+            <div className="mt-2 flex space-x-4 text-xs">
+              <div className="flex items-center space-x-1 opacity-50">
+                <Package className="h-3 w-3" />
+                <span>Done: Created PO</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Truck className="h-3 w-3 text-green-600" />
+                <span>Current: Receive Goods</span>
+              </div>
+              <div className="flex items-center space-x-1 opacity-50">
+                <CreditCard className="h-3 w-3" />
+                <span>Next: AP Invoice</span>
+              </div>
+            </div>
+            <div className="mt-2 p-2 bg-green-100 rounded-md">
+              <p className="text-xs font-semibold text-green-900">💡 What happens when you save:</p>
+              <ul className="text-xs text-green-800 ml-4 list-disc">
+                <li>Inventory quantity increases by received amount</li>
+                <li>GRV Accrual account shows liability to supplier</li>
+                <li>PO status updates to "Received"</li>
+                <li>Ready for AP Invoice conversion</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

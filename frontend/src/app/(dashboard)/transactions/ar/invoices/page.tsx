@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { 
   Plus, 
@@ -12,7 +12,8 @@ import {
   FileText,
   Calendar,
   DollarSign,
-  User
+  User,
+  CheckCircle
 } from 'lucide-react';
 import { ARTransaction } from '@/types/ar';
 import { arTransactionService } from '@/services/arService';
@@ -21,15 +22,38 @@ import { AR_TRANSACTIONS_POST, AR_REPORTS_VIEW } from '@/lib/permissions';
 
 export default function ARInvoicesPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredInvoices, setFilteredInvoices] = useState<ARTransaction[]>([]);
+  const [postingTransactionId, setPostingTransactionId] = useState<number | null>(null);
 
   const { data: transactions = [], isLoading, error, refetch } = useQuery({
     queryKey: ['ar-transactions', 'Invoice'],
     queryFn: () => arTransactionService.getByType('Invoice'),
     enabled: hasPermission(AR_REPORTS_VIEW),
   });
+
+  const postTransactionMutation = useMutation({
+    mutationFn: (transactionId: number) => arTransactionService.post(transactionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ar-transactions'] });
+      setPostingTransactionId(null);
+    },
+    onError: (error: any) => {
+      console.error('Error posting transaction:', error);
+      alert('Failed to post invoice. Please try again.');
+      setPostingTransactionId(null);
+    },
+  });
+
+  const handlePostTransaction = async (transactionId: number) => {
+    if (!confirm('Are you sure you want to post this invoice? This action cannot be undone.')) {
+      return;
+    }
+    setPostingTransactionId(transactionId);
+    await postTransactionMutation.mutateAsync(transactionId);
+  };
 
   useEffect(() => {
     if (transactions) {
@@ -258,13 +282,27 @@ export default function ARInvoicesPage() {
                           <Eye className="h-4 w-4" />
                         </Link>
                         {hasPermission(AR_TRANSACTIONS_POST) && invoice.status === 'Draft' && (
-                          <Link
-                            href={`/transactions/ar/transactions/${invoice.id}/edit`}
-                            className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                            title="Edit invoice"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Link>
+                          <>
+                            <Link
+                              href={`/transactions/ar/transactions/${invoice.id}/edit`}
+                              className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                              title="Edit invoice"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Link>
+                            <button
+                              onClick={() => handlePostTransaction(invoice.id)}
+                              disabled={postingTransactionId === invoice.id}
+                              className="rounded-md p-2 text-green-600 hover:bg-green-50 hover:text-green-700 disabled:opacity-50"
+                              title="Post invoice"
+                            >
+                              {postingTransactionId === invoice.id ? (
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              ) : (
+                                <CheckCircle className="h-4 w-4" />
+                              )}
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>

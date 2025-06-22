@@ -129,10 +129,13 @@ export default function NewAllocationPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ar-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['ar-allocations'] });
+      alert('Allocation created successfully!');
       router.push('/transactions/ar/allocations');
     },
     onError: (error: any) => {
       console.error('Error creating allocation:', error);
+      const errorMessage = error?.response?.data?.detail || 'Failed to create allocation. Please try again.';
+      alert(errorMessage);
     },
   });
 
@@ -142,8 +145,37 @@ export default function NewAllocationPage() {
       return;
     }
 
+    // Validate that we have allocation lines
+    if (allocationLines.length === 0) {
+      alert('Please add at least one allocation line before submitting.');
+      return;
+    }
+
+    // Validate that all lines have required data
+    const invalidLines = allocationLines.filter(line => 
+      !line.debit_transaction_id || 
+      !line.credit_transaction_id || 
+      !line.allocated_amount || 
+      line.allocated_amount <= 0
+    );
+
+    if (invalidLines.length > 0) {
+      alert('Please complete all allocation line fields before submitting.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      console.log('Submitting allocation with data:', {
+        allocation_date: data.allocation_date,
+        customer_id: data.customer_id,
+        lines: data.lines.map(line => ({
+          debit_transaction_id: line.debit_transaction_id,
+          credit_transaction_id: line.credit_transaction_id,
+          allocated_amount: Number(line.allocated_amount),
+        })),
+      });
+      
       await createMutation.mutateAsync({
         allocation_date: data.allocation_date,
         customer_id: data.customer_id,
@@ -155,7 +187,8 @@ export default function NewAllocationPage() {
       });
     } catch (error: any) {
       console.error('Error:', error);
-      alert('Failed to create allocation. Please try again.');
+      const errorMessage = error?.response?.data?.detail || 'Failed to create allocation. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -213,6 +246,34 @@ export default function NewAllocationPage() {
             <p className="text-gray-700">
               Allocate receipts and credit notes to outstanding invoices
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Process Guide */}
+      <div className="rounded-lg border p-4 bg-blue-50">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+              <AlertTriangle className="h-3 w-3 text-blue-600" />
+            </div>
+          </div>
+          <div className="text-sm">
+            <p className="font-medium text-blue-900">Allocation Process Guide:</p>
+            <div className="text-blue-800 mt-1 space-y-1">
+              <p><strong>Step 1:</strong> Select a customer to see their outstanding transactions</p>
+              <p><strong>Step 2:</strong> View outstanding invoices (what customer owes you)</p>
+              <p><strong>Step 3:</strong> View available receipts/credits (what customer paid you)</p>
+              <p><strong>Step 4:</strong> Match receipts to specific invoices to mark them as paid</p>
+            </div>
+            <div className="mt-2 p-2 bg-blue-100 rounded-md">
+              <p className="text-xs font-semibold text-blue-900">💡 Example:</p>
+              <p className="text-xs text-blue-800">
+                Customer John Smith has Invoice INV-001 ($400) and Receipt RCP-001 ($400).
+                <br />Create allocation: Receipt RCP-001 → Invoice INV-001 for $400
+                <br />Result: Invoice is marked "Paid", customer balance becomes $0
+              </p>
+            </div>
           </div>
         </div>
       </div>

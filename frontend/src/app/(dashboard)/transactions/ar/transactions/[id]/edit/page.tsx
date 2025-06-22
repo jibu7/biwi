@@ -15,7 +15,7 @@ export default function ARTransactionEditPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
-  const transactionId = resolvedParams ? parseInt(resolvedParams.id as string, 10) : 0;
+  const transactionId = params ? parseInt(params.id as string, 10) : 0;
 
   const [formData, setFormData] = useState<ARTransactionUpdate>({
     customer_id: 0,

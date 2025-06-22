@@ -388,7 +388,7 @@ def post_ar_transaction(
     require_permission(current_user, AR_TRANSACTIONS_POST)
     
     try:
-        transaction = crud.ar.post_ar_transaction_to_gl(db, transaction_id, current_user.company_id)
+        transaction = crud.ar.post_ar_transaction_to_gl(db, transaction_id, current_user.company_id, current_user.id)
         if not transaction:
             raise HTTPException(status_code=404, detail="Transaction not found or already posted")
         return transaction

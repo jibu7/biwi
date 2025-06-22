@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Edit, Save, X, Package, FileText } from 'lucide-react';
+import { ArrowLeft, Edit, Save, X, Package, FileText, Trash2 } from 'lucide-react';
 import { purchaseOrderService } from '@/services/oeService';
 import { PurchaseOrder, PurchaseOrderLine } from '@/types/oe';
 
@@ -15,6 +15,7 @@ export default function PurchaseOrderDetailPage({ params }: PageProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
 
   useEffect(() => {
@@ -27,6 +28,18 @@ export default function PurchaseOrderDetailPage({ params }: PageProps) {
     queryKey: ['purchaseOrder', purchaseOrderId],
     queryFn: () => purchaseOrderService.getById(purchaseOrderId),
     enabled: purchaseOrderId > 0,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => purchaseOrderService.delete(purchaseOrderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+      router.push('/transactions/oe/purchase-orders');
+    },
+    onError: (error) => {
+      console.error('Failed to delete purchase order:', error);
+      alert('Failed to delete purchase order. Please try again.');
+    }
   });
 
   if (!resolvedParams) {
@@ -70,8 +83,12 @@ export default function PurchaseOrderDetailPage({ params }: PageProps) {
   };
 
   const calculateLineTotal = (line: PurchaseOrderLine) => {
-    const subtotal = line.quantity * line.unit_price;
-    const discount = subtotal * (line.discount_percentage || 0) / 100;
+    const quantity = Number(line.quantity) || 0;
+    const unitPrice = Number(line.unit_price) || 0;
+    const discountPercentage = Number(line.discount_percentage) || 0;
+    
+    const subtotal = quantity * unitPrice;
+    const discount = subtotal * discountPercentage / 100;
     return subtotal - discount;
   };
 
@@ -79,6 +96,19 @@ export default function PurchaseOrderDetailPage({ params }: PageProps) {
 
   const handleReceiveGoods = () => {
     router.push(`/transactions/oe/grvs/new?po=${purchaseOrderId}`);
+  };
+
+  const handleDelete = () => {
+    if (purchaseOrder?.status !== 'DRAFT') {
+      alert('Only draft purchase orders can be deleted.');
+      return;
+    }
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    deleteMutation.mutate();
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -130,6 +160,15 @@ export default function PurchaseOrderDetailPage({ params }: PageProps) {
               </>
             )}
           </button>
+          {purchaseOrder.status === 'DRAFT' && (
+            <button
+              onClick={handleDelete}
+              className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </button>
+          )}
         </div>
       </div>
 
@@ -210,31 +249,31 @@ export default function PurchaseOrderDetailPage({ params }: PageProps) {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900">
-                        {line.item_code}
+                        {line.item_code || `Item #${line.item_id}` || 'Unknown Item'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {line.item_description}
+                        {line.item_description || 'No description available'}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {line.quantity}
+                    {line.quantity || 0}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div className="flex flex-col">
-                      <span>{line.quantity_received}</span>
-                      {line.quantity_received < line.quantity && (
+                      <span>{line.quantity_received || 0}</span>
+                      {(line.quantity_received || 0) < (line.quantity || 0) && (
                         <span className="text-xs text-orange-600">
-                          Pending: {line.quantity - line.quantity_received}
+                          Pending: {(line.quantity || 0) - (line.quantity_received || 0)}
                         </span>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${line.unit_price.toFixed(2)}
+                    ${(Number(line.unit_price) || 0).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {line.discount_percentage}%
+                    {Number(line.discount_percentage) || 0}%
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     ${calculateLineTotal(line).toFixed(2)}
@@ -251,21 +290,20 @@ export default function PurchaseOrderDetailPage({ params }: PageProps) {
 
       {/* Totals */}
       <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex justify-end">
-          <div className="w-64 space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Subtotal:</span>
-              <span className="text-sm font-medium">${purchaseOrder.subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Tax:</span>
-              <span className="text-sm font-medium">${purchaseOrder.tax_amount.toFixed(2)}</span>
-            </div>
-            <div className="border-t pt-2 flex justify-between">
-              <span className="text-base font-medium">Total:</span>
-              <span className="text-base font-bold">${purchaseOrder.total_amount.toFixed(2)}</span>
-            </div>
+        <div className="flex justify-end">        <div className="w-64 space-y-2">
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Subtotal:</span>
+            <span className="text-sm font-medium">${(Number(purchaseOrder.subtotal) || 0).toFixed(2)}</span>
           </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Tax:</span>
+            <span className="text-sm font-medium">${(Number(purchaseOrder.tax_amount) || 0).toFixed(2)}</span>
+          </div>
+          <div className="border-t pt-2 flex justify-between">
+            <span className="text-base font-medium">Total:</span>
+            <span className="text-base font-bold">${(Number(purchaseOrder.total_amount) || 0).toFixed(2)}</span>
+          </div>
+        </div>
         </div>
       </div>
 
@@ -291,6 +329,40 @@ export default function PurchaseOrderDetailPage({ params }: PageProps) {
           </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <Trash2 className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mt-4">Delete Purchase Order</h3>
+              <div className="mt-2 px-7 py-3">
+                <p className="text-sm text-gray-500">
+                  Are you sure you want to delete this purchase order? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex justify-center space-x-4 mt-4">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deleteMutation.isPending}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

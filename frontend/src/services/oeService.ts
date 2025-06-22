@@ -56,6 +56,10 @@ export const purchaseOrderService = {
     const response = await axiosInstance.put(`/oe/purchase-orders/${id}`, data);
     return response.data;
   },
+
+  delete: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`/oe/purchase-orders/${id}`);
+  },
 };
 
 // GRVs API functions

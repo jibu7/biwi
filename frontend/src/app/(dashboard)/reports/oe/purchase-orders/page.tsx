@@ -36,9 +36,9 @@ export default function PurchaseOrdersReportPage() {
   const filteredOrders = purchaseOrders.filter(order => {
     if (!searchTerm) return true;
     return (
-      order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.supplier_reference?.toLowerCase().includes(searchTerm.toLowerCase())
+      (order.order_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.supplier_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.supplier_reference || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -76,7 +76,7 @@ export default function PurchaseOrdersReportPage() {
       new Date(order.order_date).toLocaleDateString(),
       order.status,
       order.currency_code,
-      order.total_amount.toFixed(2),
+      (Number(order.total_amount) || 0).toFixed(2),
       order.supplier_reference || '',
       order.notes || ''
     ]);
@@ -100,7 +100,7 @@ export default function PurchaseOrdersReportPage() {
   const calculateTotals = () => {
     const totals = filteredOrders.reduce((acc, order) => {
       acc.totalOrders += 1;
-      acc.totalAmount += order.total_amount;
+      acc.totalAmount += (Number(order.total_amount) || 0);
       acc.statusCounts[order.status] = (acc.statusCounts[order.status] || 0) + 1;
       return acc;
     }, {
@@ -347,7 +347,7 @@ export default function PurchaseOrdersReportPage() {
                       <div className="text-sm text-gray-900">{order.currency_code}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">${order.total_amount.toFixed(2)}</div>
+                      <div className="text-sm text-gray-900">${(Number(order.total_amount) || 0).toFixed(2)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{order.supplier_reference || '-'}</div>

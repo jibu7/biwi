@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { 
   Plus, 
@@ -12,7 +12,9 @@ import {
   FileText,
   Calendar,
   DollarSign,
-  User
+  User,
+  CheckCircle,
+  CreditCard
 } from 'lucide-react';
 import { ARTransaction } from '@/types/ar';
 import { arTransactionService } from '@/services/arService';
@@ -21,15 +23,51 @@ import { AR_TRANSACTIONS_POST, AR_REPORTS_VIEW } from '@/lib/permissions';
 
 export default function ARReceiptsPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredReceipts, setFilteredReceipts] = useState<ARTransaction[]>([]);
+  const [postingTransactionId, setPostingTransactionId] = useState<number | null>(null);
 
   const { data: transactions = [], isLoading, error, refetch } = useQuery({
     queryKey: ['ar-transactions', 'Receipt'],
     queryFn: () => arTransactionService.getByType('Receipt'),
     enabled: hasPermission(AR_REPORTS_VIEW),
   });
+
+  const postTransactionMutation = useMutation({
+    mutationFn: (transactionId: number) => arTransactionService.post(transactionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ar-transactions'] });
+      setPostingTransactionId(null);
+      // Optional: Add success toast notification here
+    },
+    onError: (error: any) => {
+      console.error('Error posting transaction:', error);
+      const errorMessage = error?.response?.data?.detail || 'Failed to post receipt. Please try again.';
+      alert(`Posting failed: ${errorMessage}`);
+      setPostingTransactionId(null);
+    },
+  });
+
+  const handlePostTransaction = async (transactionId: number) => {
+    const receipt = filteredReceipts.find(r => r.id === transactionId);
+    const confirmMessage = `Are you sure you want to post this receipt?\n\n` +
+      `Receipt: ${receipt?.document_number}\n` +
+      `Customer: ${receipt?.customer_name}\n` +
+      `Amount: ${formatCurrency(receipt?.total_amount || 0)}\n\n` +
+      `This will:\n` +
+      `• Update GL accounts (Debit Bank, Credit AR)\n` +
+      `• Change status to "Posted"\n` +
+      `• Cannot be undone\n\n` +
+      `Continue?`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+    setPostingTransactionId(transactionId);
+    await postTransactionMutation.mutateAsync(transactionId);
+  };
 
   useEffect(() => {
     if (transactions) {
@@ -118,16 +156,25 @@ export default function ARReceiptsPage() {
               Manage customer payments and receipts
             </p>
           </div>
-        {hasPermission(AR_TRANSACTIONS_POST) && (
-          <Link
-            href="/transactions/ar/receipts/new"
-            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-600/90"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            New Receipt
-          </Link>
-        )}
-      </div>
+          <div className="flex space-x-3">
+            <Link
+              href="/transactions/ar/allocations"
+              className="inline-flex items-center justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-green-600/90"
+            >
+              <CreditCard className="mr-2 h-4 w-4" />
+              Allocate Payments
+            </Link>
+            {hasPermission(AR_TRANSACTIONS_POST) && (
+              <Link
+                href="/transactions/ar/receipts/new"
+                className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-600/90"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                New Receipt
+              </Link>
+            )}
+          </div>
+        </div>
 
       {/* Search */}
       <div className="flex items-center space-x-2">
@@ -245,13 +292,27 @@ export default function ARReceiptsPage() {
                           <Eye className="h-4 w-4" />
                         </Link>
                         {hasPermission(AR_TRANSACTIONS_POST) && receipt.status === 'Draft' && (
-                          <Link
-                            href={`/transactions/ar/transactions/${receipt.id}/edit`}
-                            className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                            title="Edit receipt"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Link>
+                          <>
+                            <Link
+                              href={`/transactions/ar/transactions/${receipt.id}/edit`}
+                              className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                              title="Edit receipt"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Link>
+                            <button
+                              onClick={() => handlePostTransaction(receipt.id)}
+                              disabled={postingTransactionId === receipt.id}
+                              className="rounded-md p-2 text-green-600 hover:bg-green-50 hover:text-green-700 disabled:opacity-50"
+                              title="Post receipt"
+                            >
+                              {postingTransactionId === receipt.id ? (
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              ) : (
+                                <CheckCircle className="h-4 w-4" />
+                              )}
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>

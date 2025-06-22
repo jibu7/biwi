@@ -252,7 +252,7 @@ def update_ar_transaction(db: Session, transaction_id: int, company_id: int,
         db.refresh(db_transaction)
     return db_transaction
 
-def post_ar_transaction_to_gl(db: Session, transaction_id: int, company_id: int) -> Optional[ARTransaction]:
+def post_ar_transaction_to_gl(db: Session, transaction_id: int, company_id: int, posted_by_user_id: int) -> Optional[ARTransaction]:
     """Post an AR transaction to GL and update customer balance"""
     from app.crud.gl import create_gl_journal_entry
     from app.schemas.gl import GLJournalEntryCreate, GLJournalEntryLineCreate
@@ -335,13 +335,13 @@ def post_ar_transaction_to_gl(db: Session, transaction_id: int, company_id: int)
     
     # Create GL journal entry
     journal_entry_data = GLJournalEntryCreate(
-        transaction_date=db_transaction.transaction_date,
+        entry_date=db_transaction.transaction_date,
         reference=f"AR {db_transaction.ar_transaction_type.base_type} {db_transaction.document_number}",
         description=f"{db_transaction.ar_transaction_type.base_type} for {db_transaction.customer.name}",
         lines=lines
     )
     
-    gl_entry = create_gl_journal_entry(db, journal_entry_data, company_id)
+    gl_entry = create_gl_journal_entry(db, journal_entry_data, company_id, posted_by_user_id)
     
     # Link the GL entry to AR transaction
     db_transaction.linked_gl_journal_entry_id = gl_entry.id

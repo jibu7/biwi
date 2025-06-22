@@ -128,6 +128,33 @@ export default function ARAllocationsPage() {
         </div>
       </div>
 
+      {/* Information Panel */}
+      <div className="rounded-lg border p-4 bg-amber-50">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center">
+              <ArrowUpDown className="h-3 w-3 text-amber-600" />
+            </div>
+          </div>
+          <div className="text-sm">
+            <p className="font-medium text-amber-900">Why Allocations Are Critical:</p>
+            <div className="text-amber-800 mt-1 space-y-1">
+              <p>• <strong>Invoices create debits</strong> (customer owes you money)</p>
+              <p>• <strong>Receipts create credits</strong> (customer paid you money)</p>
+              <p>• <strong>Without allocation:</strong> System shows customer still owes money even after payment!</p>
+              <p>• <strong>With allocation:</strong> Payment is matched to specific invoices, marking them as paid</p>
+            </div>
+            <div className="mt-2 p-2 bg-amber-100 rounded-md">
+              <p className="text-xs font-semibold text-amber-900">Example:</p>
+              <p className="text-xs text-amber-800">
+                Invoice INV-001 ($400) + Receipt RCP-001 ($400) → Without allocation: Customer balance = $400 
+                <br />Invoice INV-001 ($400) ↔ Receipt RCP-001 ($400) → With allocation: Customer balance = $0
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Allocations Table */}
       <div className="rounded-md border">
         <div className="overflow-x-auto">

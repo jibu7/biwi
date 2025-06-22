@@ -6,12 +6,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Save, FileText, Calendar, User, DollarSign } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Calendar, User, DollarSign, CreditCard, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { ARTransactionCreate } from '@/types/ar';
 import { arTransactionService, customerService, arTransactionTypeService } from '@/services/arService';
+import { glService } from '@/services/glService';
 import { usePermissions } from '@/hooks/usePermissions';
 import { AR_TRANSACTIONS_POST } from '@/lib/permissions';
+import Toast from '@/components/ui/Toast';
 
 const receiptSchema = z.object({
   customer_id: z.number().min(1, 'Customer is required'),
@@ -20,6 +22,7 @@ const receiptSchema = z.object({
   reference: z.string().optional(),
   document_number: z.string().min(1, 'Document number is required'),
   total_amount: z.number().min(0.01, 'Amount must be greater than 0'),
+  payment_method: z.string().min(1, 'Payment method is required'),
 });
 
 type ReceiptFormData = z.infer<typeof receiptSchema>;
@@ -29,6 +32,8 @@ export default function NewReceiptPage() {
   const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
 
   const { data: customers = [], isLoading: loadingCustomers } = useQuery({
     queryKey: ['customers'],
@@ -52,6 +57,7 @@ export default function NewReceiptPage() {
     defaultValues: {
       transaction_date: new Date().toISOString().split('T')[0],
       total_amount: 0,
+      payment_method: 'Check',
     },
   });
 
@@ -70,30 +76,47 @@ export default function NewReceiptPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: ARTransactionCreate) => arTransactionService.create(data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['ar-transactions'] });
-      router.push('/transactions/ar/receipts');
+      setToast({ 
+        message: `Receipt ${data.document_number} created successfully! Next: Post it, then allocate to invoices to mark them as paid.`, 
+        type: 'success' 
+      });
+      // Navigate after a longer delay to show the message
+      setTimeout(() => {
+        router.push('/transactions/ar/receipts');
+      }, 3000);
     },
     onError: (error: any) => {
       console.error('Error creating receipt:', error);
+      const errorMessage = error?.response?.data?.detail || 'Failed to create receipt';
+      setToast({ message: errorMessage, type: 'error' });
     },
   });
 
   const onSubmit = async (data: ReceiptFormData) => {
     if (!hasPermission(AR_TRANSACTIONS_POST)) {
-      alert('You do not have permission to create receipts');
+      setToast({ message: 'You do not have permission to create receipts', type: 'error' });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await createMutation.mutateAsync({
-        ...data,
+      // Prepare the transaction data
+      const transactionData: ARTransactionCreate = {
+        customer_id: data.customer_id,
+        ar_transaction_type_id: data.ar_transaction_type_id,
+        transaction_date: data.transaction_date,
+        document_number: data.document_number,
         total_amount: Number(data.total_amount),
-      });
+        // Use reference field for payment method and description
+        reference: data.reference || `${data.payment_method} payment`,
+      };
+
+      await createMutation.mutateAsync(transactionData);
     } catch (error: any) {
       console.error('Error:', error);
-      alert('Failed to create receipt. Please try again.');
+      // Error handling is done in the mutation's onError callback
     } finally {
       setIsSubmitting(false);
     }
@@ -122,6 +145,13 @@ export default function NewReceiptPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div className="space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -151,7 +181,10 @@ export default function NewReceiptPage() {
               <div className="relative">
                 <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600" />
                 <select
-                  {...register('customer_id', { valueAsNumber: true })}
+                  {...register('customer_id', { 
+                    valueAsNumber: true,
+                    onChange: (e) => setSelectedCustomerId(Number(e.target.value) || null)
+                  })}
                   className="w-full rounded-md border border-gray-300 bg-white px-10 py-2 text-sm text-gray-900 ring-offset-background placeholder:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   disabled={loadingCustomers}
                 >
@@ -165,6 +198,20 @@ export default function NewReceiptPage() {
               </div>
               {errors.customer_id && (
                 <p className="text-sm text-red-600">{errors.customer_id.message}</p>
+              )}
+              {selectedCustomerId && (
+                <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                  <p className="text-xs text-gray-600">
+                    Current Balance: $
+                    {(() => {
+                      const customer = customers.find(c => c.id === selectedCustomerId);
+                      const balance = customer?.current_balance;
+                      if (balance === null || balance === undefined) return '0.00';
+                      const numBalance = typeof balance === 'string' ? parseFloat(balance) : balance;
+                      return isNaN(numBalance) ? '0.00' : numBalance.toFixed(2);
+                    })()}
+                  </p>
+                </div>
               )}
             </div>
 
@@ -228,10 +275,36 @@ export default function NewReceiptPage() {
                 type="text"
                 {...register('reference')}
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 ring-offset-background placeholder:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                placeholder="Enter reference (e.g., check number, bank reference)"
+                placeholder="Enter reference (e.g., CHK-001, bank reference)"
               />
               {errors.reference && (
                 <p className="text-sm text-red-600">{errors.reference.message}</p>
+              )}
+              <p className="text-xs text-gray-600">
+                Optional: Check number, bank reference, or other payment identifier
+              </p>
+            </div>
+
+            {/* Payment Method */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-900">Payment Method *</label>
+              <div className="relative">
+                <CreditCard className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600" />
+                <select
+                  {...register('payment_method')}
+                  className="w-full rounded-md border border-gray-300 bg-white px-10 py-2 text-sm text-gray-900 ring-offset-background placeholder:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="Check">Check</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Wire Transfer">Wire Transfer</option>
+                  <option value="EFT">Electronic Funds Transfer (EFT)</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              {errors.payment_method && (
+                <p className="text-sm text-red-600">{errors.payment_method.message}</p>
               )}
             </div>
 
@@ -259,20 +332,60 @@ export default function NewReceiptPage() {
           </div>
         </div>
 
-        {/* Note */}
-        <div className="rounded-lg border p-4 bg-blue-50">
-          <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0">
-              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                <FileText className="h-3 w-3 text-blue-600" />
+        {/* Information Panel */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* GL Impact Preview */}
+          <div className="rounded-lg border p-4 bg-green-50">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                  <BookOpen className="h-3 w-3 text-green-600" />
+                </div>
+              </div>
+              <div className="text-sm">
+                <p className="font-medium text-green-900">General Ledger Impact:</p>
+                <p className="text-green-800 mt-1">
+                  When posted, this receipt will create the following GL entries:
+                </p>
+                <div className="mt-2 space-y-1 text-xs font-mono">
+                  <div className="flex justify-between">
+                    <span>Debit: 1000 - Bank Account</span>
+                    <span>$XXX.XX</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Credit: 1100 - Accounts Receivable</span>
+                    <span>$XXX.XX</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="text-sm">
-              <p className="font-medium text-blue-900">Note:</p>
-              <p className="text-blue-800">
-                After creating this receipt, you can allocate it to outstanding invoices using the AR Allocations feature.
-                Unallocated receipts will appear as credits on the customer's account.
-              </p>
+          </div>
+
+          {/* Process Note */}
+          <div className="rounded-lg border p-4 bg-blue-50">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                  <FileText className="h-3 w-3 text-blue-600" />
+                </div>
+              </div>
+              <div className="text-sm">
+                <p className="font-medium text-blue-900">Next Steps:</p>
+                <ul className="text-blue-800 mt-1 space-y-1">
+                  <li>• Receipt will be created in Draft status</li>
+                  <li>• Post the receipt to update GL accounts</li>
+                  <li>• <strong>Allocate to outstanding invoices</strong> to mark them as paid</li>
+                  <li>• Unallocated amounts remain as customer credits</li>
+                </ul>
+                <div className="mt-2 p-2 bg-blue-100 rounded-md">
+                  <p className="text-xs font-semibold text-blue-900">⚠️ Important:</p>
+                  <p className="text-xs text-blue-800">
+                    After posting, use <strong>Transactions → AR → Allocations</strong> to 
+                    match this payment to specific invoices. Without allocation, the customer 
+                    will still show outstanding balances!
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

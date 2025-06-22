@@ -8,7 +8,10 @@ import {
   Plus, 
   Search, 
   Eye,
-  Package
+  Package,
+  AlertTriangle,
+  Truck,
+  CreditCard
 } from 'lucide-react';
 import { purchaseOrderService } from '@/services/oeService';
 import { apService } from '@/services/apService';
@@ -34,9 +37,9 @@ export default function PurchaseOrdersPage() {
   const filteredPurchaseOrders = useMemo(() => {
     return purchaseOrders.filter((order) => {
       const matchesSearch = 
-        order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.supplier_reference?.toLowerCase().includes(searchTerm.toLowerCase());
+        (order.order_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.supplier_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.supplier_reference || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesSupplier = selectedSupplier === '' || order.supplier_id === selectedSupplier;
       const matchesStatus = selectedStatus === '' || order.status === selectedStatus;
@@ -77,6 +80,32 @@ export default function PurchaseOrdersPage() {
           <Plus className="h-4 w-4 mr-2" />
           New Purchase Order
         </Link>
+      </div>
+
+      {/* Procurement Workflow Guide */}
+      <div className="rounded-lg border p-4 bg-blue-50">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+              <AlertTriangle className="h-3 w-3 text-blue-600" />
+            </div>
+          </div>
+          <div className="text-sm">
+            <p className="font-medium text-blue-900">Complete Procurement Process - Step 4.1: Create Purchase Orders</p>
+            <div className="text-blue-800 mt-1 space-y-1">
+              <p><strong>When to Use:</strong> When inventory reaches reorder level or quantity = 0</p>
+              <p><strong>Process:</strong> Create PO → Supplier delivers → Receive via GRV → Convert to AP Invoice</p>
+              <p><strong>Next Step:</strong> Click 📦 "Receive Goods" on confirmed orders when delivery arrives</p>
+            </div>
+            <div className="mt-2 p-2 bg-blue-100 rounded-md">
+              <p className="text-xs font-semibold text-blue-900">💡 Example:</p>
+              <p className="text-xs text-blue-800">
+                Laptop stock = 0 → Create PO for 5 laptops ($299 each) → Total: $1,495 → 
+                Status: "Confirmed" → Receive goods → Create GRV → Convert to AP Invoice
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -172,23 +201,36 @@ export default function PurchaseOrdersPage() {
                   </td>
                 </tr>
               ) : (
-                filteredPurchaseOrders.map((order) => (
+                filteredPurchaseOrders.map((order) => {
+                  const supplier = suppliers.find(s => s.id === order.supplier_id);
+                  
+                  return (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {order.order_number}
+                          {order.order_number || `PO-${order.id}`}
                         </div>
                         {order.supplier_reference && (
                           <div className="text-sm text-gray-500">
                             Ref: {order.supplier_reference}
                           </div>
                         )}
+                        {order.notes && (
+                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                            {order.notes}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {order.supplier_name}
+                      <div>
+                        <div className="text-sm text-gray-900">
+                          {supplier?.name || order.supplier_name || `Supplier #${order.supplier_id}`}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          ID: {order.supplier_id}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -221,7 +263,7 @@ export default function PurchaseOrdersPage() {
                       </div>
                     </td>
                   </tr>
-                ))
+                )})
               )}
             </tbody>
           </table>
@@ -248,7 +290,7 @@ export default function PurchaseOrdersPage() {
           },
           {
             label: 'Total Value',
-            value: `${filteredPurchaseOrders[0]?.currency_code || 'USD'} ${filteredPurchaseOrders.reduce((sum, o) => sum + o.total_amount, 0).toFixed(2)}`,
+            value: `${filteredPurchaseOrders[0]?.currency_code || 'USD'} ${filteredPurchaseOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0).toFixed(2)}`,
             color: 'text-green-600',
           },
         ].map((stat, index) => (
