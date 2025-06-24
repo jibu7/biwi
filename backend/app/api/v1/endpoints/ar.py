@@ -6,10 +6,11 @@ from datetime import date
 from app.database.database import get_db
 from app.core.security import get_current_active_user
 from app.core.permissions import (
-    AR_SETUP_MANAGE, AR_TRANSACTIONS_POST, AR_REPORTS_VIEW,
+    AR_SETUP_MANAGE, AR_TRANSACTIONS_POST, AR_REPORTS_VIEW, AR_WRITEOFF_APPROVE,
     require_permission
 )
 from app import crud, schemas, models
+from app.crud import ar_new
 
 router = APIRouter()
 
@@ -465,7 +466,7 @@ def update_ar_defaults(
     return crud.ar.create_or_update_ar_defaults(db, ar_defaults_update, current_user.company_id)
 
 # AR Reports endpoints
-@router.get("/reports/customer-aging")
+@router.get("/reports/customer-aging", response_model=List[schemas.CustomerAgingReportItem])
 def get_customer_aging_report(
     as_of_date: date,
     db: Session = Depends(get_db),
@@ -473,7 +474,9 @@ def get_customer_aging_report(
 ):
     """Get customer aging report"""
     require_permission(current_user, AR_REPORTS_VIEW)
-    return crud.ar.get_customer_aging_report(db, current_user.company_id, as_of_date)
+    aging_data = ar_new.get_customer_aging_report(db, current_user.company_id, as_of_date)
+    # Convert to frontend-compatible format
+    return [schemas.CustomerAgingReportItem.from_customer_ageing(item) for item in aging_data]
 
 @router.get("/reports/customer-statement/{customer_id}")
 def get_customer_statement(
@@ -486,3 +489,173 @@ def get_customer_statement(
     """Get customer statement"""
     require_permission(current_user, AR_REPORTS_VIEW)
     return crud.ar.get_customer_statement(db, current_user.company_id, customer_id, from_date, to_date)
+
+# Write-off endpoints
+@router.get("/writeoffs", response_model=List[schemas.ARWriteOff])
+def get_writeoffs(
+    skip: int = 0,
+    limit: int = 100,
+    customer_id: Optional[int] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get write-offs with optional filters"""
+    require_permission(current_user, AR_REPORTS_VIEW)
+    return ar_new.get_ar_writeoffs(
+        db, current_user.company_id, skip=skip, limit=limit, 
+        customer_id=customer_id, status=status
+    )
+
+@router.get("/writeoffs/{writeoff_id}", response_model=schemas.ARWriteOff)
+def get_writeoff(
+    writeoff_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get a specific write-off"""
+    require_permission(current_user, AR_REPORTS_VIEW)
+    writeoff = ar_new.get_ar_writeoff(db, writeoff_id, current_user.company_id)
+    if not writeoff:
+        raise HTTPException(status_code=404, detail="Write-off not found")
+    return writeoff
+
+@router.post("/writeoffs", response_model=schemas.ARWriteOff)
+def create_writeoff(
+    writeoff: schemas.ARWriteOffCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Create a new write-off request"""
+    require_permission(current_user, AR_TRANSACTIONS_POST)
+    
+    try:
+        return ar_new.create_ar_writeoff(
+            db, writeoff, current_user.company_id, current_user.id
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.put("/writeoffs/{writeoff_id}", response_model=schemas.ARWriteOff)
+def update_writeoff(
+    writeoff_id: int,
+    writeoff_update: schemas.ARWriteOffUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Update a write-off (only if in Draft status)"""
+    require_permission(current_user, AR_TRANSACTIONS_POST)
+    
+    try:
+        writeoff = ar_new.update_ar_writeoff(
+            db, writeoff_id, writeoff_update, current_user.company_id
+        )
+        if not writeoff:
+            raise HTTPException(status_code=404, detail="Write-off not found")
+        return writeoff
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/writeoffs/{writeoff_id}/approve", response_model=schemas.ARWriteOff)
+def approve_writeoff(
+    writeoff_id: int,
+    approval: schemas.ARWriteOffApproval,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Approve or reject a write-off"""
+    require_permission(current_user, AR_WRITEOFF_APPROVE)  # New permission
+    
+    try:
+        return ar_new.approve_ar_writeoff(
+            db, writeoff_id, approval, current_user.company_id, current_user.id
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/writeoffs/{writeoff_id}")
+def delete_writeoff(
+    writeoff_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Delete a write-off (only if in Draft status)"""
+    require_permission(current_user, AR_TRANSACTIONS_POST)
+    
+    try:
+        success = ar_new.delete_ar_writeoff(db, writeoff_id, current_user.company_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Write-off not found")
+        return {"message": "Write-off deleted successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# Customer Analytics endpoints
+@router.get("/customers/{customer_id}/analytics", response_model=schemas.CustomerWithAnalytics)
+def get_customer_analytics(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get customer with write-off analytics and credit analysis"""
+    require_permission(current_user, AR_REPORTS_VIEW)
+    
+    try:
+        return ar_new.get_customer_with_analytics(db, customer_id, current_user.company_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/customers/{customer_id}/writeoff-summary", response_model=schemas.CustomerWriteOffSummary)
+def get_customer_writeoff_summary(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get write-off summary for a customer"""
+    require_permission(current_user, AR_REPORTS_VIEW)
+    
+    return ar_new.get_customer_writeoff_summary(db, customer_id, current_user.company_id)
+
+@router.get("/customers/{customer_id}/credit-analysis", response_model=schemas.CustomerCreditAnalysis)
+def get_customer_credit_analysis(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get credit analysis for a customer"""
+    require_permission(current_user, AR_REPORTS_VIEW)
+    
+    return ar_new.get_customer_credit_analysis(db, customer_id, current_user.company_id)
+
+# Financial Reporting endpoints
+@router.get("/reports/bad-debt-expense", response_model=schemas.BadDebtExpenseReport)
+def get_bad_debt_expense_report(
+    start_date: date,
+    end_date: date,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get bad debt expense report for P&L"""
+    require_permission(current_user, AR_REPORTS_VIEW)
+    return ar_new.get_bad_debt_expense_report(db, current_user.company_id, start_date, end_date)
+
+@router.get("/reports/aging-with-writeoffs", response_model=List[schemas.ARAgingWithWriteoffs])
+def get_ar_aging_with_writeoffs(
+    as_of_date: date,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get AR aging report including write-off analysis"""
+    require_permission(current_user, AR_REPORTS_VIEW)
+    return ar_new.get_ar_aging_with_writeoffs(db, current_user.company_id, as_of_date)
+
+@router.get("/reports/writeoff-recoveries", response_model=List[schemas.WriteOffRecovery])
+def get_writeoff_recoveries(
+    start_date: date,
+    end_date: date,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Get write-off recovery tracking"""
+    require_permission(current_user, AR_REPORTS_VIEW)
+    return ar_new.get_writeoff_recoveries(db, current_user.company_id, start_date, end_date)

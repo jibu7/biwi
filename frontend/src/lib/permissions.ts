@@ -29,6 +29,7 @@ export const GL_REPORTS_VIEW = "gl:reports_view";
 export const AR_SETUP_MANAGE = "ar:setup_manage";
 export const AR_TRANSACTIONS_POST = "ar:transactions_post";
 export const AR_REPORTS_VIEW = "ar:reports_view";
+export const AR_WRITEOFF_APPROVE = "ar:writeoff_approve";
 
 // AP Permissions
 export const AP_SETUP_MANAGE = "ap:setup_manage";

@@ -2,7 +2,7 @@ from .core import User, Role, UserRole, Company, AccountingPeriod
 from .gl import GLAccount, GLJournalEntry, GLJournalEntryLine, GLTransactionType, GLDefaults
 from .ar import (
     Customer, SalesRepresentative, ARTransactionType, ARTransaction, 
-    ARAllocation, ARAllocationLine, ARDefaults
+    ARAllocation, ARAllocationLine, ARDefaults, ARWriteOff
 )
 from .ap import (
     Supplier, APTransactionType, APTransaction, APAllocation, 

@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, UniqueConstraint, Text, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
+from datetime import datetime
 from app.database.database import Base
 
 class Customer(Base):
@@ -129,6 +130,7 @@ class ARDefaults(Base):
     default_sales_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     default_receipt_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     default_sales_discount_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
+    default_bad_debt_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     
     # Relationships
     company = relationship("Company")
@@ -136,3 +138,44 @@ class ARDefaults(Base):
     default_sales_gl_account = relationship("GLAccount", foreign_keys=[default_sales_gl_account_id])
     default_receipt_gl_account = relationship("GLAccount", foreign_keys=[default_receipt_gl_account_id])
     default_sales_discount_gl_account = relationship("GLAccount", foreign_keys=[default_sales_discount_gl_account_id])
+    default_bad_debt_gl_account = relationship("GLAccount", foreign_keys=[default_bad_debt_gl_account_id])
+
+class ARWriteOff(Base):
+    __tablename__ = "ar_writeoffs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
+    original_invoice_id = Column(Integer, ForeignKey("ar_transactions.id"), nullable=False)
+    ar_transaction_type_id = Column(Integer, ForeignKey("ar_transaction_types.id"), nullable=False)
+    linked_gl_journal_entry_id = Column(Integer, ForeignKey("gl_journal_entries.id"), nullable=True)
+    
+    # Write-off details
+    document_number = Column(String, nullable=False)
+    writeoff_date = Column(Date, nullable=False)
+    writeoff_amount = Column(Numeric(precision=15, scale=2), nullable=False)
+    reason_code = Column(String, nullable=False)  # UNCOLLECTIBLE, CUSTOMER_BANKRUPTCY, SMALL_BALANCE, etc.
+    reason_description = Column(Text, nullable=True)
+    
+    # Approval workflow
+    status = Column(String, nullable=False, default="Draft")  # Draft, Approved, Rejected, Posted
+    requested_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    approved_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    approval_date = Column(DateTime, nullable=True)
+    approval_notes = Column(Text, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    company = relationship("Company")
+    customer = relationship("Customer")
+    original_invoice = relationship("ARTransaction")
+    ar_transaction_type = relationship("ARTransactionType")
+    requested_by = relationship("User", foreign_keys=[requested_by_user_id])
+    approved_by = relationship("User", foreign_keys=[approved_by_user_id])
+    
+    __table_args__ = (
+        UniqueConstraint('document_number', 'company_id', name='uq_writeoff_document_company'),
+    )

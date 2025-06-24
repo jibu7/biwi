@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FileText, CreditCard, Receipt, Minus } from 'lucide-react';
+import { FileText, CreditCard, Receipt, Minus, AlertTriangle } from 'lucide-react';
 
 export default function ARTransactionsPage() {
   return (
@@ -73,6 +73,22 @@ export default function ARTransactionsPage() {
                 <h3 className="font-semibold text-gray-900">AR Allocations</h3>
                 <p className="text-sm text-gray-600">
                   Allocate receipts to outstanding invoices
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/transactions/ar/writeoffs">
+          <div className="group cursor-pointer rounded-lg border border-gray-200 p-6 hover:bg-gray-50 hover:border-gray-300 transition-colors bg-white">
+            <div className="flex items-center space-x-4">
+              <div className="p-2 rounded-md bg-orange-100 text-orange-600 group-hover:bg-orange-200">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Write-offs</h3>
+                <p className="text-sm text-gray-600">
+                  Manage bad debt write-offs and approvals
                 </p>
               </div>
             </div>

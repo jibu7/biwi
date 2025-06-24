@@ -26,12 +26,12 @@ export default function CustomerAgingReportPage() {
   const getTotals = () => {
     return agingData.reduce(
       (totals, item) => ({
-        current_balance: totals.current_balance + item.current_balance,
+        current_balance: totals.current_balance + (item.total_due || item.current_balance || 0),
         current: totals.current + item.current,
-        days_1_30: totals.days_1_30 + item.days_1_30,
-        days_31_60: totals.days_31_60 + item.days_31_60,
-        days_61_90: totals.days_61_90 + item.days_61_90,
-        over_90: totals.over_90 + item.over_90,
+        days_1_30: totals.days_1_30 + (item.days_30 || item.days_1_30 || 0),
+        days_31_60: totals.days_31_60 + (item.days_60 || item.days_31_60 || 0),
+        days_61_90: totals.days_61_90 + (item.days_90 || item.days_61_90 || 0),
+        over_90: totals.over_90 + (item.days_120_plus || item.over_90 || 0),
       }),
       {
         current_balance: 0,
@@ -182,7 +182,7 @@ export default function CustomerAgingReportPage() {
                 <Users className="h-5 w-5 text-gray-600" />
                 <div>
                   <p className="text-sm text-gray-600">Customers with Balance</p>
-                  <p className="text-2xl font-bold">{agingData.filter(item => item.current_balance > 0).length}</p>
+                  <p className="text-2xl font-bold">{agingData.filter(item => (item.current_balance || item.total_due || 0) > 0).length}</p>
                 </div>
               </div>
             </div>

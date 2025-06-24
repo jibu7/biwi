@@ -1,10 +1,11 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, and_, desc
 from typing import Optional, List
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from decimal import Decimal
 from fastapi import HTTPException
 from app import models, schemas
+from app.schemas import ar as ar_schemas
 from app.crud import gl as crud_gl
 
 # Customer CRUD
@@ -602,3 +603,564 @@ def get_customer_statement(
         period_start=start_date,
         period_end=end_date
     )
+
+# AR Write-off CRUD
+def generate_writeoff_document_number(
+    db: Session, 
+    company_id: int
+) -> str:
+    """Generate next document number for write-off"""
+    # Get the count of existing write-offs for this company
+    count = db.query(models.ARWriteOff).filter(
+        models.ARWriteOff.company_id == company_id
+    ).count()
+    
+    return f"WO-{count + 1:06d}"
+
+def get_ar_writeoffs(
+    db: Session,
+    company_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    customer_id: Optional[int] = None,
+    status: Optional[str] = None
+) -> List[models.ARWriteOff]:
+    """Get write-offs with filters"""
+    query = db.query(models.ARWriteOff).filter(
+        models.ARWriteOff.company_id == company_id
+    ).options(
+        joinedload(models.ARWriteOff.customer),
+        joinedload(models.ARWriteOff.original_invoice),
+        joinedload(models.ARWriteOff.requested_by),
+        joinedload(models.ARWriteOff.approved_by)
+    )
+    
+    if customer_id:
+        query = query.filter(models.ARWriteOff.customer_id == customer_id)
+    
+    if status:
+        query = query.filter(models.ARWriteOff.status == status)
+    
+    return query.order_by(desc(models.ARWriteOff.created_at)).offset(skip).limit(limit).all()
+
+def get_ar_writeoff(
+    db: Session,
+    writeoff_id: int,
+    company_id: int
+) -> Optional[models.ARWriteOff]:
+    """Get a single write-off"""
+    return db.query(models.ARWriteOff).filter(
+        models.ARWriteOff.id == writeoff_id,
+        models.ARWriteOff.company_id == company_id
+    ).options(
+        joinedload(models.ARWriteOff.customer),
+        joinedload(models.ARWriteOff.original_invoice),
+        joinedload(models.ARWriteOff.requested_by),
+        joinedload(models.ARWriteOff.approved_by)
+    ).first()
+
+def create_ar_writeoff(
+    db: Session,
+    writeoff_in: schemas.ARWriteOffCreate,
+    company_id: int,
+    user_id: int
+) -> models.ARWriteOff:
+    """Create a new write-off request"""
+    
+    # Validate original invoice
+    original_invoice = db.query(models.ARTransaction).filter(
+        models.ARTransaction.id == writeoff_in.original_invoice_id,
+        models.ARTransaction.company_id == company_id,
+        models.ARTransaction.open_amount > 0
+    ).first()
+    
+    if not original_invoice:
+        raise ValueError("Original invoice not found or has no outstanding balance")
+    
+    if writeoff_in.writeoff_amount > original_invoice.open_amount:
+        raise ValueError("Write-off amount cannot exceed outstanding invoice balance")
+    
+    # Get write-off transaction type
+    writeoff_trans_type = db.query(models.ARTransactionType).filter(
+        models.ARTransactionType.company_id == company_id,
+        models.ARTransactionType.base_type == "Write-off",
+        models.ARTransactionType.is_active == True
+    ).first()
+    
+    if not writeoff_trans_type:
+        raise ValueError("Write-off transaction type not configured")
+    
+    # Generate document number
+    doc_number = generate_writeoff_document_number(db, company_id)
+    
+    # Create write-off
+    db_writeoff = models.ARWriteOff(
+        company_id=company_id,
+        customer_id=writeoff_in.customer_id,
+        original_invoice_id=writeoff_in.original_invoice_id,
+        ar_transaction_type_id=writeoff_trans_type.id,
+        document_number=doc_number,
+        writeoff_date=writeoff_in.writeoff_date,
+        writeoff_amount=writeoff_in.writeoff_amount,
+        reason_code=writeoff_in.reason_code,
+        reason_description=writeoff_in.reason_description,
+        status="Draft",
+        requested_by_user_id=user_id
+    )
+    
+    db.add(db_writeoff)
+    db.commit()
+    db.refresh(db_writeoff)
+    
+    return db_writeoff
+
+def approve_ar_writeoff(
+    db: Session,
+    writeoff_id: int,
+    approval_in: schemas.ARWriteOffApproval,
+    company_id: int,
+    user_id: int
+) -> models.ARWriteOff:
+    """Approve or reject a write-off"""
+    
+    # Get write-off
+    writeoff = get_ar_writeoff(db, writeoff_id, company_id)
+    if not writeoff:
+        raise ValueError("Write-off not found")
+    
+    if writeoff.status != "Draft":
+        raise ValueError("Only draft write-offs can be approved/rejected")
+    
+    # Update write-off status
+    writeoff.approved_by_user_id = user_id
+    writeoff.approval_date = datetime.utcnow()
+    writeoff.approval_notes = approval_in.approval_notes
+    
+    if approval_in.approval_decision == "APPROVE":
+        writeoff.status = "Approved"
+        
+        # Post to GL and update invoice
+        _post_writeoff_to_gl(db, writeoff, company_id, user_id)
+        
+    else:  # REJECT
+        writeoff.status = "Rejected"
+    
+    db.commit()
+    db.refresh(writeoff)
+    
+    return writeoff
+
+def _post_writeoff_to_gl(
+    db: Session,
+    writeoff: models.ARWriteOff,
+    company_id: int,
+    user_id: int
+):
+    """Post write-off to GL and update invoice balance"""
+    from app.crud import gl as crud_gl
+    from app.schemas import gl as gl_schemas
+    
+    # Get AR defaults for GL accounts
+    ar_defaults = get_ar_defaults(db, company_id)
+    if not ar_defaults or not ar_defaults.default_ar_control_gl_account_id:
+        raise ValueError("AR defaults not configured")
+    
+    if not ar_defaults.default_bad_debt_gl_account_id:
+        raise ValueError("Bad debt GL account not configured")
+    
+    # Create GL journal entry
+    gl_lines = [
+        gl_schemas.GLJournalEntryLineCreate(
+            gl_account_id=ar_defaults.default_bad_debt_gl_account_id,
+            description=f"Bad Debt Write-off {writeoff.document_number}",
+            debit_amount=writeoff.writeoff_amount,
+            credit_amount=Decimal('0.00')
+        ),
+        gl_schemas.GLJournalEntryLineCreate(
+            gl_account_id=ar_defaults.default_ar_control_gl_account_id,
+            description=f"AR Write-off {writeoff.document_number}",
+            debit_amount=Decimal('0.00'),
+            credit_amount=writeoff.writeoff_amount
+        )
+    ]
+    
+    gl_entry_in = gl_schemas.GLJournalEntryCreate(
+        entry_date=writeoff.writeoff_date,
+        reference=writeoff.document_number,
+        description=f"Bad Debt Write-off - {writeoff.customer.name}",
+        lines=gl_lines
+    )
+    
+    # Create and post GL entry
+    gl_entry = crud_gl.create_gl_journal_entry(db, gl_entry_in, company_id, user_id)
+    crud_gl.post_gl_journal_entry(db, gl_entry.id, company_id)
+    
+    # Link GL entry to write-off
+    writeoff.linked_gl_journal_entry_id = gl_entry.id
+    writeoff.status = "Posted"
+    
+    # Update original invoice balance
+    original_invoice = writeoff.original_invoice
+    original_invoice.open_amount -= writeoff.writeoff_amount
+    
+    if original_invoice.open_amount <= 0:
+        original_invoice.status = "Written Off"
+    elif original_invoice.open_amount < original_invoice.total_amount:
+        original_invoice.status = "Partially Written Off"
+    
+    # Update customer balance
+    customer = writeoff.customer
+    customer.current_balance -= writeoff.writeoff_amount
+
+def update_ar_writeoff(
+    db: Session,
+    writeoff_id: int,
+    writeoff_update: schemas.ARWriteOffUpdate,
+    company_id: int
+) -> Optional[models.ARWriteOff]:
+    """Update a write-off (only if in Draft status)"""
+    
+    writeoff = get_ar_writeoff(db, writeoff_id, company_id)
+    if not writeoff:
+        return None
+    
+    if writeoff.status != "Draft":
+        raise ValueError("Only draft write-offs can be updated")
+    
+    # Update fields
+    update_data = writeoff_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        if hasattr(writeoff, field):
+            setattr(writeoff, field, value)
+    
+    writeoff.updated_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(writeoff)
+    
+    return writeoff
+
+def delete_ar_writeoff(
+    db: Session,
+    writeoff_id: int,
+    company_id: int
+) -> bool:
+    """Delete a write-off (only if in Draft status)"""
+    
+    writeoff = get_ar_writeoff(db, writeoff_id, company_id)
+    if not writeoff:
+        return False
+    
+    if writeoff.status != "Draft":
+        raise ValueError("Only draft write-offs can be deleted")
+    
+    db.delete(writeoff)
+    db.commit()
+    
+    return True
+
+# Customer Write-off Analytics
+def get_customer_writeoff_summary(
+    db: Session,
+    customer_id: int,
+    company_id: int
+) -> ar_schemas.CustomerWriteOffSummary:
+    """Get write-off summary for a customer"""
+    
+    # Get write-off totals
+    writeoff_query = db.query(
+        func.count(models.ARWriteOff.id).label('writeoff_count'),
+        func.coalesce(func.sum(models.ARWriteOff.writeoff_amount), 0).label('total_writeoffs'),
+        func.max(models.ARWriteOff.writeoff_date).label('last_writeoff_date')
+    ).filter(
+        models.ARWriteOff.customer_id == customer_id,
+        models.ARWriteOff.company_id == company_id,
+        models.ARWriteOff.status == 'Posted'
+    ).first()
+    
+    # Get total sales for percentage calculation
+    total_sales = db.query(
+        func.coalesce(func.sum(models.ARTransaction.total_amount), 0)
+    ).join(models.ARTransactionType).filter(
+        models.ARTransaction.customer_id == customer_id,
+        models.ARTransaction.company_id == company_id,
+        models.ARTransactionType.base_type == 'Invoice'
+    ).scalar() or Decimal('0.00')
+    
+    writeoff_percentage = Decimal('0.00')
+    if total_sales > 0:
+        writeoff_percentage = (writeoff_query.total_writeoffs / total_sales) * 100
+    
+    # Determine risk level
+    risk_level = "LOW"
+    if writeoff_percentage > 10:
+        risk_level = "HIGH"
+    elif writeoff_percentage > 5:
+        risk_level = "MEDIUM"
+    
+    return ar_schemas.CustomerWriteOffSummary(
+        total_writeoffs=writeoff_query.total_writeoffs,
+        writeoff_count=writeoff_query.writeoff_count,
+        last_writeoff_date=writeoff_query.last_writeoff_date,
+        writeoff_percentage=writeoff_percentage,
+        risk_level=risk_level
+    )
+
+def get_customer_credit_analysis(
+    db: Session,
+    customer_id: int,
+    company_id: int
+) -> ar_schemas.CustomerCreditAnalysis:
+    """Get comprehensive credit analysis for a customer"""
+    
+    customer = get_customer(db, customer_id, company_id)
+    if not customer:
+        raise ValueError("Customer not found")
+    
+    # Get write-off summary
+    writeoff_summary = get_customer_writeoff_summary(db, customer_id, company_id)
+    
+    # Calculate overdue amounts
+    today = date.today()
+    overdue_query = db.query(
+        func.coalesce(func.sum(models.ARTransaction.open_amount), 0).label('overdue_amount'),
+        func.min(models.ARTransaction.due_date).label('oldest_due_date')
+    ).filter(
+        models.ARTransaction.customer_id == customer_id,
+        models.ARTransaction.company_id == company_id,
+        models.ARTransaction.open_amount > 0,
+        models.ARTransaction.due_date < today
+    ).first()
+    
+    days_overdue = 0
+    if overdue_query.oldest_due_date:
+        days_overdue = (today - overdue_query.oldest_due_date).days
+    
+    # Calculate credit utilization
+    credit_utilization = Decimal('0.00')
+    if customer.credit_limit > 0:
+        credit_utilization = (customer.current_balance / customer.credit_limit) * 100
+    
+    # Determine recommended action
+    recommended_action = "APPROVED"
+    if writeoff_summary.risk_level == "HIGH":
+        recommended_action = "HOLD_ORDERS"
+    elif credit_utilization > 90:
+        recommended_action = "REVIEW"
+    elif days_overdue > 90:
+        recommended_action = "DECREASE_LIMIT"
+    elif writeoff_summary.risk_level == "LOW" and credit_utilization < 50:
+        recommended_action = "INCREASE_LIMIT"
+    
+    return ar_schemas.CustomerCreditAnalysis(
+        customer_id=customer_id,
+        current_balance=customer.current_balance,
+        credit_limit=customer.credit_limit,
+        credit_utilization=credit_utilization,
+        writeoff_summary=writeoff_summary,
+        overdue_amount=overdue_query.overdue_amount,
+        days_overdue=days_overdue,
+        recommended_action=recommended_action
+    )
+
+def get_customer_with_analytics(
+    db: Session,
+    customer_id: int,
+    company_id: int
+) -> ar_schemas.CustomerWithAnalytics:
+    """Get customer with write-off analytics"""
+    
+    customer = get_customer(db, customer_id, company_id)
+    if not customer:
+        raise ValueError("Customer not found")
+    
+    writeoff_summary = get_customer_writeoff_summary(db, customer_id, company_id)
+    credit_analysis = get_customer_credit_analysis(db, customer_id, company_id)
+    
+    return ar_schemas.CustomerWithAnalytics(
+        **customer.__dict__,
+        writeoff_summary=writeoff_summary,
+        credit_analysis=credit_analysis
+    )
+
+# Financial Reporting Functions
+def get_bad_debt_expense_report(
+    db: Session,
+    company_id: int,
+    start_date: date,
+    end_date: date
+) -> ar_schemas.BadDebtExpenseReport:
+    """Generate bad debt expense report for a period"""
+    
+    # Get total write-offs for period
+    writeoffs_query = db.query(
+        func.count(models.ARWriteOff.id).label('writeoff_count'),
+        func.coalesce(func.sum(models.ARWriteOff.writeoff_amount), 0).label('total_writeoffs')
+    ).filter(
+        models.ARWriteOff.company_id == company_id,
+        models.ARWriteOff.status == 'Posted',
+        models.ARWriteOff.writeoff_date >= start_date,
+        models.ARWriteOff.writeoff_date <= end_date
+    ).first()
+    
+    # Get write-offs by reason
+    writeoffs_by_reason = db.query(
+        models.ARWriteOff.reason_code,
+        func.count(models.ARWriteOff.id).label('count'),
+        func.sum(models.ARWriteOff.writeoff_amount).label('amount')
+    ).filter(
+        models.ARWriteOff.company_id == company_id,
+        models.ARWriteOff.status == 'Posted',
+        models.ARWriteOff.writeoff_date >= start_date,
+        models.ARWriteOff.writeoff_date <= end_date
+    ).group_by(models.ARWriteOff.reason_code).all()
+    
+    # Get write-offs by customer
+    writeoffs_by_customer = db.query(
+        models.Customer.name,
+        func.count(models.ARWriteOff.id).label('count'),
+        func.sum(models.ARWriteOff.writeoff_amount).label('amount')
+    ).join(models.Customer).filter(
+        models.ARWriteOff.company_id == company_id,
+        models.ARWriteOff.status == 'Posted',
+        models.ARWriteOff.writeoff_date >= start_date,
+        models.ARWriteOff.writeoff_date <= end_date
+    ).group_by(models.Customer.name).all()
+    
+    # Calculate recovery amount (payments received after write-off)
+    # This would require tracking payments against written-off invoices
+    recovery_amount = Decimal('0.00')  # Placeholder for now
+    
+    return ar_schemas.BadDebtExpenseReport(
+        period_start=start_date,
+        period_end=end_date,
+        total_writeoffs=writeoffs_query.total_writeoffs,
+        writeoff_count=writeoffs_query.writeoff_count,
+        writeoffs_by_reason=[
+            {"reason_code": r.reason_code, "amount": float(r.amount), "count": r.count}
+            for r in writeoffs_by_reason
+        ],
+        writeoffs_by_customer=[
+            {"customer_name": c.name, "amount": float(c.amount), "count": c.count}
+            for c in writeoffs_by_customer
+        ],
+        recovery_amount=recovery_amount
+    )
+
+def get_ar_aging_with_writeoffs(
+    db: Session,
+    company_id: int,
+    as_of_date: date
+) -> List[ar_schemas.ARAgingWithWriteoffs]:
+    """Get AR aging report including write-off information"""
+    
+    customers = db.query(models.Customer).filter(
+        models.Customer.company_id == company_id,
+        models.Customer.is_active == True
+    ).all()
+    
+    aging_data = []
+    
+    for customer in customers:
+        # Get aging buckets using SQLAlchemy
+        from sqlalchemy import text
+        
+        aging_query = text("""
+        SELECT
+            SUM(CASE 
+                WHEN COALESCE(due_date, transaction_date) >= :as_of_date THEN open_amount 
+                ELSE 0 
+            END) as current,
+            SUM(CASE 
+                WHEN COALESCE(due_date, transaction_date) < :as_of_date 
+                AND COALESCE(due_date, transaction_date) >= :days_30_ago THEN open_amount 
+                ELSE 0 
+            END) as days_30,
+            SUM(CASE 
+                WHEN COALESCE(due_date, transaction_date) < :days_30_ago 
+                AND COALESCE(due_date, transaction_date) >= :days_60_ago THEN open_amount 
+                ELSE 0 
+            END) as days_60,
+            SUM(CASE 
+                WHEN COALESCE(due_date, transaction_date) < :days_60_ago 
+                AND COALESCE(due_date, transaction_date) >= :days_90_ago THEN open_amount 
+                ELSE 0 
+            END) as days_90,
+            SUM(CASE 
+                WHEN COALESCE(due_date, transaction_date) < :days_120_ago THEN open_amount 
+                ELSE 0 
+            END) as days_120_plus,
+            SUM(open_amount) as total_due
+        FROM ar_transactions 
+        WHERE customer_id = :customer_id AND company_id = :company_id AND open_amount > 0
+        """)
+        
+        days_30_ago = as_of_date - timedelta(days=30)
+        days_60_ago = as_of_date - timedelta(days=60)
+        days_90_ago = as_of_date - timedelta(days=90)
+        days_120_ago = as_of_date - timedelta(days=120)
+        
+        result = db.execute(aging_query, {
+            'as_of_date': as_of_date,
+            'days_30_ago': days_30_ago,
+            'days_60_ago': days_60_ago,
+            'days_90_ago': days_90_ago,
+            'days_120_ago': days_120_ago,
+            'customer_id': customer.id,
+            'company_id': company_id
+        }).first()
+        
+        if result and result.total_due and result.total_due > 0:
+            # Get YTD write-offs for customer
+            ytd_start = date(as_of_date.year, 1, 1)
+            ytd_writeoffs = db.query(
+                func.coalesce(func.sum(models.ARWriteOff.writeoff_amount), 0)
+            ).filter(
+                models.ARWriteOff.customer_id == customer.id,
+                models.ARWriteOff.company_id == company_id,
+                models.ARWriteOff.status == 'Posted',
+                models.ARWriteOff.writeoff_date >= ytd_start,
+                models.ARWriteOff.writeoff_date <= as_of_date
+            ).scalar() or Decimal('0.00')
+            
+            # Calculate write-off percentage
+            total_exposure = result.total_due + ytd_writeoffs
+            writeoff_percentage = Decimal('0.00')
+            if total_exposure > 0:
+                writeoff_percentage = (ytd_writeoffs / total_exposure) * 100
+            
+            # Determine risk level
+            risk_level = "LOW"
+            if writeoff_percentage > 10:
+                risk_level = "HIGH"
+            elif writeoff_percentage > 5:
+                risk_level = "MEDIUM"
+            
+            aging_data.append(ar_schemas.ARAgingWithWriteoffs(
+                customer_id=customer.id,
+                customer_code=customer.customer_code,
+                customer_name=customer.name,
+                current=result.current or Decimal('0.00'),
+                days_30=result.days_30 or Decimal('0.00'),
+                days_60=result.days_60 or Decimal('0.00'),
+                days_90=result.days_90 or Decimal('0.00'),
+                days_120_plus=result.days_120_plus or Decimal('0.00'),
+                total_due=result.total_due or Decimal('0.00'),
+                total_writeoffs_ytd=ytd_writeoffs,
+                writeoff_percentage=writeoff_percentage,
+                risk_level=risk_level
+            ))
+    
+    return aging_data
+
+def get_writeoff_recoveries(
+    db: Session,
+    company_id: int,
+    start_date: date,
+    end_date: date
+) -> List[ar_schemas.WriteOffRecovery]:
+    """Get write-off recoveries (payments received after write-off)"""
+    
+    # This is a placeholder - would require tracking payments against written-off invoices
+    # For now, return empty list
+    return []

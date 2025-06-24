@@ -3,6 +3,9 @@ import {
   Customer,
   CustomerCreate,
   CustomerUpdate,
+  CustomerWithAnalytics,
+  CustomerWriteOffSummary,
+  CustomerCreditAnalysis,
   SalesRepresentative,
   SalesRepresentativeCreate,
   SalesRepresentativeUpdate,
@@ -16,8 +19,15 @@ import {
   ARAllocationCreate,
   ARDefaults,
   ARDefaultsUpdate,
+  ARWriteOff,
+  ARWriteOffCreate,
+  ARWriteOffUpdate,
+  ARWriteOffApproval,
   CustomerAgingReportItem,
   CustomerStatementItem,
+  BadDebtExpenseReport,
+  ARAgingWithWriteoffs,
+  WriteOffRecovery,
 } from '@/types/ar';
 
 // Customer API functions
@@ -72,6 +82,22 @@ export const customerService = {
       console.error('Error deleting customer:', error);
       throw error;
     }
+  },
+
+  // Customer Analytics
+  getCustomerAnalytics: async (customerId: number): Promise<CustomerWithAnalytics> => {
+    const response = await axiosInstance.get(`/ar/customers/${customerId}/analytics`);
+    return response.data;
+  },
+
+  getCustomerWriteOffSummary: async (customerId: number): Promise<CustomerWriteOffSummary> => {
+    const response = await axiosInstance.get(`/ar/customers/${customerId}/writeoff-summary`);
+    return response.data;
+  },
+
+  getCustomerCreditAnalysis: async (customerId: number): Promise<CustomerCreditAnalysis> => {
+    const response = await axiosInstance.get(`/ar/customers/${customerId}/credit-analysis`);
+    return response.data;
   },
 };
 
@@ -224,5 +250,101 @@ export const arReportsService = {
       params: { from_date: fromDate, to_date: toDate },
     });
     return response.data;
+  },
+
+  // Financial Reporting
+  getBadDebtExpenseReport: async (startDate: string, endDate: string): Promise<BadDebtExpenseReport> => {
+    const response = await axiosInstance.get('/ar/reports/bad-debt-expense', {
+      params: { start_date: startDate, end_date: endDate }
+    });
+    return response.data;
+  },
+
+  getARAgingWithWriteoffs: async (asOfDate: string): Promise<ARAgingWithWriteoffs[]> => {
+    const response = await axiosInstance.get('/ar/reports/aging-with-writeoffs', {
+      params: { as_of_date: asOfDate }
+    });
+    return response.data;
+  },
+
+  getWriteOffRecoveries: async (startDate: string, endDate: string): Promise<WriteOffRecovery[]> => {
+    const response = await axiosInstance.get('/ar/reports/writeoff-recoveries', {
+      params: { start_date: startDate, end_date: endDate }
+    });
+    return response.data;
+  },
+};
+
+// Write-off service functions
+export const writeOffService = {
+  getAll: async (): Promise<ARWriteOff[]> => {
+    try {
+      const response = await axiosInstance.get('/ar/writeoffs');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching write-offs:', error);
+      throw error;
+    }
+  },
+
+  getById: async (id: number): Promise<ARWriteOff> => {
+    try {
+      const response = await axiosInstance.get(`/ar/writeoffs/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching write-off:', error);
+      throw error;
+    }
+  },
+
+  create: async (data: ARWriteOffCreate): Promise<ARWriteOff> => {
+    try {
+      console.log('Creating write-off with data:', data);
+      const response = await axiosInstance.post('/ar/writeoffs', data);
+      console.log('Write-off created successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating write-off:', error);
+      throw error;
+    }
+  },
+
+  update: async (id: number, data: ARWriteOffUpdate): Promise<ARWriteOff> => {
+    try {
+      const response = await axiosInstance.put(`/ar/writeoffs/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating write-off:', error);
+      throw error;
+    }
+  },
+
+  approve: async (id: number, approval: ARWriteOffApproval): Promise<ARWriteOff> => {
+    try {
+      const response = await axiosInstance.post(`/ar/writeoffs/${id}/approve`, approval);
+      return response.data;
+    } catch (error) {
+      console.error('Error approving write-off:', error);
+      throw error;
+    }
+  },
+
+  reject: async (id: number, approval: ARWriteOffApproval): Promise<ARWriteOff> => {
+    try {
+      const response = await axiosInstance.post(`/ar/writeoffs/${id}/reject`, approval);
+      return response.data;
+    } catch (error) {
+      console.error('Error rejecting write-off:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id: number): Promise<void> => {
+    try {
+      await axiosInstance.delete(`/ar/writeoffs/${id}`);
+    } catch (error) {
+      console.error('Error deleting write-off:', error);
+      throw error;
+    }
   },
 };
