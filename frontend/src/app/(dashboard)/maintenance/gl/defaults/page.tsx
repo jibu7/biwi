@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -36,17 +37,25 @@ export default function GLDefaultsPage() {
     reset,
   } = useForm<DefaultsFormData>({
     resolver: zodResolver(defaultsSchema),
+    defaultValues: {
+      retained_earnings_account_id: defaults?.retained_earnings_account_id || null,
+      default_cash_account_id: defaults?.default_cash_account_id || null,
+      default_ar_control_account_id: defaults?.default_ar_control_account_id || null,
+      default_ap_control_account_id: defaults?.default_ap_control_account_id || null,
+    }
   });
 
-  // Reset form when data loads
-  if (defaults && !errors.retained_earnings_account_id) {
-    reset({
-      retained_earnings_account_id: defaults.retained_earnings_account_id || null,
-      default_cash_account_id: defaults.default_cash_account_id || null,
-      default_ar_control_account_id: defaults.default_ar_control_account_id || null,
-      default_ap_control_account_id: defaults.default_ap_control_account_id || null,
-    });
-  }
+  // Reset form when data loads using useEffect
+  React.useEffect(() => {
+    if (defaults) {
+      reset({
+        retained_earnings_account_id: defaults.retained_earnings_account_id || null,
+        default_cash_account_id: defaults.default_cash_account_id || null,
+        default_ar_control_account_id: defaults.default_ar_control_account_id || null,
+        default_ap_control_account_id: defaults.default_ap_control_account_id || null,
+      });
+    }
+  }, [defaults, reset]);
 
   const updateMutation = useMutation({
     mutationFn: glService.updateGLDefaults,

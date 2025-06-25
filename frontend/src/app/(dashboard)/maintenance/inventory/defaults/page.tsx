@@ -47,7 +47,11 @@ export default function InventoryDefaultsPage() {
     mutationFn: updateInventoryDefaults,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-defaults'] });
-      router.refresh();
+      alert('Inventory defaults saved successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Failed to update defaults:', error);
+      alert(`Failed to save defaults: ${error.response?.data?.detail || error.message}`);
     },
   });
 
@@ -74,13 +78,16 @@ export default function InventoryDefaultsPage() {
 
   const onSubmit = async (data: DefaultsFormData) => {
     try {
+      console.log('Form data submitted:', data);
       // Convert undefined to null for API
       const cleanData = Object.fromEntries(
         Object.entries(data).map(([key, value]) => [key, value || null])
       );
+      console.log('Clean data for API:', cleanData);
       await updateMutation.mutateAsync(cleanData as InventoryDefaultsUpdate);
     } catch (error) {
       console.error('Failed to update defaults:', error);
+      alert(`Error: ${error}`);
     }
   };
 
@@ -104,7 +111,9 @@ export default function InventoryDefaultsPage() {
               Default Warehouse
             </label>
             <select
-              {...register('default_warehouse_id', { valueAsNumber: true })}
+              {...register('default_warehouse_id', { 
+                setValueAs: (value) => value === '' ? undefined : Number(value)
+              })}
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select default warehouse</option>
@@ -129,7 +138,9 @@ export default function InventoryDefaultsPage() {
                 Default Inventory Asset Account
               </label>
               <select
-                {...register('default_inventory_gl_account_id', { valueAsNumber: true })}
+                {...register('default_inventory_gl_account_id', { 
+                  setValueAs: (value) => value === '' ? undefined : Number(value)
+                })}
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select inventory account</option>
@@ -149,7 +160,9 @@ export default function InventoryDefaultsPage() {
                 Default Cost of Goods Sold Account
               </label>
               <select
-                {...register('default_cogs_gl_account_id', { valueAsNumber: true })}
+                {...register('default_cogs_gl_account_id', { 
+                  setValueAs: (value) => value === '' ? undefined : Number(value)
+                })}
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select COGS account</option>
@@ -169,7 +182,9 @@ export default function InventoryDefaultsPage() {
                 Default Sales Revenue Account
               </label>
               <select
-                {...register('default_sales_revenue_gl_account_id', { valueAsNumber: true })}
+                {...register('default_sales_revenue_gl_account_id', { 
+                  setValueAs: (value) => value === '' ? undefined : Number(value)
+                })}
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select sales revenue account</option>
@@ -189,7 +204,9 @@ export default function InventoryDefaultsPage() {
                 Default Inventory Adjustment Account
               </label>
               <select
-                {...register('default_inventory_adjustment_gl_account_id', { valueAsNumber: true })}
+                {...register('default_inventory_adjustment_gl_account_id', { 
+                  setValueAs: (value) => value === '' ? undefined : Number(value)
+                })}
                 className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select adjustment account</option>

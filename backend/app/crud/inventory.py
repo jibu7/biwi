@@ -489,7 +489,7 @@ def process_warehouse_transfer(
             )
         ]
         
-        gl_entry = crud_gl.create_journal_entry(
+        gl_entry = crud_gl.create_gl_journal_entry(
             db,
             schemas.GLJournalEntryCreate(
                 entry_date=transfer_date,

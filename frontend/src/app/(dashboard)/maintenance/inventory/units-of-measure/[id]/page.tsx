@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { getUnitOfMeasure, updateUnitOfMeasure } from '@/services/inventoryService';
 import { UnitOfMeasureUpdate } from '@/types/inventory';
 
@@ -18,11 +18,20 @@ const unitOfMeasureSchema = z.object({
 
 type UnitOfMeasureFormData = z.infer<typeof unitOfMeasureSchema>;
 
-export default function EditUnitOfMeasurePage() {
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function EditUnitOfMeasurePage({ params }: PageProps) {
   const router = useRouter();
-  const params = useParams();
-  const unitId = resolvedParams ? Number(resolvedParams.id) : 0;
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    params.then(setResolvedParams);
+  }, [params]);
+
+  const unitId = resolvedParams ? Number(resolvedParams.id) : 0;
 
   const { data: unit, isLoading } = useQuery({
     queryKey: ['unit-of-measure', unitId],
