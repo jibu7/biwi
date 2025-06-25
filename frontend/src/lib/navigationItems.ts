@@ -14,7 +14,9 @@ import {
   Globe,
   Percent,
   GitBranch,
-  Settings
+  Settings,
+  Factory,
+  Wrench
 } from 'lucide-react';
 import * as permissions from './permissions';
 
@@ -208,6 +210,24 @@ export const navItems: NavItem[] = [
             requiredPermission: permissions.OE_SETUP_MANAGE 
           }
         ]
+      },
+      {
+        label: "BOM Setup",
+        href: "/maintenance/bom",
+        icon: Wrench,
+        requiredPermission: permissions.BOM_SETUP_MANAGE,
+        children: [
+          { 
+            label: "Bill of Materials", 
+            href: "/maintenance/bom/bills", 
+            requiredPermission: permissions.BOM_SETUP_MANAGE 
+          },
+          { 
+            label: "Defaults", 
+            href: "/maintenance/bom/defaults", 
+            requiredPermission: permissions.BOM_SETUP_MANAGE 
+          }
+        ]
       }
     ]
   },
@@ -369,6 +389,24 @@ export const navItems: NavItem[] = [
                 requiredPermission: permissions.OE_GRV_PROCESS 
               }
             ]
+          }
+        ]
+      },
+      {
+        label: "BOM",
+        href: "/transactions/bom",
+        icon: Factory,
+        requiredPermission: permissions.BOM_MANUFACTURING_PROCESS,
+        children: [
+          { 
+            label: "New Manufacturing Order", 
+            href: "/transactions/bom/manufacturing-orders/new", 
+            requiredPermission: permissions.BOM_MANUFACTURING_PROCESS 
+          },
+          { 
+            label: "View Manufacturing Orders", 
+            href: "/transactions/bom/manufacturing-orders", 
+            requiredPermission: permissions.BOM_MANUFACTURING_PROCESS 
           }
         ]
       }
@@ -547,6 +585,23 @@ export const navItems: NavItem[] = [
             label: "GRV Listing", 
             href: "/reports/oe/grvs", 
             requiredPermission: permissions.OE_REPORTS_VIEW 
+          }
+        ]
+      },
+      {
+        label: "BOM Reports",
+        href: "/reports/bom",
+        requiredPermission: permissions.BOM_REPORTS_VIEW,
+        children: [
+          { 
+            label: "Material Requirements", 
+            href: "/reports/bom/mrp", 
+            requiredPermission: permissions.BOM_REPORTS_VIEW 
+          },
+          { 
+            label: "Manufacturing Process", 
+            href: "/reports/bom/manufacturing-process", 
+            requiredPermission: permissions.BOM_REPORTS_VIEW 
           }
         ]
       },

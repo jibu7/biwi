@@ -1,4 +1,4 @@
-from . import core, gl, ar, ap, inventory, oe, common, reporting
+from . import core, gl, ar, ap, inventory, oe, common, reporting, bom
 
 # Inventory imports
 from .inventory import (
@@ -27,4 +27,13 @@ from .reporting import (
     update_report_template, delete_report_template, create_bank_reconciliation,
     get_bank_reconciliations_by_company, update_bank_reconciliation_status,
     add_reconciliation_item, get_unreconciled_transactions
+)
+
+# BOM imports
+from .bom import (
+    create_bom_header, get_bom_headers_by_company, get_bom_header, get_bom_header_by_item,
+    update_bom_header, delete_bom_header, create_manufacturing_order, get_manufacturing_orders_by_company,
+    get_manufacturing_order, update_manufacturing_order, release_manufacturing_order,
+    process_manufacturing_order, cancel_manufacturing_order, calculate_mrp, get_bom_cost_analysis,
+    get_or_create_bom_defaults, get_bom_defaults, update_bom_defaults, get_bom_where_used, copy_bom
 )

@@ -21,3 +21,7 @@ from .common import Currency, TaxType, Branch
 from .reporting import (
     ReportTemplate, ReportSchedule, BankReconciliation, BankReconciliationItem
 )
+from .bom import (
+    BOMHeader, BOMComponent, ManufacturingOrder, ManufacturingOrderComponent, 
+    BOMDefaults
+)

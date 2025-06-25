@@ -60,3 +60,8 @@ export const REPORTING_ADVANCED_AR = "reporting:advanced_ar";
 export const REPORTING_ADVANCED_AP = "reporting:advanced_ap";
 export const REPORTING_TEMPLATES_MANAGE = "reporting:templates_manage";
 export const REPORTING_BANK_RECONCILIATION = "reporting:bank_reconciliation";
+
+// BOM Permissions
+export const BOM_SETUP_MANAGE = "bom:setup_manage";
+export const BOM_MANUFACTURING_PROCESS = "bom:manufacturing_process";
+export const BOM_REPORTS_VIEW = "bom:reports_view";

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from .endpoints import auth, users, roles, companies, accounting_periods, gl, ar, ap, inventory, oe, common, reporting
+from .endpoints import auth, users, roles, companies, accounting_periods, gl, ar, ap, inventory, oe, common, reporting, bom
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -32,3 +32,6 @@ api_router.include_router(common.router, prefix="/common", tags=["common-setup"]
 
 # Financial reporting endpoints (Phase 9)
 api_router.include_router(reporting.router, prefix="/reporting", tags=["reporting"])
+
+# Bill of Materials endpoints (Phase 10)
+api_router.include_router(bom.router, prefix="/bom", tags=["bill-of-materials"])

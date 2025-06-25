@@ -264,3 +264,55 @@ export const getItemListing = async (activeOnly = true): Promise<any[]> => {
   });
   return response.data;
 };
+
+// Object wrapper for easier importing
+export const inventoryService = {
+  // Units of Measure
+  createUnitOfMeasure,
+  getUnitsOfMeasure,
+  getUnitOfMeasure,
+  updateUnitOfMeasure,
+  deleteUnitOfMeasure,
+
+  // Warehouses
+  createWarehouse,
+  getWarehouses,
+  getWarehouse,
+  updateWarehouse,
+  deleteWarehouse,
+
+  // Items
+  createInventoryItem,
+  getInventoryItems,
+  getInventoryItem,
+  updateInventoryItem,
+  deleteInventoryItem,
+  getItems: getInventoryItems, // Alias for compatibility
+
+  // Other functions
+  getItemBarcodes,
+  createItemBarcode,
+  deleteItemBarcode,
+  getInventoryTransactionTypes,
+  createInventoryTransactionType,
+  updateInventoryTransactionType,
+  deleteInventoryTransactionType,
+  getInventoryTransactions,
+  processInventoryAdjustment,
+  processWarehouseTransfer,
+  getInventoryDefaults,
+  updateInventoryDefaults,
+
+  // Inventory Count
+  startInventoryCount,
+  getInventoryCountSession,
+  getInventoryCountLines,
+  recordCountedQuantities,
+  processCountVariances,
+
+  // Reports
+  getInventoryValuation,
+  getInventoryMovement,
+  getStockQuantities,
+  getItemListing,
+};

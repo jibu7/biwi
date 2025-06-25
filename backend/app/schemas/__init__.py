@@ -75,6 +75,15 @@ from .reporting import (
     ARAgingDetail, APAgingDetail
 )
 
+from .bom import (
+    BOMHeaderBase, BOMHeaderCreate, BOMHeaderUpdate, BOMHeaderRead,
+    BOMComponentBase, BOMComponentCreate, BOMComponentUpdate, BOMComponentRead,
+    ManufacturingOrderBase, ManufacturingOrderCreate, ManufacturingOrderUpdate, ManufacturingOrderRead,
+    ManufacturingOrderComponentBase, ManufacturingOrderComponentCreate, ManufacturingOrderComponentRead,
+    BOMDefaultsBase, BOMDefaultsCreate, BOMDefaultsUpdate, BOMDefaultsRead,
+    MRPRequest, MRPResult
+)
+
 __all__ = [
     "Company", "CompanyCreate", "CompanyUpdate",
     "Role", "RoleCreate", "RoleUpdate", 
@@ -128,5 +137,11 @@ __all__ = [
     "FinancialStatementLine", "BalanceSheetData", "IncomeStatementData", "CashFlowData",
     "ReportTemplate", "ReportTemplateCreate", "ReportTemplateBase",
     "BankReconciliation", "BankReconciliationCreate", "BankReconciliationBase",
-    "ARAgingDetail", "APAgingDetail"
+    "ARAgingDetail", "APAgingDetail",
+    "BOMHeader", "BOMHeaderCreate", "BOMHeaderUpdate", "BOMHeaderRead",
+    "BOMComponent", "BOMComponentCreate", "BOMComponentUpdate", "BOMComponentRead",
+    "ManufacturingOrder", "ManufacturingOrderCreate", "ManufacturingOrderUpdate", "ManufacturingOrderRead",
+    "ManufacturingOrderComponent", "ManufacturingOrderComponentCreate", "ManufacturingOrderComponentRead",
+    "BOMDefaults", "BOMDefaultsCreate", "BOMDefaultsUpdate", "BOMDefaultsRead",
+    "MRPRequest", "MRPResult"
 ]

@@ -107,3 +107,6 @@ export interface AccountingPeriodUpdate {
 
 // Export GL types
 export * from './gl';
+
+// Export BOM types
+export * from './bom';
