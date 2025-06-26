@@ -105,6 +105,15 @@ def delete_warehouse(db: Session, warehouse_id: int, company_id: int) -> Optiona
 
 # Inventory Item CRUD
 def create_inventory_item(db: Session, item: schemas.InventoryItemCreate, company_id: int) -> models.InventoryItem:
+    # Check for duplicate item code
+    existing_item = db.query(models.InventoryItem).filter(
+        models.InventoryItem.item_code == item.item_code,
+        models.InventoryItem.company_id == company_id
+    ).first()
+    
+    if existing_item:
+        raise HTTPException(status_code=400, detail="Item code already exists")
+    
     db_item = models.InventoryItem(**item.model_dump(), company_id=company_id)
     db.add(db_item)
     db.commit()
@@ -139,6 +148,18 @@ def get_inventory_items(db: Session, company_id: int, skip: int = 0, limit: int 
 
 def update_inventory_item(db: Session, item_db_obj: models.InventoryItem, item_in: schemas.InventoryItemUpdate) -> models.InventoryItem:
     update_data = item_in.model_dump(exclude_unset=True)
+    
+    # Check for duplicate item code if item_code is being updated
+    if 'item_code' in update_data and update_data['item_code'] != item_db_obj.item_code:
+        existing_item = db.query(models.InventoryItem).filter(
+            models.InventoryItem.item_code == update_data['item_code'],
+            models.InventoryItem.company_id == item_db_obj.company_id,
+            models.InventoryItem.id != item_db_obj.id
+        ).first()
+        
+        if existing_item:
+            raise HTTPException(status_code=400, detail="Item code already exists")
+    
     for field, value in update_data.items():
         setattr(item_db_obj, field, value)
     db.add(item_db_obj)
@@ -667,29 +688,34 @@ def get_inventory_valuation(
     as_of_date: date
 ) -> List[dict]:
     """Get inventory valuation report"""
+    from sqlalchemy import func, text
     
-    query = db.query(
-        models.InventoryItem.item_code,
-        models.InventoryItem.description,
-        models.Warehouse.name.label("warehouse_name"),
-        models.InventoryItemLocation.quantity_on_hand,
-        models.InventoryItem.average_cost,
-        (models.InventoryItemLocation.quantity_on_hand * models.InventoryItem.average_cost).label("total_value")
-    ).join(
-        models.InventoryItemLocation,
-        models.InventoryItem.id == models.InventoryItemLocation.item_id
-    ).join(
-        models.Warehouse,
-        models.InventoryItemLocation.warehouse_id == models.Warehouse.id
-    ).filter(
-        models.InventoryItem.company_id == company_id,
-        models.InventoryItemLocation.quantity_on_hand > 0
-    )
+    # Raw SQL approach to properly aggregate across all items with same item_code
+    sql = text("""
+        SELECT 
+            ii.item_code,
+            ii.description,
+            w.name as warehouse_name,
+            SUM(iil.quantity_on_hand) as quantity_on_hand,
+            AVG(ii.average_cost) as average_cost,
+            SUM(iil.quantity_on_hand * ii.average_cost) as total_value
+        FROM inventory_items ii
+        JOIN inventory_item_locations iil ON ii.id = iil.item_id
+        JOIN warehouses w ON iil.warehouse_id = w.id
+        WHERE ii.company_id = :company_id 
+        AND iil.quantity_on_hand > 0
+        {warehouse_filter}
+        GROUP BY ii.item_code, ii.description, w.name
+        ORDER BY ii.item_code, w.name
+    """.format(
+        warehouse_filter="AND iil.warehouse_id = :warehouse_id" if warehouse_id else ""
+    ))
     
+    params = {"company_id": company_id}
     if warehouse_id:
-        query = query.filter(models.InventoryItemLocation.warehouse_id == warehouse_id)
-    
-    results = query.all()
+        params["warehouse_id"] = warehouse_id
+        
+    results = db.execute(sql, params).fetchall()
     
     return [
         {
@@ -713,7 +739,11 @@ def get_inventory_movement(
 ) -> List[models.InventoryTransaction]:
     """Get inventory movement report"""
     
-    query = db.query(models.InventoryTransaction).filter(
+    query = db.query(models.InventoryTransaction).options(
+        joinedload(models.InventoryTransaction.item),
+        joinedload(models.InventoryTransaction.warehouse),
+        joinedload(models.InventoryTransaction.transaction_type)
+    ).filter(
         models.InventoryTransaction.company_id == company_id,
         models.InventoryTransaction.item_id == item_id,
         models.InventoryTransaction.transaction_date >= start_date,
@@ -776,3 +806,24 @@ def get_stock_quantities(
         }
         for r in results
     ]
+
+def get_inventory_count_sessions(
+    db: Session,
+    company_id: int,
+    warehouse_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100
+) -> List[models.InventoryCountSession]:
+    """Get inventory count sessions for a company"""
+    from sqlalchemy.orm import joinedload
+    
+    query = db.query(models.InventoryCountSession).options(
+        joinedload(models.InventoryCountSession.warehouse)
+    ).filter(
+        models.InventoryCountSession.company_id == company_id
+    )
+    
+    if warehouse_id:
+        query = query.filter(models.InventoryCountSession.warehouse_id == warehouse_id)
+    
+    return query.order_by(models.InventoryCountSession.count_date.desc()).offset(skip).limit(limit).all()

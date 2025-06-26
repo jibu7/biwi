@@ -218,6 +218,15 @@ export const processCountVariances = async (sessionId: number): Promise<void> =>
   await axiosInstance.post(`${API_PREFIX}/counts/sessions/${sessionId}/process-variances`);
 };
 
+export const getInventoryCountSessions = async (params?: {
+  warehouseId?: number;
+  skip?: number;
+  limit?: number;
+}): Promise<InventoryCountSession[]> => {
+  const response = await axiosInstance.get(`${API_PREFIX}/counts/sessions`, { params });
+  return response.data;
+};
+
 // Inventory Transactions
 export const getInventoryTransactions = async (params?: {
   itemId?: number;
@@ -251,9 +260,9 @@ export const getInventoryMovement = async (
   return response.data;
 };
 
-export const getStockQuantities = async (warehouseId?: number): Promise<StockQuantityItem[]> => {
+export const getStockQuantities = async (warehouseId?: number): Promise<any[]> => {
   const response = await axiosInstance.get(`${API_PREFIX}/reports/stock-quantity`, {
-    params: { warehouse_id: warehouseId },
+    params: warehouseId ? { warehouse_id: warehouseId } : {},
   });
   return response.data;
 };
@@ -309,6 +318,7 @@ export const inventoryService = {
   getInventoryCountLines,
   recordCountedQuantities,
   processCountVariances,
+  getInventoryCountSessions,
 
   // Reports
   getInventoryValuation,

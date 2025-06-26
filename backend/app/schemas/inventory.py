@@ -247,6 +247,7 @@ class InventoryCountSession(InventoryCountSessionBase):
     id: int
     company_id: int
     status: str
+    warehouse: Optional["Warehouse"] = None
     
     class Config:
         from_attributes = True
@@ -258,12 +259,14 @@ class InventoryCountLineBase(BaseModel):
     counted_quantity: Optional[Decimal] = None
 
 class InventoryCountLineUpdate(BaseModel):
+    id: int
     counted_quantity: Decimal
 
 class InventoryCountLine(InventoryCountLineBase):
     id: int
     inventory_count_session_id: int
     variance_quantity: Optional[Decimal] = None
+    item: Optional["InventoryItem"] = None
     
     class Config:
         from_attributes = True

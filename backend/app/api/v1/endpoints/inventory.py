@@ -298,6 +298,16 @@ async def process_warehouse_transfer(
     return crud.process_warehouse_transfer(db, transfer, current_user.company_id, current_user.id)
 
 # Inventory Count endpoints
+@router.get("/counts/sessions", response_model=List[schemas.InventoryCountSession])
+async def list_inventory_count_sessions(
+    warehouse_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST, INV_REPORTS_VIEW]))
+):
+    return crud.get_inventory_count_sessions(db, current_user.company_id, warehouse_id, skip, limit)
+
 @router.post("/counts/sessions", response_model=schemas.InventoryCountSession)
 async def start_inventory_count(
     count_in: schemas.InventoryCountSessionCreate,
@@ -312,7 +322,11 @@ async def get_inventory_count_session(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST, INV_REPORTS_VIEW]))
 ):
-    session = db.query(models.InventoryCountSession).filter(
+    from sqlalchemy.orm import joinedload
+    
+    session = db.query(models.InventoryCountSession).options(
+        joinedload(models.InventoryCountSession.warehouse)
+    ).filter(
         models.InventoryCountSession.id == session_id,
         models.InventoryCountSession.company_id == current_user.company_id
     ).first()
@@ -326,6 +340,8 @@ async def get_inventory_count_lines(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST, INV_REPORTS_VIEW]))
 ):
+    from sqlalchemy.orm import joinedload
+    
     # Verify session exists
     session = db.query(models.InventoryCountSession).filter(
         models.InventoryCountSession.id == session_id,
@@ -334,7 +350,9 @@ async def get_inventory_count_lines(
     if not session:
         raise HTTPException(status_code=404, detail="Count session not found")
     
-    return db.query(models.InventoryCountLine).filter(
+    return db.query(models.InventoryCountLine).options(
+        joinedload(models.InventoryCountLine.item)
+    ).filter(
         models.InventoryCountLine.inventory_count_session_id == session_id
     ).all()
 
@@ -356,6 +374,16 @@ async def process_count_variances(
 ):
     crud.process_inventory_count_variances(db, session_id, current_user.company_id, current_user.id)
     return {"detail": "Count variances processed"}
+
+@router.get("/counts/sessions", response_model=List[schemas.InventoryCountSession])
+async def list_inventory_count_sessions(
+    warehouse_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST, INV_REPORTS_VIEW]))
+):
+    return crud.get_inventory_count_sessions(db, current_user.company_id, warehouse_id, skip, limit)
 
 # Inventory Transaction endpoints
 @router.get("/transactions", response_model=List[schemas.InventoryTransaction])

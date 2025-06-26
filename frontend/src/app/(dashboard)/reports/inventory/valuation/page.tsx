@@ -15,9 +15,11 @@ export default function InventoryValuationReportPage() {
     queryFn: () => getWarehouses(),
   });
 
-  const { data: valuationItems = [], isLoading } = useQuery({
-    queryKey: ['inventory-valuation', selectedWarehouse, asOfDate],
+  const { data: valuationItems = [], isLoading, error } = useQuery({
+    queryKey: ['inventory-valuation-v3', selectedWarehouse, asOfDate],
     queryFn: () => getInventoryValuation(selectedWarehouse, asOfDate),
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 
   const handleExport = () => {
@@ -27,9 +29,9 @@ export default function InventoryValuationReportPage() {
       item.item_code,
       item.description,
       item.warehouse_name,
-      safeQuantity(typeof item.quantity_on_hand === 'number' ? item.quantity_on_hand : null),
-      safeCurrency(typeof item.average_cost === 'number' ? item.average_cost : null),
-      safeCurrency(typeof item.total_value === 'number' ? item.total_value : null),
+      safeQuantity(typeof item.quantity_on_hand === 'number' ? item.quantity_on_hand : parseFloat(item.quantity_on_hand) || 0),
+      safeCurrency(typeof item.average_cost === 'number' ? item.average_cost : parseFloat(item.average_cost) || 0),
+      safeCurrency(typeof item.total_value === 'number' ? item.total_value : parseFloat(item.total_value) || 0),
     ]);
 
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -46,12 +48,36 @@ export default function InventoryValuationReportPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  const validTotalValues = valuationItems.map(item => typeof item.total_value === 'number' ? item.total_value : 0);
-  const validQuantities = valuationItems.map(item => typeof item.quantity_on_hand === 'number' ? item.quantity_on_hand : 0);
+  const validTotalValues = valuationItems.map(item => {
+    const value = item.total_value;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') return parseFloat(value) || 0;
+    return 0;
+  });
+  const validQuantities = valuationItems.map(item => {
+    const quantity = item.quantity_on_hand;
+    if (typeof quantity === 'number') return quantity;
+    if (typeof quantity === 'string') return parseFloat(quantity) || 0;
+    return 0;
+  });
   const totalValue = safeSum(validTotalValues);
   const totalQuantity = safeSum(validQuantities);
 
   if (isLoading) return <div>Loading...</div>;
+
+  // DEBUG: Show error information
+  if (error) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <h3 className="text-red-800 font-medium">API Error</h3>
+          <p className="text-red-700 text-sm mt-1">
+            {error instanceof Error ? error.message : 'Unknown error'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6">
@@ -161,13 +187,13 @@ export default function InventoryValuationReportPage() {
                   {item.warehouse_name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                  {safeQuantity(typeof item.quantity_on_hand === 'number' ? item.quantity_on_hand : null)}
+                  {safeQuantity(typeof item.quantity_on_hand === 'number' ? item.quantity_on_hand : parseFloat(item.quantity_on_hand) || 0)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                  {safeCurrency(typeof item.average_cost === 'number' ? item.average_cost : null)}
+                  {safeCurrency(typeof item.average_cost === 'number' ? item.average_cost : parseFloat(item.average_cost) || 0)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600 text-right">
-                  {safeCurrency(typeof item.total_value === 'number' ? item.total_value : null)}
+                  {safeCurrency(typeof item.total_value === 'number' ? item.total_value : parseFloat(item.total_value) || 0)}
                 </td>
               </tr>
             ))}

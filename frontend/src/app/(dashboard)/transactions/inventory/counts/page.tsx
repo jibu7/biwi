@@ -5,15 +5,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Plus, Eye, PlayCircle, FileText } from 'lucide-react';
 import Link from 'next/link';
-import { getInventoryCountSession } from '@/services/inventoryService';
+import { getInventoryCountSession, getInventoryCountSessions } from '@/services/inventoryService';
 import { usePermissions } from '@/hooks/usePermissions';
 import { INV_TRANSACTIONS_ADJUST } from '@/lib/permissions';
-
-// Mock function for now - would need to implement in service
-const getInventoryCountSessions = async () => {
-  // This would be implemented in the service
-  return [];
-};
 
 export default function InventoryCountSessionsPage() {
   const router = useRouter();

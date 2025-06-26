@@ -162,6 +162,11 @@ export interface InventoryTransaction {
   reference_document_id?: number;
   notes?: string;
   linked_gl_journal_entry_id?: number;
+  
+  // Related objects
+  item?: InventoryItem;
+  warehouse?: Warehouse;
+  transaction_type?: InventoryTransactionType;
 }
 
 export interface InventoryAdjustmentCreate {

@@ -14,7 +14,7 @@ from .inventory import (
     delete_inventory_transaction_type,
     get_inventory_defaults, create_or_update_inventory_defaults,
     process_inventory_adjustment, process_warehouse_transfer,
-    start_inventory_count, record_counted_quantities, process_inventory_count_variances,
+    start_inventory_count, get_inventory_count_sessions, record_counted_quantities, process_inventory_count_variances,
     get_inventory_valuation, get_inventory_movement, get_stock_quantities
 )
 

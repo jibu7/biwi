@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { createInventoryItem, getUnitsOfMeasure } from '@/services/inventoryService';
 import { glService } from '@/services/glService';
 import { InventoryItemCreate } from '@/types/inventory';
@@ -32,6 +33,7 @@ type InventoryItemFormData = z.infer<typeof inventoryItemSchema>;
 export default function NewInventoryItemPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [submitError, setSubmitError] = useState<string>('');
 
   const { data: unitsOfMeasure = [], isLoading: loadingUOMs } = useQuery({
     queryKey: ['units-of-measure'],
@@ -49,6 +51,10 @@ export default function NewInventoryItemPage() {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       router.push('/maintenance/inventory/items');
       router.refresh();
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.detail || 'Failed to create inventory item';
+      setSubmitError(errorMessage);
     },
   });
 
@@ -72,6 +78,7 @@ export default function NewInventoryItemPage() {
 
   const onSubmit = async (data: InventoryItemFormData) => {
     try {
+      setSubmitError(''); // Clear any previous error
       await createMutation.mutateAsync(data as InventoryItemCreate);
     } catch (error) {
       console.error('Failed to create inventory item:', error);
@@ -85,6 +92,28 @@ export default function NewInventoryItemPage() {
       <h1 className="text-3xl font-bold mb-6">Add New Inventory Item</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow">
+        {/* Error Display */}
+        {submitError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Error Creating Item</h3>
+                <p className="mt-1 text-sm text-red-700">{submitError}</p>
+                {submitError.includes('Item code already exists') && (
+                  <p className="mt-2 text-sm text-red-600">
+                    <strong>Tip:</strong> Please choose a different item code. Item codes must be unique within your company.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>

@@ -97,8 +97,18 @@ ALL_PERMISSIONS_LIST = [
 ]
 
 class PermissionChecker:
-    def __init__(self, required_permissions: List[str]):
+    def __init__(self, required_permissions: List[str], require_all: bool = False):
+        """
+        Initialize permission checker.
+        
+        Args:
+            required_permissions: List of permissions to check
+            require_all: If True, user must have ALL permissions (AND logic).
+                        If False, user must have AT LEAST ONE permission (OR logic).
+                        Default is False for backward compatibility.
+        """
         self.required_permissions = required_permissions
+        self.require_all = require_all
     
     async def __call__(
         self,
@@ -117,9 +127,17 @@ class PermissionChecker:
             if role and role.permissions:
                 user_permissions.extend(role.permissions)
         
-        # Check if user has all required permissions
-        for permission in self.required_permissions:
-            if permission not in user_permissions:
+        if self.require_all:
+            # Check if user has ALL required permissions (AND logic)
+            for permission in self.required_permissions:
+                if permission not in user_permissions:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Not enough permissions"
+                    )
+        else:
+            # Check if user has AT LEAST ONE required permission (OR logic)
+            if not any(permission in user_permissions for permission in self.required_permissions):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Not enough permissions"
