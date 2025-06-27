@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Edit, Save, X, Package, FileText, Trash2 } from 'lucide-react';
 import { purchaseOrderService } from '@/services/oeService';
 import { PurchaseOrder, PurchaseOrderLine } from '@/types/oe';
+import { safeCurrency } from '@/lib/formatters';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -82,17 +83,7 @@ export default function PurchaseOrderDetailPage({ params }: PageProps) {
     );
   };
 
-  const calculateLineTotal = (line: PurchaseOrderLine) => {
-    const quantity = Number(line.quantity) || 0;
-    const unitPrice = Number(line.unit_price) || 0;
-    const discountPercentage = Number(line.discount_percentage) || 0;
-    
-    const subtotal = quantity * unitPrice;
-    const discount = subtotal * discountPercentage / 100;
-    return subtotal - discount;
-  };
-
-  const subtotal = purchaseOrder.lines?.reduce((sum: number, line: PurchaseOrderLine) => sum + calculateLineTotal(line), 0) || 0;
+  const subtotal = purchaseOrder.lines?.reduce((sum: number, line: PurchaseOrderLine) => sum + (Number(line.line_total) || 0), 0) || 0;
 
   const handleReceiveGoods = () => {
     router.push(`/transactions/oe/grvs/new?po=${purchaseOrderId}`);
@@ -257,7 +248,8 @@ export default function PurchaseOrderDetailPage({ params }: PageProps) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {line.quantity || 0}
+                    {/* display ordered quantity */}
+                    {(line as any).quantity_ordered ?? line.quantity}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div className="flex flex-col">
@@ -270,13 +262,13 @@ export default function PurchaseOrderDetailPage({ params }: PageProps) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${(Number(line.unit_price) || 0).toFixed(2)}
+                    {safeCurrency(line.unit_price)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {Number(line.discount_percentage) || 0}%
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${calculateLineTotal(line).toFixed(2)}
+                    {safeCurrency(line.line_total)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {line.notes || '-'}

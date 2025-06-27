@@ -6,7 +6,9 @@ import {
   Search, 
   Download,
   Filter,
-  Calendar
+  Calendar,
+  FileText,
+  FileSpreadsheet
 } from 'lucide-react';
 import { oeReportsService } from '@/services/oeService';
 import { customerService } from '@/services/arService';
@@ -36,9 +38,9 @@ export default function SalesOrdersReportPage() {
   const filteredOrders = salesOrders.filter(order => {
     if (!searchTerm) return true;
     return (
-      order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.document_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer_po_reference?.toLowerCase().includes(searchTerm.toLowerCase())
+      order.reference?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -60,28 +62,133 @@ export default function SalesOrdersReportPage() {
   const calculateTotals = () => {
     return filteredOrders.reduce((acc, order) => {
       acc.count += 1;
-      acc.subtotal += order.subtotal;
-      acc.tax += order.tax_amount;
-      acc.total += order.total_amount;
+      acc.subtotal += Number(order.subtotal) || 0;
+      acc.tax += Number(order.tax_amount) || 0;
+      acc.total += Number(order.total_amount) || 0;
       return acc;
     }, { count: 0, subtotal: 0, tax: 0, total: 0 });
   };
 
   const totals = calculateTotals();
 
-  const exportToCSV = () => {
-    const headers = ['Order Number', 'Customer', 'Order Date', 'Status', 'Currency', 'Subtotal', 'Tax', 'Total', 'Customer PO', 'Sales Rep'];
+  const exportToPDF = () => {
+    const reportDate = new Date().toLocaleDateString();
+    const reportContent = `
+      <html>
+        <head>
+          <title>Sales Orders Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; text-align: center; }
+            .summary { display: flex; justify-content: space-around; margin: 20px 0; }
+            .summary-item { text-align: center; padding: 10px; border: 1px solid #ddd; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f5f5f5; }
+            .total-row { font-weight: bold; background-color: #f0f8ff; }
+          </style>
+        </head>
+        <body>
+          <h1>Sales Orders Report</h1>
+          <p><strong>Generated on:</strong> ${reportDate}</p>
+          
+          <div class="summary">
+            <div class="summary-item">
+              <h3>Total Orders</h3>
+              <p>${totals.count}</p>
+            </div>
+            <div class="summary-item">
+              <h3>Total Subtotal</h3>
+              <p>${filteredOrders[0]?.currency_code || 'USD'} ${totals.subtotal.toFixed(2)}</p>
+            </div>
+            <div class="summary-item">
+              <h3>Total Tax</h3>
+              <p>${filteredOrders[0]?.currency_code || 'USD'} ${totals.tax.toFixed(2)}</p>
+            </div>
+            <div class="summary-item">
+              <h3>Grand Total</h3>
+              <p>${filteredOrders[0]?.currency_code || 'USD'} ${totals.total.toFixed(2)}</p>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Order Number</th>
+                <th>Customer</th>
+                <th>Order Date</th>
+                <th>Status</th>
+                <th>Subtotal</th>
+                <th>Tax</th>
+                <th>Total</th>
+                <th>Sales Rep</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredOrders.map(order => `
+                <tr>
+                  <td>${order.document_number}</td>
+                  <td>${order.customer_name || ''}</td>
+                  <td>${new Date(order.order_date).toLocaleDateString()}</td>
+                  <td>${order.status}</td>
+                  <td>${order.currency_code || 'USD'} ${(Number(order.subtotal) || 0).toFixed(2)}</td>
+                  <td>${order.currency_code || 'USD'} ${(Number(order.tax_amount) || 0).toFixed(2)}</td>
+                  <td>${order.currency_code || 'USD'} ${(Number(order.total_amount) || 0).toFixed(2)}</td>
+                  <td>${order.sales_representative_name || ''}</td>
+                </tr>
+              `).join('')}
+              <tr class="total-row">
+                <td colspan="4"><strong>TOTALS</strong></td>
+                <td><strong>${filteredOrders[0]?.currency_code || 'USD'} ${totals.subtotal.toFixed(2)}</strong></td>
+                <td><strong>${filteredOrders[0]?.currency_code || 'USD'} ${totals.tax.toFixed(2)}</strong></td>
+                <td><strong>${filteredOrders[0]?.currency_code || 'USD'} ${totals.total.toFixed(2)}</strong></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(reportContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
+  };
+
+  const exportToExcel = () => {
+    const headers = ['Order Number', 'Customer', 'Order Date', 'Status', 'Currency', 'Subtotal', 'Tax', 'Total', 'Reference', 'Sales Rep'];
     const csvData = filteredOrders.map(order => [
-      order.order_number,
+      order.document_number,
       order.customer_name || '',
       new Date(order.order_date).toLocaleDateString(),
       order.status,
-      order.currency_code,
-      order.subtotal.toFixed(2),
-      order.tax_amount.toFixed(2),
-      order.total_amount.toFixed(2),
-      order.customer_po_reference || '',
+      order.currency_code || 'USD',
+      (Number(order.subtotal) || 0).toFixed(2),
+      (Number(order.tax_amount) || 0).toFixed(2),
+      (Number(order.total_amount) || 0).toFixed(2),
+      order.reference || '',
       order.sales_representative_name || ''
+    ]);
+
+    // Add totals row
+    csvData.push([
+      'TOTALS',
+      '',
+      '',
+      '',
+      filteredOrders[0]?.currency_code || 'USD',
+      totals.subtotal.toFixed(2),
+      totals.tax.toFixed(2),
+      totals.total.toFixed(2),
+      '',
+      ''
     ]);
 
     const csvContent = [headers, ...csvData]
@@ -92,10 +199,11 @@ export default function SalesOrdersReportPage() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `sales-orders-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `sales-orders-report-${new Date().toISOString().split('T')[0]}.xlsx`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -107,14 +215,24 @@ export default function SalesOrdersReportPage() {
             View and analyze sales order data with filtering and export options.
           </p>
         </div>
-        <button
-          onClick={exportToCSV}
-          disabled={filteredOrders.length === 0}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Export CSV
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={exportToPDF}
+            disabled={filteredOrders.length === 0}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Export PDF
+          </button>
+          <button
+            onClick={exportToExcel}
+            disabled={filteredOrders.length === 0}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Export Excel
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -281,11 +399,11 @@ export default function SalesOrdersReportPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {order.order_number}
+                          {order.document_number}
                         </div>
-                        {order.customer_po_reference && (
+                        {order.reference && (
                           <div className="text-sm text-gray-500">
-                            PO: {order.customer_po_reference}
+                            Ref: {order.reference}
                           </div>
                         )}
                       </div>
@@ -302,13 +420,13 @@ export default function SalesOrdersReportPage() {
                       {getStatusBadge(order.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.currency_code} {order.subtotal.toFixed(2)}
+                      {order.currency_code || 'USD'} {(Number(order.subtotal) || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.currency_code} {order.tax_amount.toFixed(2)}
+                      {order.currency_code || 'USD'} {(Number(order.tax_amount) || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {order.currency_code} {order.total_amount.toFixed(2)}
+                      {order.currency_code || 'USD'} {(Number(order.total_amount) || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {order.sales_representative_name || '-'}

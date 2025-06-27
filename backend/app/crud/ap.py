@@ -142,7 +142,8 @@ def delete_ap_transaction_type(
 
 # AP Transaction CRUD
 def get_ap_transactions(db: Session, company_id: int, supplier_id: Optional[int] = None, 
-                       skip: int = 0, limit: int = 100) -> List[models.APTransaction]:
+                       transaction_type_id: Optional[int] = None, start_date: Optional[date] = None,
+                       end_date: Optional[date] = None, skip: int = 0, limit: int = 100) -> List[models.APTransaction]:
     query = db.query(models.APTransaction)\
         .filter(models.APTransaction.company_id == company_id)\
         .options(
@@ -153,6 +154,15 @@ def get_ap_transactions(db: Session, company_id: int, supplier_id: Optional[int]
     
     if supplier_id:
         query = query.filter(models.APTransaction.supplier_id == supplier_id)
+    
+    if transaction_type_id:
+        query = query.filter(models.APTransaction.ap_transaction_type_id == transaction_type_id)
+    
+    if start_date:
+        query = query.filter(models.APTransaction.transaction_date >= start_date)
+    
+    if end_date:
+        query = query.filter(models.APTransaction.transaction_date <= end_date)
     
     return query.offset(skip).limit(limit).all()
 

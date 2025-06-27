@@ -123,18 +123,21 @@ export interface PurchaseOrderLineCreate {
 export interface GoodsReceivedVoucher {
   id: number;
   company_id: number;
-  grv_number: string;
+  document_number: string; // Backend uses document_number
+  grv_number?: string; // Keep for backward compatibility
   grv_date: string;
   purchase_order_id?: number;
   supplier_id: number;
   supplier_delivery_note?: string;
+  reference?: string; // Backend may use reference
   received_by?: string;
-  status: 'DRAFT' | 'CONFIRMED' | 'INVOICED';
+  status: 'DRAFT' | 'Open' | 'CONFIRMED' | 'INVOICED';
   total_value?: number;
   notes?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  is_active?: boolean;
+  ap_invoice_id?: number;
+  created_at?: string;
+  updated_at?: string;
   
   // Related data
   purchase_order_number?: string;
@@ -152,8 +155,9 @@ export interface GoodsReceivedVoucherLine {
   item_description?: string;
   quantity_ordered?: number;
   quantity_received: number;
-  unit_price: number;
-  line_total?: number;
+  unit_cost: number;
+  unit_price?: number; // Keep for backward compatibility
+  line_total: number;
   notes?: string;
 }
 
@@ -162,6 +166,7 @@ export interface GoodsReceivedVoucherCreate {
   purchase_order_id?: number;
   grv_date?: string;
   supplier_delivery_note?: string;
+  reference?: string;
   received_by?: string;
   notes?: string;
   lines: GoodsReceivedVoucherLineCreate[];
@@ -169,8 +174,11 @@ export interface GoodsReceivedVoucherCreate {
 
 export interface GoodsReceivedVoucherLineCreate {
   item_id: number;
+  description?: string;
   quantity_received: number;
-  unit_price: number;
+  unit_price?: number;
+  unit_cost?: number;
+  line_total?: number;
   purchase_order_line_id?: number;
   notes?: string;
 }
@@ -195,6 +203,14 @@ export interface OrderDefaults {
   // Related data
   default_sales_representative_name?: string;
   default_warehouse_name?: string;
+  // Order status defaults
+  default_so_status: 'Draft' | 'Open' | 'PartiallyInvoiced' | 'Invoiced' | 'Closed' | 'Cancelled';
+  default_po_status: 'Draft' | 'Open' | 'PartiallyReceived' | 'Received' | 'Closed' | 'Cancelled';
+  default_grv_status: 'Open' | 'PartiallyInvoiced' | 'Invoiced' | 'Closed';
+  // Next document numbers
+  next_so_number: number;
+  next_po_number: number;
+  next_grv_number: number;
 }
 
 export interface OrderDefaultsUpdate {
@@ -208,6 +224,9 @@ export interface OrderDefaultsUpdate {
   grv_number_prefix?: string;
   require_approval_for_orders?: boolean;
   order_approval_limit?: number;
+  default_so_status?: 'Draft' | 'Open' | 'PartiallyInvoiced' | 'Invoiced' | 'Closed' | 'Cancelled';
+  default_po_status?: 'Draft' | 'Open' | 'PartiallyReceived' | 'Received' | 'Closed' | 'Cancelled';
+  default_grv_status?: 'Open' | 'PartiallyInvoiced' | 'Invoiced' | 'Closed';
 }
 
 // Re-export AR and AP Transaction types for conversions

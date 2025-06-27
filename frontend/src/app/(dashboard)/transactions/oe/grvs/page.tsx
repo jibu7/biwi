@@ -40,10 +40,15 @@ export default function GRVsPage() {
 
   const convertToAPInvoiceMutation = useMutation({
     mutationFn: ({ id, details }: { id: number; details: any }) => grvService.convertToAPInvoice(id, details),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['grvs'] });
       setShowConvertModal(false);
       setSelectedGRV(null);
+      
+      // Navigate to AP transactions to show the created invoice
+      setTimeout(() => {
+        router.push('/transactions/ap/list');
+      }, 2000); // Give time for the success message to be seen
     },
     onError: (error) => {
       console.error('Error converting GRV to AP Invoice:', error);
@@ -53,10 +58,10 @@ export default function GRVsPage() {
   const filteredGRVs = useMemo(() => {
     return grvs.filter((grv) => {
       const matchesSearch = 
-        grv.grv_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        grv.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        grv.purchase_order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        grv.supplier_delivery_note?.toLowerCase().includes(searchTerm.toLowerCase());
+        (grv.document_number || grv.grv_number || '')?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (grv.supplier_name || '')?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (grv.purchase_order_number || '')?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (grv.supplier_delivery_note || grv.reference || '')?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesSupplier = selectedSupplier === '' || grv.supplier_id === selectedSupplier;
       const matchesStatus = selectedStatus === '' || grv.status === selectedStatus;
@@ -68,6 +73,7 @@ export default function GRVsPage() {
   const getStatusBadge = (status: string) => {
     const statusStyles = {
       'DRAFT': 'bg-gray-100 text-gray-800',
+      'Open': 'bg-blue-100 text-blue-800',
       'CONFIRMED': 'bg-blue-100 text-blue-800',
       'INVOICED': 'bg-green-100 text-green-800',
     };
@@ -183,6 +189,7 @@ export default function GRVsPage() {
             >
               <option value="">All Statuses</option>
               <option value="DRAFT">Draft</option>
+              <option value="Open">Open</option>
               <option value="CONFIRMED">Confirmed</option>
               <option value="INVOICED">Invoiced</option>
             </select>
@@ -238,7 +245,7 @@ export default function GRVsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {grv.grv_number}
+                          {grv.document_number || grv.grv_number}
                         </div>
                         {grv.supplier_delivery_note && (
                           <div className="text-sm text-gray-500">
@@ -275,7 +282,7 @@ export default function GRVsPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
-                        {grv.status === 'CONFIRMED' && (
+                        {(grv.status === 'CONFIRMED' || grv.status === 'Open') && (
                           <button
                             onClick={() => handleConvertToAPInvoice(grv)}
                             disabled={convertToAPInvoiceMutation.isPending}
@@ -284,6 +291,15 @@ export default function GRVsPage() {
                           >
                             <FileText className="h-4 w-4" />
                           </button>
+                        )}
+                        {grv.status === 'INVOICED' && grv.ap_invoice_id && (
+                          <Link
+                            href={`/transactions/ap/list`}
+                            className="text-purple-600 hover:text-purple-900"
+                            title="View AP Invoice"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                          </Link>
                         )}
                       </div>
                     </td>
@@ -296,7 +312,7 @@ export default function GRVsPage() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {[
           {
             label: 'Total GRVs',
@@ -307,6 +323,11 @@ export default function GRVsPage() {
             label: 'Draft GRVs',
             value: filteredGRVs.filter(g => g.status === 'DRAFT').length,
             color: 'text-gray-600',
+          },
+          {
+            label: 'Open GRVs',
+            value: filteredGRVs.filter(g => g.status === 'Open').length,
+            color: 'text-blue-600',
           },
           {
             label: 'Confirmed GRVs',
@@ -332,7 +353,7 @@ export default function GRVsPage() {
       {convertToAPInvoiceMutation.isSuccess && (
         <div className="bg-green-50 border border-green-200 rounded-md p-4">
           <p className="text-sm text-green-800">
-            GRV successfully converted to AP invoice!
+            GRV converted to AP Invoice successfully! Redirecting to AP Transactions...
           </p>
         </div>
       )}
@@ -379,7 +400,7 @@ function ConvertToAPInvoiceModal({
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [paymentTerms, setPaymentTerms] = useState('Net 30');
-  const [reference, setReference] = useState(`GRV-${grv.grv_number}`);
+  const [reference, setReference] = useState(`GRV-${grv.document_number || grv.grv_number}`);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -389,12 +410,13 @@ function ConvertToAPInvoiceModal({
     }
     
     onSubmit({
-      supplier_invoice_number: invoiceNumber,
-      invoice_date: invoiceDate,
+      ap_transaction_type_id: 1, // Supplier Invoice
+      supplier_id: grv.supplier_id,
+      transaction_date: invoiceDate,
       due_date: dueDate,
-      payment_terms: paymentTerms,
       reference: reference,
-      amount: grv.total_amount || 0,
+      description: `AP Invoice from GRV ${grv.document_number || grv.grv_number}`,
+      total_amount: grv.total_value || 0,
     });
   };
 
@@ -414,10 +436,10 @@ function ConvertToAPInvoiceModal({
 
           <div className="mb-4 p-3 bg-blue-50 rounded-md">
             <div className="text-sm">
-              <p><strong>GRV:</strong> {grv.grv_number}</p>
+              <p><strong>GRV:</strong> {grv.document_number || grv.grv_number}</p>
               <p><strong>Supplier:</strong> {grv.supplier_name}</p>
               <p><strong>GRV Date:</strong> {new Date(grv.grv_date).toLocaleDateString()}</p>
-              <p><strong>Amount:</strong> ${(grv.total_amount || 0).toFixed(2)}</p>
+              <p><strong>Amount:</strong> ${Number(grv.total_value || 0).toFixed(2)}</p>
             </div>
           </div>
 
@@ -493,8 +515,8 @@ function ConvertToAPInvoiceModal({
               <div className="text-sm text-yellow-800">
                 <p className="font-semibold">What happens when you convert:</p>
                 <ul className="mt-1 ml-4 list-disc space-y-1 text-xs">
-                  <li>GRV Accrual Account cleared: ${(grv.total_amount || 0).toFixed(2)}</li>
-                  <li>Accounts Payable increased: ${(grv.total_amount || 0).toFixed(2)}</li>
+                  <li>GRV Accrual Account cleared: ${Number(grv.total_value || 0).toFixed(2)}</li>
+                  <li>Accounts Payable increased: ${Number(grv.total_value || 0).toFixed(2)}</li>
                   <li>GRV status changes to "INVOICED"</li>
                   <li>AP Invoice created for supplier payment</li>
                 </ul>

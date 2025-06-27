@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Edit, Save, X, FileText } from 'lucide-react';
 import { salesOrderService } from '@/services/oeService';
+import { toast } from 'sonner';
 import { SalesOrder, SalesOrderLine } from '@/types/oe';
 import { safeCurrency } from '@/lib/formatters';
 
@@ -35,6 +36,10 @@ export default function SalesOrderDetailPage({ params }: PageProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salesOrder', salesOrderId] });
       queryClient.invalidateQueries({ queryKey: ['salesOrders'] });
+      toast.success('Sales Order converted to Invoice successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to convert sales order');
     },
   });
 
@@ -99,10 +104,10 @@ export default function SalesOrderDetailPage({ params }: PageProps) {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Sales Order {salesOrder.order_number}
+              Sales Order {salesOrder.document_number}
             </h1>
             <p className="mt-2 text-sm text-gray-700">
-              Created on {new Date(salesOrder.created_at).toLocaleDateString()}
+              Created on {new Date(salesOrder.order_date).toLocaleDateString()}
             </p>
           </div>
           
@@ -112,7 +117,7 @@ export default function SalesOrderDetailPage({ params }: PageProps) {
             {salesOrder.status === 'CONFIRMED' && (
               <button
                 onClick={handleConvertToInvoice}
-                disabled={convertToInvoiceMutation.isPending}
+                disabled={convertToInvoiceMutation.isPending || salesOrder.status !== 'CONFIRMED'}
                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
               >
                 <FileText className="h-4 w-4 mr-2" />
@@ -172,10 +177,10 @@ export default function SalesOrderDetailPage({ params }: PageProps) {
             </div>
           </div>
           
-          {salesOrder.customer_po_reference && (
+          {salesOrder.reference && (
             <div>
               <label className="block text-sm font-medium text-gray-700">Customer PO Reference</label>
-              <div className="mt-1 text-sm text-gray-900">{salesOrder.customer_po_reference}</div>
+              <div className="mt-1 text-sm text-gray-900">{salesOrder.reference}</div>
             </div>
           )}
           

@@ -21,6 +21,10 @@ const defaultsSchema = z.object({
   grv_number_prefix: z.string().optional(),
   require_approval_for_orders: z.boolean(),
   order_approval_limit: z.number().nullable().optional(),
+  // Status settings
+  default_so_status: z.enum(['Draft','Open','PartiallyInvoiced','Invoiced','Closed','Cancelled']),
+  default_po_status: z.enum(['Draft','Open','PartiallyReceived','Received','Closed','Cancelled']),
+  default_grv_status: z.enum(['Open','PartiallyInvoiced','Invoiced','Closed']),
 });
 
 type DefaultsFormData = z.infer<typeof defaultsSchema>;
@@ -67,6 +71,9 @@ export default function OEDefaultsPage() {
         sales_order_number_prefix: defaults.sales_order_number_prefix || 'SO-',
         purchase_order_number_prefix: defaults.purchase_order_number_prefix || 'PO-',
         grv_number_prefix: defaults.grv_number_prefix || 'GRV-',
+        default_so_status: defaults.default_so_status,
+        default_po_status: defaults.default_po_status,
+        default_grv_status: defaults.default_grv_status,
         require_approval_for_orders: defaults.require_approval_for_orders ?? false,
         order_approval_limit: defaults.order_approval_limit || null,
       });
@@ -194,6 +201,59 @@ export default function OEDefaultsPage() {
           </div>
         </div>
 
+        {/* Status Settings */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium mb-4">Status Settings</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Default SO Status
+              </label>
+              <select
+                {...register('default_so_status')}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              >
+                <option value="Draft">Draft</option>
+                <option value="Open">Open</option>
+                <option value="PartiallyInvoiced">PartiallyInvoiced</option>
+                <option value="Invoiced">Invoiced</option>
+                <option value="Closed">Closed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Default PO Status
+              </label>
+              <select
+                {...register('default_po_status')}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              >
+                <option value="Draft">Draft</option>
+                <option value="Open">Open</option>
+                <option value="PartiallyReceived">PartiallyReceived</option>
+                <option value="Received">Received</option>
+                <option value="Closed">Closed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Default GRV Status
+              </label>
+              <select
+                {...register('default_grv_status')}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              >
+                <option value="Open">Open</option>
+                <option value="PartiallyInvoiced">PartiallyInvoiced</option>
+                <option value="Invoiced">Invoiced</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         {/* Numbering Settings */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium mb-4">Numbering Settings</h2>
@@ -250,6 +310,18 @@ export default function OEDefaultsPage() {
           </div>
         </div>
 
+        {/* Next Document Numbers */}
+        {defaults && (
+          <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-lg font-medium mb-4">Next Document Numbers</h2>
+            <div className="space-y-1">
+              <p>Sales Order: SO{defaults.next_so_number.toString().padStart(6, '0')}</p>
+              <p>Purchase Order: PO{defaults.next_po_number.toString().padStart(6, '0')}</p>
+              <p>GRV: GRV{defaults.next_grv_number.toString().padStart(6, '0')}</p>
+            </div>
+          </div>
+        )}
+
         {/* Approval Settings */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium mb-4">Approval Settings</h2>
@@ -299,7 +371,7 @@ export default function OEDefaultsPage() {
         {updateMutation.isSuccess && (
           <div className="bg-green-50 border border-green-200 rounded-md p-4">
             <p className="text-sm text-green-800">
-              Order defaults saved successfully!
+              Order defaults updated successfully
             </p>
           </div>
         )}

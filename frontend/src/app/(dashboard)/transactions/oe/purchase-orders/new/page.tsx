@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Plus, Trash2, ArrowLeft, AlertTriangle, Package, Truck, CreditCard } from 'lucide-react';
 import { purchaseOrderService } from '@/services/oeService';
 import { apService } from '@/services/apService';
@@ -102,11 +103,13 @@ export default function NewPurchaseOrderPage() {
   const createMutation = useMutation({
     mutationFn: purchaseOrderService.create,
     onSuccess: (data) => {
+      toast.success(`Purchase Order ${data.order_number} created successfully`);
       router.push(`/transactions/oe/purchase-orders/${data.id}`);
     },
   });
 
-  const watchedLines = watch('lines');
+  // subscribe to changes in line items for totals
+  const watchedLines = useWatch({ control, name: 'lines' });
 
   // Calculate totals
   const calculateLineTotal = (line: any) => {

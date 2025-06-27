@@ -183,6 +183,10 @@ class GoodsReceivedVoucherLineUpdate(BaseModel):
 class GoodsReceivedVoucherLine(GoodsReceivedVoucherLineBase):
     id: int
     grv_id: int
+    
+    # Related item data
+    item_code: Optional[str] = None
+    item_description: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -213,6 +217,11 @@ class GoodsReceivedVoucher(GoodsReceivedVoucherBase):
     document_number: str
     ap_invoice_id: Optional[int] = None
     lines: List[GoodsReceivedVoucherLine] = []
+    
+    # Related data
+    supplier_name: Optional[str] = None
+    purchase_order_number: Optional[str] = None
+    total_value: Optional[Decimal] = None
 
     class Config:
         from_attributes = True

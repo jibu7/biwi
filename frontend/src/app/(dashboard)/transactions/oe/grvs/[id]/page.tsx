@@ -79,17 +79,23 @@ export default function GRVDetailPage({ params }: PageProps) {
   };
 
   const calculateLineTotal = (line: GoodsReceivedVoucherLine) => {
-    return line.quantity_received * line.unit_price;
+    // Use stored line_total if available, otherwise calculate from unit_cost
+    const lineTotal = line.line_total || (line.quantity_received * (line.unit_cost || line.unit_price || 0));
+    return Number(lineTotal);
   };
 
-  const totalAmount = grv.lines?.reduce((sum: number, line: GoodsReceivedVoucherLine) => sum + calculateLineTotal(line), 0) || 0;
+  const totalAmount = grv.lines?.reduce((sum: number, line: GoodsReceivedVoucherLine) => {
+    const lineTotal = calculateLineTotal(line);
+    return sum + lineTotal;
+  }, 0) || 0;
 
   const handleConvertToAPInvoice = async () => {
+    const grvNumber = grv.document_number || grv.grv_number;
     const invoiceDetails = {
       invoice_date: new Date().toISOString().split('T')[0],
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days
-      reference: `GRV-${grv.grv_number}`,
-      description: `AP Invoice from GRV ${grv.grv_number}`,
+      reference: `GRV-${grvNumber}`,
+      description: `AP Invoice from GRV ${grvNumber}`,
     };
 
     if (confirm('Are you sure you want to convert this GRV to an AP invoice? This action cannot be undone.')) {
@@ -116,12 +122,12 @@ export default function GRVDetailPage({ params }: PageProps) {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              GRV {grv.grv_number}
+              GRV {grv.document_number || grv.grv_number}
             </h1>
             <div className="flex items-center space-x-4 mt-1">
               {getStatusBadge(grv.status)}
               <span className="text-sm text-gray-500">
-                Created on {new Date(grv.created_at).toLocaleDateString()}
+                Created on {grv.created_at ? new Date(grv.created_at).toLocaleDateString() : 'Unknown'}
               </span>
             </div>
           </div>
@@ -245,7 +251,7 @@ export default function GRVDetailPage({ params }: PageProps) {
                     {line.quantity_received}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {safeCurrency(line.unit_price)}
+                    {safeCurrency(line.unit_cost || line.unit_price || 0)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {safeCurrency(calculateLineTotal(line))}

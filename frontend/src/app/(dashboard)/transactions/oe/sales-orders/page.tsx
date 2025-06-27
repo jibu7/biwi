@@ -16,6 +16,7 @@ import { salesOrderService } from '@/services/oeService';
 import { customerService } from '@/services/arService';
 import { SalesOrder } from '@/types/oe';
 import { safeCurrency } from '@/lib/formatters';
+import { toast } from 'sonner';
 
 export default function SalesOrdersPage() {
   const router = useRouter();
@@ -38,6 +39,10 @@ export default function SalesOrdersPage() {
     mutationFn: salesOrderService.convertToInvoice,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salesOrders'] });
+      toast.success('Sales Order converted to Invoice successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to convert sales order');
     },
   });
 
@@ -228,14 +233,25 @@ export default function SalesOrdersPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
+                        {/* Convert button: only for confirmed orders, disabled when pending or not confirmed */}
                         <button
                           onClick={() => handleConvertToInvoice(order.id)}
-                          disabled={convertToInvoiceMutation.isPending}
+                          disabled={convertToInvoiceMutation.isPending || order.status !== 'CONFIRMED'}
                           className="text-green-600 hover:text-green-900 disabled:opacity-50"
                           title="Convert to Invoice"
                         >
                           <FileText className="h-4 w-4" />
                         </button>
+                        {/* Edit button for draft orders */}
+                        {order.status === 'DRAFT' && (
+                          <Link
+                            href={`/transactions/oe/sales-orders/${order.id}`}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="Edit"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>

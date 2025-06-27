@@ -181,10 +181,9 @@ def read_ap_transactions(
     current_user: models.User = Depends(get_current_active_user),
 ) -> Any:
     """Retrieve AP transactions"""
-    return crud.ap.get_ap_transactions_by_company(
+    return crud.ap.get_ap_transactions(
         db, company_id=current_user.company_id, skip=skip, limit=limit,
-        supplier_id=supplier_id, transaction_type_id=transaction_type_id,
-        start_date=start_date, end_date=end_date
+        supplier_id=supplier_id
     )
 
 @router.get("/transactions/{transaction_id}", response_model=schemas.APTransaction, dependencies=[Depends(PermissionChecker([AP_REPORTS_VIEW]))])

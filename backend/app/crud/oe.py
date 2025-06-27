@@ -389,13 +389,58 @@ def create_grv(
     db.flush()
     
     # Determine warehouse
-    warehouse_id = 1  # Default warehouse
     if grv_in.purchase_order_id:
         po = db.query(models.PurchaseOrder).filter(
             models.PurchaseOrder.id == grv_in.purchase_order_id
         ).first()
         if po:
             warehouse_id = po.delivery_address_warehouse_id
+        else:
+            # Get default warehouse from inventory defaults
+            inv_defaults = db.query(models.InventoryDefaults).filter(
+                models.InventoryDefaults.company_id == company_id
+            ).first()
+            warehouse_id = inv_defaults.default_warehouse_id if inv_defaults and inv_defaults.default_warehouse_id else None
+            
+            if not warehouse_id:
+                # Find any warehouse for this company
+                default_warehouse = db.query(models.Warehouse).filter(
+                    models.Warehouse.company_id == company_id,
+                    models.Warehouse.is_default == True
+                ).first()
+                
+                if not default_warehouse:
+                    default_warehouse = db.query(models.Warehouse).filter(
+                        models.Warehouse.company_id == company_id
+                    ).first()
+                
+                if not default_warehouse:
+                    raise ValueError("No warehouse found for this company")
+                
+                warehouse_id = default_warehouse.id
+    else:
+        # For standalone GRV, get default warehouse from inventory defaults
+        inv_defaults = db.query(models.InventoryDefaults).filter(
+            models.InventoryDefaults.company_id == company_id
+        ).first()
+        warehouse_id = inv_defaults.default_warehouse_id if inv_defaults and inv_defaults.default_warehouse_id else None
+        
+        if not warehouse_id:
+            # Find default warehouse for this company
+            default_warehouse = db.query(models.Warehouse).filter(
+                models.Warehouse.company_id == company_id,
+                models.Warehouse.is_default == True
+            ).first()
+            
+            if not default_warehouse:
+                default_warehouse = db.query(models.Warehouse).filter(
+                    models.Warehouse.company_id == company_id
+                ).first()
+            
+            if not default_warehouse:
+                raise ValueError("No warehouse found for this company")
+            
+            warehouse_id = default_warehouse.id
     
     # Process GRV lines
     for line_in in grv_in.lines:
@@ -418,13 +463,51 @@ def create_grv(
         ).first()
         
         if item and item.item_type == "Stock":
+            # Ensure inventory item location exists for this warehouse
+            item_location = db.query(models.InventoryItemLocation).filter(
+                models.InventoryItemLocation.item_id == item.id,
+                models.InventoryItemLocation.warehouse_id == warehouse_id,
+                models.InventoryItemLocation.company_id == company_id
+            ).first()
+            
+            if not item_location:
+                # Create inventory location if it doesn't exist
+                item_location = models.InventoryItemLocation(
+                    company_id=company_id,
+                    item_id=item.id,
+                    warehouse_id=warehouse_id,
+                    quantity_on_hand=Decimal("0.00"),
+                    quantity_committed=Decimal("0.00"),
+                    quantity_on_order=Decimal("0.00")
+                )
+                db.add(item_location)
+                db.flush()  # Ensure the location is created before processing adjustment
+            
+            # Get the correct transaction type for receipt from supplier
+            receipt_trans_type = db.query(models.InventoryTransactionType).filter(
+                models.InventoryTransactionType.company_id == company_id,
+                models.InventoryTransactionType.base_type == "ReceiptFromSupplier"
+            ).first()
+            
+            if not receipt_trans_type:
+                # Create default receipt transaction type if it doesn't exist
+                receipt_trans_type = models.InventoryTransactionType(
+                    company_id=company_id,
+                    name="Receipt from Supplier",
+                    description="Inventory receipt from supplier via GRV",
+                    base_type="ReceiptFromSupplier",
+                    affects_quantity_direction="Increase"
+                )
+                db.add(receipt_trans_type)
+                db.flush()
+            
             # Create inventory transaction
             inv_receipt = schemas.InventoryAdjustmentCreate(
                 item_id=line_in.item_id,
                 warehouse_id=warehouse_id,
                 quantity=line_in.quantity_received,
                 unit_cost=line_in.unit_cost,
-                inventory_transaction_type_id=3,  # "ReceiptFromSupplier"
+                inventory_transaction_type_id=receipt_trans_type.id,
                 reason="Receipt from Supplier - GRV"
             )
             crud_inventory.process_inventory_adjustment(
@@ -614,7 +697,12 @@ def get_purchase_orders(
     limit: int = 100,
     status: Optional[str] = None
 ) -> List[models.PurchaseOrder]:
-    query = db.query(models.PurchaseOrder).filter(
+    from sqlalchemy.orm import joinedload
+    
+    query = db.query(models.PurchaseOrder).options(
+        joinedload(models.PurchaseOrder.supplier),
+        joinedload(models.PurchaseOrder.lines).joinedload(models.PurchaseOrderLine.item)
+    ).filter(
         models.PurchaseOrder.company_id == company_id
     )
     
@@ -660,7 +748,11 @@ def get_grvs(
     limit: int = 100,
     status: Optional[str] = None
 ) -> List[models.GoodsReceivedVoucher]:
-    query = db.query(models.GoodsReceivedVoucher).filter(
+    query = db.query(models.GoodsReceivedVoucher).options(
+        joinedload(models.GoodsReceivedVoucher.lines),
+        joinedload(models.GoodsReceivedVoucher.supplier),
+        joinedload(models.GoodsReceivedVoucher.purchase_order)
+    ).filter(
         models.GoodsReceivedVoucher.company_id == company_id
     )
     

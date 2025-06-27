@@ -16,7 +16,9 @@ const grvLineSchema = z.object({
   item_id: z.number().min(1, 'Item is required'),
   quantity_received: z.number().min(0.01, 'Quantity must be greater than 0'),
   unit_price: z.number().min(0, 'Unit price must be non-negative'),
+  description: z.string().optional(),
   notes: z.string().optional(),
+  purchase_order_line_id: z.number().optional(),
 });
 
 const grvSchema = z.object({
@@ -44,10 +46,24 @@ function NewGRVPageContent() {
     queryFn: () => apService.getSuppliers(),
   });
 
-  const { data: purchaseOrders = [] } = useQuery({
+  const { data: purchaseOrders = [], isLoading: isPOLoading, error: poError } = useQuery({
     queryKey: ['purchaseOrders'],
     queryFn: () => purchaseOrderService.getAll(),
   });
+
+  // Filter for Purchase Orders that can be received (Draft, Open or PartiallyReceived)
+  const availablePOs = (purchaseOrders as any[]).filter((po: any) => 
+    po.status === 'Draft' || po.status === 'Open' || po.status === 'PartiallyReceived'
+  );
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Purchase Orders loaded:', purchaseOrders);
+    console.log('Available POs for receiving:', availablePOs);
+    if (poError) {
+      console.error('PO loading error:', poError);
+    }
+  }, [purchaseOrders, availablePOs, poError]);
 
   const { data: items = [] } = useQuery({
     queryKey: ['inventoryItems'],
@@ -72,8 +88,9 @@ function NewGRVPageContent() {
   } = useForm<GRVFormData>({
     resolver: zodResolver(grvSchema),
     defaultValues: {
+      supplier_id: 0,
       grv_date: new Date().toISOString().split('T')[0],
-      lines: [{ item_id: 0, quantity_received: 1, unit_price: 0, notes: '' }],
+      lines: [{ item_id: 0, quantity_received: 1, unit_price: 0, description: '', notes: '', purchase_order_line_id: undefined }],
     },
   });
 
@@ -87,6 +104,10 @@ function NewGRVPageContent() {
     onSuccess: (data) => {
       router.push(`/transactions/oe/grvs/${data.id}`);
     },
+    onError: (error: any) => {
+      console.error('Error creating GRV:', error);
+      alert(`Failed to create GRV: ${error.response?.data?.detail || error.message || 'Unknown error'}`);
+    }
   });
 
   const watchedLines = watch('lines');
@@ -102,21 +123,38 @@ function NewGRVPageContent() {
   // Populate form when PO is selected
   useEffect(() => {
     if (selectedPO) {
+      console.log('Selected PO:', selectedPO);
       setValue('supplier_id', selectedPO.supplier_id);
       setValue('purchase_order_id', selectedPO.id);
       
       // Populate lines with outstanding quantities
-      const outstandingLines = selectedPO.lines?.filter((line: any) => 
-        line.quantity_received < line.quantity
-      ).map((line: any) => ({
-        item_id: line.item_id,
-        quantity_received: line.quantity - line.quantity_received,
-        unit_price: line.unit_price,
-        notes: '',
-      })) || [];
+      const outstandingLines = selectedPO.lines?.filter((line: any) => {
+        const received = line.quantity_received || 0;
+        const ordered = line.quantity_ordered || line.quantity || 0;
+        return received < ordered;
+      }).map((line: any) => {
+        const received = line.quantity_received || 0;
+        const ordered = line.quantity_ordered || line.quantity || 0;
+        const outstanding = ordered - received;
+        
+        return {
+          item_id: line.item_id,
+          quantity_received: outstanding,
+          unit_price: line.unit_price,
+          description: line.item_description || line.description || `Item #${line.item_id}`,
+          notes: '',
+          purchase_order_line_id: line.id, // Include PO line ID for linking
+        };
+      }) || [];
+
+      console.log('Outstanding lines:', outstandingLines);
 
       if (outstandingLines.length > 0) {
         replace(outstandingLines);
+      } else {
+        // If no outstanding lines, show message and reset to single empty line
+        alert('This Purchase Order has been fully received');
+        replace([{ item_id: 0, quantity_received: 1, unit_price: 0, description: '', notes: '', purchase_order_line_id: undefined }]);
       }
     }
   }, [selectedPO, setValue, replace]);
@@ -130,16 +168,37 @@ function NewGRVPageContent() {
   const onSubmit = async (data: GRVFormData) => {
     setIsSubmitting(true);
     try {
-      await createMutation.mutateAsync(data);
+      // Get item descriptions for each line
+      const itemsMap = items.reduce((acc, item) => {
+        acc[item.id] = item;
+        return acc;
+      }, {} as Record<number, any>);
+
+      // Format the data to include descriptions
+      const formattedData: GoodsReceivedVoucherCreate = {
+        ...data,
+        reference: data.supplier_delivery_note, // Map to backend's reference field
+        lines: data.lines.map(line => ({
+          ...line,
+          // Add description from items
+          description: itemsMap[line.item_id]?.description || `Item #${line.item_id}`,
+          unit_cost: line.unit_price, // Map to backend's unit_cost field
+          line_total: line.quantity_received * line.unit_price // Calculate line total
+        }))
+      };
+
+      console.log('Submitting GRV:', formattedData);
+      await createMutation.mutateAsync(formattedData as any);
     } catch (error) {
       console.error('Error creating GRV:', error);
+      alert('Failed to create GRV. Please check the console for more details.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const addLine = () => {
-    append({ item_id: 0, quantity_received: 1, unit_price: 0, notes: '' });
+    append({ item_id: 0, quantity_received: 1, unit_price: 0, description: '', notes: '' });
   };
 
   const removeLine = (index: number) => {
@@ -156,7 +215,7 @@ function NewGRVPageContent() {
       setSelectedPOId(null);
       setValue('supplier_id', 0);
       setValue('purchase_order_id', undefined);
-      replace([{ item_id: 0, quantity_received: 1, unit_price: 0, notes: '' }]);
+      replace([{ item_id: 0, quantity_received: 1, unit_price: 0, description: '', notes: '', purchase_order_line_id: undefined }]);
     }
   };
 
@@ -228,13 +287,16 @@ function NewGRVPageContent() {
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Create standalone GRV</option>
-                {purchaseOrders
-                  .filter(po => po.status === 'CONFIRMED')
-                  .map((po) => (
-                    <option key={po.id} value={po.id}>
-                      {po.order_number} - {po.supplier_name}
-                    </option>
-                  ))}
+                {isPOLoading && <option disabled>Loading Purchase Orders...</option>}
+                {poError && <option disabled>Error loading Purchase Orders</option>}
+                {availablePOs.map((po: any) => (
+                  <option key={po.id} value={po.id}>
+                    {po.document_number} - {po.supplier?.name || `Supplier ID: ${po.supplier_id}`}
+                  </option>
+                ))}
+                {!isPOLoading && !poError && availablePOs.length === 0 && (
+                  <option disabled>No Purchase Orders available for receiving</option>
+                )}
               </select>
             </div>
 

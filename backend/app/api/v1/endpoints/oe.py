@@ -361,9 +361,24 @@ async def list_grvs(
         PermissionChecker([OE_GRV_PROCESS])
     )
 ):
-    return crud.oe.get_grvs(
+    grvs = crud.oe.get_grvs(
         db, current_user.company_id, skip, limit
     )
+    
+    # Enrich GRVs with related data and totals
+    enriched_grvs = []
+    for grv in grvs:
+        grv_dict = grv.__dict__.copy()
+        grv_dict['supplier_name'] = grv.supplier.name if grv.supplier else None
+        grv_dict['purchase_order_number'] = grv.purchase_order.document_number if grv.purchase_order else None
+        
+        # Calculate total value from lines
+        total_value = sum(line.line_total for line in grv.lines) if grv.lines else 0
+        grv_dict['total_value'] = float(total_value)
+        
+        enriched_grvs.append(grv_dict)
+    
+    return enriched_grvs
 
 @router.get("/grvs/{grv_id}", response_model=schemas.GoodsReceivedVoucher)
 async def get_grv(
@@ -373,13 +388,38 @@ async def get_grv(
         PermissionChecker([OE_GRV_PROCESS])
     )
 ):
-    grv = db.query(models.GoodsReceivedVoucher).filter(
+    from sqlalchemy.orm import joinedload
+    grv = db.query(models.GoodsReceivedVoucher).options(
+        joinedload(models.GoodsReceivedVoucher.lines).joinedload(models.GoodsReceivedVoucherLine.item),
+        joinedload(models.GoodsReceivedVoucher.supplier),
+        joinedload(models.GoodsReceivedVoucher.purchase_order)
+    ).filter(
         models.GoodsReceivedVoucher.id == grv_id,
         models.GoodsReceivedVoucher.company_id == current_user.company_id
     ).first()
     if not grv:
         raise HTTPException(status_code=404, detail="GRV not found")
-    return grv
+    
+    # Enrich the response with item details
+    grv_dict = grv.__dict__.copy()
+    grv_dict['supplier_name'] = grv.supplier.name if grv.supplier else None
+    grv_dict['purchase_order_number'] = grv.purchase_order.document_number if grv.purchase_order else None
+    
+    # Calculate total value from lines
+    total_value = sum(line.line_total for line in grv.lines) if grv.lines else 0
+    grv_dict['total_value'] = float(total_value)
+    
+    # Add item details to lines
+    enriched_lines = []
+    for line in grv.lines:
+        line_dict = line.__dict__.copy()
+        if line.item:
+            line_dict['item_code'] = line.item.item_code
+            line_dict['item_description'] = line.item.description
+        enriched_lines.append(line_dict)
+    grv_dict['lines'] = enriched_lines
+    
+    return grv_dict
 
 @router.post("/grvs/{grv_id}/convert-to-ap-invoice", response_model=schemas.APTransaction)
 async def convert_grv_to_ap_invoice(

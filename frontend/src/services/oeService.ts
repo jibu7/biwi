@@ -6,6 +6,7 @@ import {
   OrderDefaults, OrderDefaultsUpdate,
   ARTransaction, APTransaction
 } from '@/types/oe';
+import { APTransactionCreate } from '@/types/ap';
 
 // Sales Orders API functions
 export const salesOrderService = {
@@ -49,6 +50,7 @@ export const purchaseOrderService = {
 
   create: async (data: PurchaseOrderCreate): Promise<PurchaseOrder> => {
     const response = await axiosInstance.post('/oe/purchase-orders', data);
+    // ensure order_number is returned
     return response.data;
   },
 
@@ -75,11 +77,29 @@ export const grvService = {
   },
 
   create: async (data: GoodsReceivedVoucherCreate): Promise<GoodsReceivedVoucher> => {
-    const response = await axiosInstance.post('/oe/grvs', data);
+    // Format the data to match backend expectations
+    const formattedData = {
+      supplier_id: data.supplier_id,
+      purchase_order_id: data.purchase_order_id,
+      grv_date: data.grv_date,
+      reference: data.reference || data.supplier_delivery_note,
+      notes: data.notes,
+      lines: data.lines.map((line) => ({
+        item_id: line.item_id,
+        description: line.description || 'No description',
+        quantity_received: line.quantity_received,
+        unit_cost: line.unit_price || line.unit_cost || 0,
+        line_total: line.line_total || (line.quantity_received * (line.unit_price || line.unit_cost || 0)),
+        purchase_order_line_id: line.purchase_order_line_id
+      }))
+    };
+    
+    console.log('Sending GRV data:', formattedData);
+    const response = await axiosInstance.post('/oe/grvs', formattedData);
     return response.data;
   },
 
-  convertToAPInvoice: async (id: number, invoiceDetails: any): Promise<APTransaction> => {
+  convertToAPInvoice: async (id: number, invoiceDetails: APTransactionCreate): Promise<APTransaction> => {
     const response = await axiosInstance.post(`/oe/grvs/${id}/convert-to-ap-invoice`, invoiceDetails);
     return response.data;
   },
