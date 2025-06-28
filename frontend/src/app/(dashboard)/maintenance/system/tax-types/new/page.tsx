@@ -11,12 +11,34 @@ const taxTypeSchema = z.object({
   tax_code: z.string().min(1, 'Tax code is required').optional(),
   name: z.string().min(1, 'Name is required'),
   tax_nature: z.enum(['Sales', 'Purchases', 'Exempt', 'ZeroRated']),
-  rate_percentage: z.number().min(0).max(100),
+  rate_percentage: z.number()
+    .min(0, "Tax rate cannot be negative")
+    .max(200, "Tax rate cannot exceed 200%")
+    .refine(val => val >= 0, "Tax rate must be 0 or greater"),
   tax_authority_gl_account_id: z.number().optional(),
   is_active: z.boolean().optional(),
 });
 
 type TaxTypeFormData = z.infer<typeof taxTypeSchema>;
+
+// Helper function to parse API errors for tax types
+const parseApiError = (error: any): string => {
+  if (error?.response?.status === 400) {
+    const detail = error.response?.data?.detail;
+    if (typeof detail === 'string') {
+      if (detail.includes('Tax type name already exists')) {
+        return 'A tax type with this name already exists for your company. Please use a different name.';
+      }
+      return detail;
+    }
+  }
+  
+  if (error?.message) {
+    return error.message;
+  }
+  
+  return 'An unexpected error occurred while creating the tax type. Please try again.';
+};
 
 export default function NewTaxTypePage() {
   const router = useRouter();
@@ -40,6 +62,10 @@ export default function NewTaxTypePage() {
       queryClient.invalidateQueries({ queryKey: ['taxTypes'] });
       router.push('/maintenance/system/tax-types');
     },
+    onError: (error: any) => {
+      console.error('Error creating tax type:', error);
+      // The error will be displayed in the JSX error block
+    },
   });
 
   const onSubmit = (data: TaxTypeFormData) => {
@@ -61,6 +87,26 @@ export default function NewTaxTypePage() {
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
+        {createMutation.error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Error Creating Tax Type
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{parseApiError(createMutation.error)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -121,13 +167,16 @@ export default function NewTaxTypePage() {
                 type="number"
                 step="0.01"
                 min="0"
-                max="100"
+                max="200"
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
                 placeholder="10.00"
               />
               {errors.rate_percentage && (
                 <p className="text-red-500 text-sm mt-1">{errors.rate_percentage.message}</p>
               )}
+              <p className="text-xs text-gray-500 mt-1">
+                Enter tax rate as a percentage (e.g., 10.00 for 10%). Negative values are not allowed. High rates above 200% will require confirmation.
+              </p>
             </div>
           </div>
 

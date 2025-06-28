@@ -8,15 +8,43 @@ import { z } from 'zod';
 import { commonService, CurrencyCreate } from '@/services/commonService';
 
 const currencySchema = z.object({
-  code: z.string().min(3, "Currency code must be exactly 3 characters").max(3, "Currency code must be exactly 3 characters").transform(val => val.toUpperCase()),
+  code: z.string()
+    .min(1, "Currency code is required")
+    .refine(val => val.length === 3, "Currency code must be exactly 3 characters")
+    .transform(val => val.toUpperCase()),
   name: z.string().min(1, "Currency name is required"),
   symbol: z.string().optional(),
-  exchange_rate_to_base: z.number().min(0.000001, "Exchange rate must be greater than 0").optional(),
+  exchange_rate_to_base: z.number()
+    .min(0.000001, "Exchange rate must be greater than 0")
+    .max(999999, "Exchange rate seems too high")
+    .optional(),
   is_base_currency: z.boolean().optional(),
   is_active: z.boolean().optional(),
 });
 
 type CurrencyFormData = z.infer<typeof currencySchema>;
+
+// Helper function to parse API errors
+const parseApiError = (error: any): string => {
+  if (error?.response?.status === 400) {
+    const detail = error.response?.data?.detail;
+    if (typeof detail === 'string') {
+      if (detail.includes('Currency code already exists')) {
+        return 'A currency with this code already exists for your company. Please use a different currency code.';
+      }
+      if (detail.includes('base currency already exists')) {
+        return 'A base currency already exists for your company. Only one base currency is allowed per company.';
+      }
+      return detail;
+    }
+  }
+  
+  if (error?.message) {
+    return error.message;
+  }
+  
+  return 'An unexpected error occurred while creating the currency. Please try again.';
+};
 
 export default function NewCurrencyPage() {
   const router = useRouter();
@@ -44,8 +72,9 @@ export default function NewCurrencyPage() {
       queryClient.invalidateQueries({ queryKey: ['currencies'] });
       router.push('/maintenance/system/currencies');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error creating currency:', error);
+      // The error will be displayed in the JSX error block
     },
   });
 
@@ -72,9 +101,21 @@ export default function NewCurrencyPage() {
       <div className="bg-white rounded-lg shadow p-6">
         {createMutation.error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-600 text-sm">
-              Error: {createMutation.error instanceof Error ? createMutation.error.message : 'Failed to create currency'}
-            </p>
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Error Creating Currency
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{parseApiError(createMutation.error)}</p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
         
@@ -90,10 +131,14 @@ export default function NewCurrencyPage() {
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
                 placeholder="USD"
                 maxLength={3}
+                style={{ textTransform: 'uppercase' }}
               />
               {errors.code && (
                 <p className="text-red-500 text-sm mt-1">{errors.code.message}</p>
               )}
+              <p className="text-xs text-gray-500 mt-1">
+                Enter a 3-letter ISO currency code (e.g., USD, EUR, GBP)
+              </p>
             </div>
 
             <div>
@@ -132,12 +177,18 @@ export default function NewCurrencyPage() {
                 {...register('exchange_rate_to_base', { valueAsNumber: true })}
                 type="number"
                 step="0.000001"
+                min="0.000001"
                 className="w-full border border-gray-300 rounded-md px-3 py-2"
                 disabled={isBaseCurrency}
               />
               {errors.exchange_rate_to_base && (
                 <p className="text-red-500 text-sm mt-1">{errors.exchange_rate_to_base.message}</p>
               )}
+              <p className="text-xs text-gray-500 mt-1">
+                {isBaseCurrency 
+                  ? "Base currency always has exchange rate of 1.0" 
+                  : "Enter the exchange rate relative to your base currency"}
+              </p>
             </div>
           </div>
 

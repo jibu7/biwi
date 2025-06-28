@@ -9,15 +9,43 @@ import { z } from 'zod';
 import { commonService, CurrencyUpdate } from '@/services/commonService';
 
 const currencyUpdateSchema = z.object({
-  code: z.string().min(3).max(3).optional(),
-  name: z.string().min(1).optional(),
+  code: z.string()
+    .min(1, "Currency code is required")
+    .refine(val => val.length === 3, "Currency code must be exactly 3 characters")
+    .optional(),
+  name: z.string().min(1, "Currency name is required").optional(),
   symbol: z.string().optional(),
-  exchange_rate_to_base: z.number().min(0.000001).optional(),
+  exchange_rate_to_base: z.number()
+    .min(0.000001, "Exchange rate must be greater than 0")
+    .max(999999, "Exchange rate seems too high")
+    .optional(),
   is_base_currency: z.boolean().optional(),
   is_active: z.boolean().optional(),
 });
 
 type CurrencyUpdateFormData = z.infer<typeof currencyUpdateSchema>;
+
+// Helper function to parse API errors
+const parseApiError = (error: any): string => {
+  if (error?.response?.status === 400) {
+    const detail = error.response?.data?.detail;
+    if (typeof detail === 'string') {
+      if (detail.includes('Currency code already exists')) {
+        return 'A currency with this code already exists for your company. Please use a different currency code.';
+      }
+      if (detail.includes('base currency already exists')) {
+        return 'A base currency already exists for your company. Only one base currency is allowed per company.';
+      }
+      return detail;
+    }
+  }
+  
+  if (error?.message) {
+    return error.message;
+  }
+  
+  return 'An unexpected error occurred while updating the currency. Please try again.';
+};
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -82,6 +110,10 @@ export default function EditCurrencyPage({ params }: PageProps) {
       queryClient.invalidateQueries({ queryKey: ['currency', currencyId] });
       router.push('/maintenance/system/currencies');
     },
+    onError: (error: any) => {
+      console.error('Error updating currency:', error);
+      // The error will be displayed in the JSX error block
+    },
   });
 
   const onSubmit = (data: CurrencyUpdateFormData) => {
@@ -115,6 +147,26 @@ export default function EditCurrencyPage({ params }: PageProps) {
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
+        {updateMutation.error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Error Updating Currency
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{parseApiError(updateMutation.error)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>

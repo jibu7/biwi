@@ -5,10 +5,10 @@ from decimal import Decimal
 
 # Currency Schemas
 class CurrencyBase(BaseModel):
-    code: str = Field(..., max_length=3, description="ISO currency code (e.g., USD, EUR)")
-    name: str = Field(..., description="Full currency name")
+    code: str = Field(..., min_length=3, max_length=3, description="ISO currency code (e.g., USD, EUR)")
+    name: str = Field(..., min_length=1, max_length=100, description="Full currency name")
     symbol: Optional[str] = Field(None, max_length=5, description="Currency symbol")
-    exchange_rate_to_base: Decimal = Field(default=Decimal("1.000000"), description="Exchange rate to base currency")
+    exchange_rate_to_base: Decimal = Field(default=Decimal("1.000000"), ge=Decimal("0.000001"), le=Decimal("999999"), description="Exchange rate to base currency")
     is_base_currency: bool = Field(default=False, description="Whether this is the base currency")
     is_active: bool = Field(default=True, description="Whether currency is active")
 
@@ -19,9 +19,9 @@ class CurrencyCreate(CurrencyBase):
 
 
 class CurrencyUpdate(BaseModel):
-    name: Optional[str] = None
-    symbol: Optional[str] = None
-    exchange_rate_to_base: Optional[Decimal] = None
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    symbol: Optional[str] = Field(None, max_length=5)
+    exchange_rate_to_base: Optional[Decimal] = Field(None, ge=Decimal("0.000001"), le=Decimal("999999"))
     is_base_currency: Optional[bool] = None
     is_active: Optional[bool] = None
 
@@ -37,7 +37,7 @@ class Currency(CurrencyBase):
 # Tax Type Schemas
 class TaxTypeBase(BaseModel):
     name: str = Field(..., description="Tax type name")
-    rate_percentage: Decimal = Field(..., description="Tax rate percentage")
+    rate_percentage: Decimal = Field(..., ge=0, le=999.99, description="Tax rate percentage (0-999.99)")
     tax_authority_gl_account_id: Optional[int] = Field(None, description="GL account for tax authority")
     tax_code: Optional[str] = Field(None, description="External tax code")
     tax_nature: str = Field(..., description="Tax nature: Sales, Purchases, Exempt, ZeroRated")
@@ -50,8 +50,8 @@ class TaxTypeCreate(TaxTypeBase):
 
 
 class TaxTypeUpdate(BaseModel):
-    name: Optional[str] = None
-    rate_percentage: Optional[Decimal] = None
+    name: Optional[str] = Field(None, min_length=1)
+    rate_percentage: Optional[Decimal] = Field(None, ge=0, le=999.99)
     tax_authority_gl_account_id: Optional[int] = None
     tax_code: Optional[str] = None
     tax_nature: Optional[str] = None
