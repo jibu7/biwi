@@ -1,5 +1,5 @@
 import { useAuth } from '@/store/authStore';
-import { roleService } from '@/services/roleService';
+import { userService } from '@/services/userService';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { Role } from '@/types';
@@ -11,10 +11,8 @@ export const usePermissions = () => {
     queryKey: ['userRoles', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      // For now, we'll fetch all roles and filter
-      // In production, you'd want a specific endpoint for user's roles
-      const allRoles = await roleService.getRoles();
-      return allRoles.filter(role => role.company_id === user.company_id);
+      // Fetch only the current user's assigned roles
+      return await userService.getUserRoles();
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes

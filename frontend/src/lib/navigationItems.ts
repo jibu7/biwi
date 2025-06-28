@@ -59,21 +59,6 @@ export const navItems: NavItem[] = [
             href: "/maintenance/system/accounting-periods", 
             requiredPermission: permissions.ACCOUNTING_PERIOD_MANAGE 
           },
-          { 
-            label: "Currencies", 
-            href: "/maintenance/system/currencies", 
-            requiredPermission: permissions.COMMON_SETUP_CURRENCIES 
-          },
-          { 
-            label: "Tax Types", 
-            href: "/maintenance/system/tax-types", 
-            requiredPermission: permissions.COMMON_SETUP_TAXES 
-          },
-          { 
-            label: "Branches", 
-            href: "/maintenance/system/branches", 
-            requiredPermission: permissions.COMMON_SETUP_BRANCHES 
-          }
         ]
       },
       {
@@ -226,6 +211,28 @@ export const navItems: NavItem[] = [
             label: "Defaults", 
             href: "/maintenance/bom/defaults", 
             requiredPermission: permissions.BOM_SETUP_MANAGE 
+          }
+        ]
+      },
+      {
+        label: "Common",
+        href: "/maintenance/common",
+        icon: Globe,
+        children: [
+          { 
+            label: "Currencies", 
+            href: "/maintenance/system/currencies", 
+            requiredPermission: permissions.COMMON_SETUP_CURRENCIES 
+          },
+          { 
+            label: "Tax Types", 
+            href: "/maintenance/system/tax-types", 
+            requiredPermission: permissions.COMMON_SETUP_TAXES 
+          },
+          { 
+            label: "Branches", 
+            href: "/maintenance/system/branches", 
+            requiredPermission: permissions.COMMON_SETUP_BRANCHES 
           }
         ]
       }

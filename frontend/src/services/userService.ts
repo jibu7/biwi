@@ -1,5 +1,5 @@
 import axiosInstance from '@/lib/axiosInstance';
-import { User, UserCreate, UserUpdate } from '@/types';
+import { User, UserCreate, UserUpdate, Role } from '@/types';
 
 export const userService = {
   async getUsers(skip = 0, limit = 100): Promise<User[]> {
@@ -37,5 +37,17 @@ export const userService = {
   async revokeRole(userId: number, roleId: number): Promise<User> {
     const response = await axiosInstance.delete<User>(`/users/${userId}/roles/${roleId}`);
     return response.data;
+  },
+
+  async getUserRoles(userId?: number): Promise<Role[]> {
+    if (userId) {
+      // For getting another user's roles (if needed in the future)
+      const response = await axiosInstance.get<Role[]>(`/users/${userId}/roles`);
+      return response.data;
+    } else {
+      // Get current user's roles
+      const response = await axiosInstance.get<Role[]>('/auth/me/roles');
+      return response.data;
+    }
   }
 };

@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any
+from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -38,3 +38,11 @@ async def read_users_me(
 ) -> Any:
     """Get current user"""
     return current_user
+
+@router.get("/me/roles", response_model=List[schemas.Role])
+async def read_users_me_roles(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.get_current_active_user),
+) -> Any:
+    """Get current user's roles"""
+    return crud.core.get_user_roles(db, current_user.id)

@@ -26,15 +26,43 @@ export function Sidebar() {
   };
 
   const renderNavItem = (item: any, level = 0) => {
-    // Check permissions
+    // Helper function to recursively check if any child is visible
+    const hasVisibleChildren = (children: any[]): boolean => {
+      return children?.some((child: any) => {
+        // Check if this child itself is visible
+        const childVisible = !child.requiredPermission || hasPermission(child.requiredPermission);
+        
+        // If child has no children and is visible, return true
+        if (!child.children && childVisible) {
+          return true;
+        }
+        
+        // If child has children, recursively check
+        if (child.children) {
+          return childVisible && hasVisibleChildren(child.children);
+        }
+        
+        return childVisible;
+      }) || false;
+    };
+
+    // Check permissions for this item
     if (item.requiredPermission && !hasPermission(item.requiredPermission)) {
       return null;
     }
 
-    // Filter children based on permissions
-    const visibleChildren = item.children?.filter(
-      (child: any) => !child.requiredPermission || hasPermission(child.requiredPermission)
-    );
+    // Filter children based on permissions (recursively)
+    const visibleChildren = item.children?.filter((child: any) => {
+      const childVisible = !child.requiredPermission || hasPermission(child.requiredPermission);
+      
+      // If child has no children, just check its own permission
+      if (!child.children) {
+        return childVisible;
+      }
+      
+      // If child has children, it's visible if it has permission AND has visible children
+      return childVisible && hasVisibleChildren(child.children);
+    });
 
     // Don't render if no visible children and no href
     if (!item.href && (!visibleChildren || visibleChildren.length === 0)) {

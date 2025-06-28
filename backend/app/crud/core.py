@@ -50,6 +50,12 @@ def delete_user(db: Session, user_id: int) -> Optional[models.User]:
         db.commit()
     return user
 
+def get_user_roles(db: Session, user_id: int) -> List[models.Role]:
+    """Get all roles assigned to a specific user"""
+    return db.query(models.Role).join(models.UserRole).filter(
+        models.UserRole.user_id == user_id
+    ).all()
+
 # Role CRUD
 def create_role(db: Session, role: schemas.RoleCreate, company_id: int) -> models.Role:
     db_role = models.Role(
