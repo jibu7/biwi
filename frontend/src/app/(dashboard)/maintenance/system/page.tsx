@@ -9,7 +9,8 @@ import {
   Shield, 
   Calendar,
   Globe,
-  Percent
+  Percent,
+  MapPin
 } from 'lucide-react';
 import * as permissions from '@/lib/permissions';
 
@@ -65,6 +66,14 @@ export default function SystemMaintenancePage() {
       href: '/maintenance/system/tax-types',
       color: 'bg-red-500',
       requiredPermission: permissions.COMMON_SETUP_TAXES,
+    },
+    {
+      title: 'Branches',
+      description: 'Manage company branches and locations',
+      icon: MapPin,
+      href: '/maintenance/system/branches',
+      color: 'bg-indigo-500',
+      requiredPermission: permissions.COMMON_SETUP_BRANCHES,
     },
   ];
 
