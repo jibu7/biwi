@@ -24,9 +24,9 @@ interface PageProps {
 }
 
 export default function EditCurrencyPage({ params }: PageProps) {
-  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
+  const [resolvedParams, setResolvedParams] = React.useState<{ id: string } | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     params.then(setResolvedParams);
   }, [params]);
 
@@ -39,6 +39,11 @@ export default function EditCurrencyPage({ params }: PageProps) {
     queryFn: () => commonService.getCurrency(currencyId),
   enabled: currencyId > 0,
   });
+  // Fetch all currencies to validate base currency uniqueness
+  const { data: allCurrencies } = useQuery({
+    queryKey: ['currencies'],
+    queryFn: () => commonService.getCurrencies(),
+  });
 
   const {
     register,
@@ -46,11 +51,22 @@ export default function EditCurrencyPage({ params }: PageProps) {
     formState: { errors },
     watch,
     reset,
+    setError,
+    setValue,
   } = useForm<CurrencyUpdateFormData>({
     resolver: zodResolver(currencyUpdateSchema),
   });
 
   const isBaseCurrency = watch('is_base_currency');
+  // Auto-set exchange rate to 1.0 when base currency is checked
+  React.useEffect(() => {
+    if (isBaseCurrency) {
+      setValue('exchange_rate_to_base', 1.0, { shouldValidate: true });
+    }
+  }, [isBaseCurrency, setValue]);
+
+  // Check if another base currency already exists
+  const baseExists = allCurrencies?.some(c => c.is_base_currency && c.id !== currencyId);
 
   // Reset form when currency data loads
   React.useEffect(() => {
@@ -69,6 +85,14 @@ export default function EditCurrencyPage({ params }: PageProps) {
   });
 
   const onSubmit = (data: CurrencyUpdateFormData) => {
+    // Prevent setting a new base currency if one already exists
+    if (data.is_base_currency) {
+      const exists = allCurrencies?.some(c => c.is_base_currency && c.id !== currencyId);
+      if (exists) {
+        setError('is_base_currency', { type: 'manual', message: 'A base currency already exists for this company' });
+        return;
+      }
+    }
     const updateData: CurrencyUpdate = { ...data };
     if (data.is_base_currency) {
       updateData.exchange_rate_to_base = 1.0;
@@ -154,7 +178,12 @@ export default function EditCurrencyPage({ params }: PageProps) {
           <div className="space-y-4">
             <div className="flex items-center">
               <input
-                {...register('is_base_currency')}
+                {...register('is_base_currency', {
+                  validate: value =>
+                    value && baseExists
+                      ? 'A base currency already exists for this company'
+                      : true,
+                })}
                 type="checkbox"
                 className="h-4 w-4 text-blue-600"
               />
@@ -162,6 +191,9 @@ export default function EditCurrencyPage({ params }: PageProps) {
                 Base Currency
               </label>
             </div>
+            {errors.is_base_currency && (
+              <p className="text-red-500 text-sm mt-1">{errors.is_base_currency.message}</p>
+            )}
 
             <div className="flex items-center">
               <input

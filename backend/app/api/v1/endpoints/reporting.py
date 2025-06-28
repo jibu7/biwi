@@ -13,6 +13,7 @@ from app.core.permissions import (
     REPORTING_BANK_RECONCILIATION_MANAGE
 )
 from app.crud import reporting
+from app.crud import gl as crud_gl
 from app import schemas, models
 from app.core.security import get_current_active_user
 
@@ -134,4 +135,31 @@ async def create_bank_reconciliation(
         reconciliation=reconciliation,
         company_id=current_user.company_id,
         user_id=current_user.id
+    )
+
+@router.get("/account-transactions", response_model=List[schemas.AccountTransaction])
+async def get_account_transactions(
+    account_code: str = Query(..., description="GL Account Code"),
+    start_date: date = Query(..., description="Start date"),
+    end_date: date = Query(..., description="End date"),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(PermissionChecker([REPORTING_GL_ADVANCED_VIEW]))
+):
+    """Get account transaction details by account code"""
+    # First find the account by code
+    account = db.query(models.GLAccount).filter(
+        models.GLAccount.company_id == current_user.company_id,
+        models.GLAccount.account_code == account_code
+    ).first()
+    
+    if not account:
+        raise HTTPException(status_code=404, detail=f"Account with code {account_code} not found")
+    
+    # Get transactions for this account
+    return crud_gl.get_account_transactions(
+        db, 
+        company_id=current_user.company_id, 
+        account_id=account.id,
+        start_date=start_date, 
+        end_date=end_date
     )

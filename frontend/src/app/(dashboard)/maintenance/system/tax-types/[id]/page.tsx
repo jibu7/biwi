@@ -13,8 +13,8 @@ const taxTypeSchema = z.object({
   tax_code: z.string().optional(),
   name: z.string().min(1, 'Name is required'),
   tax_nature: z.enum(['Sales', 'Purchases', 'Exempt', 'ZeroRated']),
-  rate_percentage: z.number().min(0).max(100),
-  tax_authority_gl_account_id: z.number().optional(),
+  rate_percentage: z.number().min(0, 'Rate must be 0 or greater').max(100, 'Rate must be 100 or less'),
+  tax_authority_gl_account_id: z.number().nullable().optional(),
   is_active: z.boolean().optional(),
 });
 
@@ -22,9 +22,9 @@ type TaxTypeFormData = z.infer<typeof taxTypeSchema>;
 
 export default function EditTaxTypePage() {
   const router = useRouter();
-  const params = useParams();
+  const { id } = useParams();
   const queryClient = useQueryClient();
-  const taxTypeId = resolvedParams ? Number(resolvedParams.id) : 0;
+  const taxTypeId = id ? Number(id) : 0;
 
   const { data: taxType, isLoading } = useQuery({
     queryKey: ['taxType', taxTypeId],
@@ -41,6 +41,13 @@ export default function EditTaxTypePage() {
     resolver: zodResolver(taxTypeSchema),
   });
 
+  // Debug form errors
+  React.useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log('Form validation errors:', errors);
+    }
+  }, [errors]);
+
   // Reset form when tax type data is loaded
   React.useEffect(() => {
     if (taxType) {
@@ -48,7 +55,8 @@ export default function EditTaxTypePage() {
         tax_code: taxType.tax_code || '',
         name: taxType.name,
         tax_nature: taxType.tax_nature,
-        rate_percentage: taxType.rate_percentage,
+        // ensure numeric type for Zod validation
+        rate_percentage: Number(taxType.rate_percentage),
         tax_authority_gl_account_id: taxType.tax_authority_gl_account_id,
         is_active: taxType.is_active,
       });
@@ -58,13 +66,19 @@ export default function EditTaxTypePage() {
   const updateMutation = useMutation({
     mutationFn: (data: TaxTypeUpdate) => commonService.updateTaxType(taxTypeId, data),
     onSuccess: () => {
+      console.log('Update successful');
       queryClient.invalidateQueries({ queryKey: ['taxTypes'] });
       queryClient.invalidateQueries({ queryKey: ['taxType', taxTypeId] });
       router.push('/maintenance/system/tax-types');
     },
+    onError: (error) => {
+      console.error('Update failed:', error);
+    },
   });
 
   const onSubmit = (data: TaxTypeFormData) => {
+    console.log('Form data:', data);
+    console.log('Tax type ID:', taxTypeId);
     const taxTypeData: TaxTypeUpdate = {
       tax_code: data.tax_code,
       name: data.name,
@@ -73,6 +87,7 @@ export default function EditTaxTypePage() {
       tax_authority_gl_account_id: data.tax_authority_gl_account_id,
       is_active: data.is_active,
     };
+    console.log('Sending update:', taxTypeData);
     updateMutation.mutate(taxTypeData);
   };
 
@@ -90,8 +105,11 @@ export default function EditTaxTypePage() {
         <h1 className="text-2xl font-bold">Edit Tax Type</h1>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="bg-white rounded-lg shadow p-6">        <form onSubmit={(e) => {
+          console.log('Form submit event triggered');
+          handleSubmit(onSubmit)(e);
+        }} className="space-y-6">
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -183,6 +201,7 @@ export default function EditTaxTypePage() {
             <button
               type="submit"
               disabled={updateMutation.isPending}
+              onClick={() => console.log('Update button clicked')}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               {updateMutation.isPending ? 'Updating...' : 'Update Tax Type'}

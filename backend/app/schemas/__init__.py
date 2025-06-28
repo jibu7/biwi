@@ -57,6 +57,7 @@ from .oe import (
     SalesOrderLine, SalesOrderLineCreate, SalesOrderLineUpdate,
     PurchaseOrder, PurchaseOrderCreate, PurchaseOrderUpdate,
     PurchaseOrderLine, PurchaseOrderLineCreate, PurchaseOrderLineUpdate,
+    PurchaseOrderReport,
     GoodsReceivedVoucher, GoodsReceivedVoucherCreate, GoodsReceivedVoucherUpdate,
     GoodsReceivedVoucherLine, GoodsReceivedVoucherLineCreate, GoodsReceivedVoucherLineUpdate,
     OrderDefaults, OrderDefaultsCreate, OrderDefaultsUpdate

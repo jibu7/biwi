@@ -29,7 +29,7 @@ export default function NewTaxTypePage() {
   } = useForm<TaxTypeFormData>({
     resolver: zodResolver(taxTypeSchema),
     defaultValues: {
-      rate_percentage: 0,
+      rate_percentage: 0 as number,
       is_active: true,
     },
   });

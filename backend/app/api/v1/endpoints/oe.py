@@ -492,7 +492,7 @@ async def sales_orders_report(
     
     return query.all()
 
-@router.get("/reports/purchase-orders-listing", response_model=List[schemas.PurchaseOrder])
+@router.get("/reports/purchase-orders-listing", response_model=List[schemas.PurchaseOrderReport])
 async def purchase_orders_report(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
@@ -503,7 +503,15 @@ async def purchase_orders_report(
         PermissionChecker([OE_REPORTS_VIEW])
     )
 ):
-    query = db.query(models.PurchaseOrder).filter(
+    # Query with joins to get supplier information
+    query = db.query(
+        models.PurchaseOrder,
+        models.Supplier.name.label('supplier_name'),
+        models.Supplier.supplier_code.label('supplier_code')
+    ).join(
+        models.Supplier, 
+        models.PurchaseOrder.supplier_id == models.Supplier.id
+    ).filter(
         models.PurchaseOrder.company_id == current_user.company_id
     )
     
@@ -516,7 +524,27 @@ async def purchase_orders_report(
     if status:
         query = query.filter(models.PurchaseOrder.status == status)
     
-    return query.all()
+    results = query.all()
+    
+    # Transform the results to match the schema
+    purchase_orders = []
+    for po, supplier_name, supplier_code in results:
+        purchase_orders.append(schemas.PurchaseOrderReport(
+            id=po.id,
+            order_number=po.document_number,
+            supplier_id=po.supplier_id,
+            supplier_name=supplier_name,
+            order_date=po.order_date,
+            expected_delivery_date=po.expected_delivery_date,
+            reference=po.reference,
+            supplier_reference=supplier_code,
+            status=po.status,
+            total_amount=po.total_amount,
+            currency_code="USD",  # Default to USD for now
+            notes=po.notes
+        ))
+    
+    return purchase_orders
 
 @router.get("/reports/grv-listing", response_model=List[schemas.GoodsReceivedVoucher])
 async def grv_report(

@@ -36,7 +36,7 @@ export interface TaxType {
   company_id: number;
   name: string;
   rate_percentage: number;
-  tax_authority_gl_account_id?: number;
+  tax_authority_gl_account_id?: number | null;
   tax_code?: string;
   tax_nature: 'Sales' | 'Purchases' | 'Exempt' | 'ZeroRated';
   is_active: boolean;
@@ -45,7 +45,7 @@ export interface TaxType {
 export interface TaxTypeCreate {
   name: string;
   rate_percentage: number;
-  tax_authority_gl_account_id?: number;
+  tax_authority_gl_account_id?: number | null;
   tax_code?: string;
   tax_nature: 'Sales' | 'Purchases' | 'Exempt' | 'ZeroRated';
   is_active?: boolean;
@@ -54,7 +54,7 @@ export interface TaxTypeCreate {
 export interface TaxTypeUpdate {
   name?: string;
   rate_percentage?: number;
-  tax_authority_gl_account_id?: number;
+  tax_authority_gl_account_id?: number | null;
   tax_code?: string;
   tax_nature?: 'Sales' | 'Purchases' | 'Exempt' | 'ZeroRated';
   is_active?: boolean;

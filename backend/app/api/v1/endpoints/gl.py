@@ -33,6 +33,15 @@ def read_gl_accounts(
         db, company_id=current_user.company_id, skip=skip, limit=limit, include_inactive=include_inactive
     )
 
+@router.get("/accounts/test", response_model=List[dict])
+def test_gl_accounts() -> Any:
+    """Test endpoint without authentication"""
+    return [
+        {"id": 1, "account_code": "1000", "account_name": "Cash", "current_balance": 5000.00},
+        {"id": 2, "account_code": "1200", "account_name": "Accounts Receivable", "current_balance": 2500.00},
+        {"id": 3, "account_code": "4000", "account_name": "Sales Revenue", "current_balance": -10000.00}
+    ]
+
 @router.get("/accounts/{account_id}", response_model=schemas.GLAccount)
 def read_gl_account(
     account_id: int,

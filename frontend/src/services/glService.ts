@@ -17,10 +17,28 @@ import {
 export const glService = {
   // GL Accounts
   async getGLAccounts(includeInactive = false): Promise<GLAccount[]> {
-    const response = await axiosInstance.get<GLAccount[]>('/gl/accounts', {
-      params: { include_inactive: includeInactive }
-    });
-    return response.data;
+    try {
+      console.log('Making request to:', '/gl/accounts');
+      const response = await axiosInstance.get<GLAccount[]>('/gl/accounts', {
+        params: { include_inactive: includeInactive }
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('GL Service error:', error);
+      console.error('Request config:', error.config);
+      throw error;
+    }
+  },
+
+  async testConnection(): Promise<any> {
+    try {
+      console.log('Testing connection to backend...');
+      const response = await axiosInstance.get('/gl/accounts/test');
+      return response.data;
+    } catch (error: any) {
+      console.error('Test connection failed:', error);
+      throw error;
+    }
   },
 
   async getGLAccount(id: number): Promise<GLAccount> {

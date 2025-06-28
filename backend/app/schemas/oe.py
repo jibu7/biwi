@@ -160,6 +160,24 @@ class PurchaseOrder(PurchaseOrderBase):
     class Config:
         from_attributes = True
 
+# Purchase Order Report Schema with additional fields
+class PurchaseOrderReport(BaseModel):
+    id: int
+    order_number: str  # document_number
+    supplier_id: int
+    supplier_name: str
+    order_date: date
+    expected_delivery_date: Optional[date] = None
+    reference: Optional[str] = None
+    supplier_reference: Optional[str] = None  # from supplier.supplier_code or reference field
+    status: str
+    total_amount: Decimal
+    currency_code: str = "USD"  # Default to USD for now
+    notes: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 # Goods Received Voucher Schemas
 class GoodsReceivedVoucherLineBase(BaseModel):
     item_id: int
