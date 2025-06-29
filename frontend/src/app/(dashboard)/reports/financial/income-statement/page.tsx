@@ -4,6 +4,11 @@ import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import reportingService, { IncomeStatementData } from '@/services/reportingService';
 import { format, subMonths } from 'date-fns';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import { FileText, FileSpreadsheet, Printer } from 'lucide-react';
 import '@/styles/reports.css';
 
 export default function IncomeStatementPage() {
@@ -73,8 +78,137 @@ export default function IncomeStatementPage() {
   };
 
   const handleDrillDown = (accountCode: string) => {
-    const url = `/reports/gl/account-transactions?account_code=${accountCode}&start_date=${startDate}&end_date=${endDate}`;
+    const url = `/reports/gl/account-transactions?account_code=${accountCode}&start_date=${endDate}&end_date=${endDate}`;
     window.open(url, '_blank');
+  };
+
+  const handleExportPDF = () => {
+    if (!incomeStatement) return;
+
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFontSize(16);
+    doc.text(incomeStatement.company_name, 105, 20, { align: 'center' });
+    doc.text('Income Statement', 105, 30, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text(`For the Period ${format(new Date(incomeStatement.start_date), 'MMMM dd, yyyy')} to ${format(new Date(incomeStatement.end_date), 'MMMM dd, yyyy')}`, 105, 40, { align: 'center' });
+    
+    let yPosition = 60;
+    
+    // Revenue section
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('REVENUE', 20, yPosition);
+    yPosition += 10;
+    
+    const revenueData = incomeStatement.revenue.map(line => [
+      line.account_code,
+      line.account_name,
+      formatCurrency(line.amount)
+    ]);
+    
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Account Code', 'Account Name', 'Amount']],
+      body: revenueData,
+      theme: 'plain',
+      styles: { fontSize: 10 },
+      columnStyles: { 2: { halign: 'right' } }
+    });
+    
+    yPosition = (doc as any).lastAutoTable.finalY + 5;
+    
+    // Total Revenue
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total Revenue:', 120, yPosition);
+    doc.text(formatCurrency(incomeStatement.total_revenue), 180, yPosition, { align: 'right' });
+    yPosition += 15;
+    
+    // Expenses section
+    doc.text('EXPENSES', 20, yPosition);
+    yPosition += 10;
+    
+    const expensesData = incomeStatement.expenses.map(line => [
+      line.account_code,
+      line.account_name,
+      formatCurrency(line.amount)
+    ]);
+    
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Account Code', 'Account Name', 'Amount']],
+      body: expensesData,
+      theme: 'plain',
+      styles: { fontSize: 10 },
+      columnStyles: { 2: { halign: 'right' } }
+    });
+    
+    yPosition = (doc as any).lastAutoTable.finalY + 5;
+    
+    // Total Expenses
+    doc.text('Total Expenses:', 120, yPosition);
+    doc.text(formatCurrency(incomeStatement.total_expenses), 180, yPosition, { align: 'right' });
+    yPosition += 10;
+    
+    // Net Income
+    doc.setFontSize(12);
+    doc.text('Net Income:', 120, yPosition);
+    doc.text(formatCurrency(incomeStatement.net_income), 180, yPosition, { align: 'right' });
+    
+    doc.save(`income-statement-${startDate}-to-${endDate}.pdf`);
+  };
+
+  const handleExportExcel = () => {
+    if (!incomeStatement) return;
+
+    const workbook = XLSX.utils.book_new();
+    
+    // Prepare data
+    const data = [];
+    
+    // Header
+    data.push([incomeStatement.company_name]);
+    data.push(['Income Statement']);
+    data.push([`For the Period ${format(new Date(incomeStatement.start_date), 'MMMM dd, yyyy')} to ${format(new Date(incomeStatement.end_date), 'MMMM dd, yyyy')}`]);
+    data.push([]);
+    
+    // Revenue
+    data.push(['REVENUE']);
+    data.push(['Account Code', 'Account Name', 'Amount']);
+    incomeStatement.revenue.forEach(line => {
+      data.push([line.account_code, line.account_name, line.amount]);
+    });
+    data.push(['', 'Total Revenue', incomeStatement.total_revenue]);
+    data.push([]);
+    
+    // Expenses
+    data.push(['EXPENSES']);
+    data.push(['Account Code', 'Account Name', 'Amount']);
+    incomeStatement.expenses.forEach(line => {
+      data.push([line.account_code, line.account_name, line.amount]);
+    });
+    data.push(['', 'Total Expenses', incomeStatement.total_expenses]);
+    data.push([]);
+    data.push(['', 'Net Income', incomeStatement.net_income]);
+    
+    const worksheet = XLSX.utils.aoa_to_sheet(data);
+    
+    // Add some styling
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    
+    // Set column widths
+    worksheet['!cols'] = [
+      { width: 15 }, // Account Code
+      { width: 30 }, // Account Name
+      { width: 15 }  // Amount
+    ];
+    
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Income Statement');
+    
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `income-statement-${startDate}-to-${endDate}.xlsx`);
   };
 
   const formatCurrency = (amount: number) => {
@@ -195,6 +329,43 @@ export default function IncomeStatementPage() {
               </div>
             </div>
             
+            {/* Export buttons */}
+            {incomeStatement && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Export Options</h3>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handlePrint}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print
+                  </button>
+                  <button
+                    onClick={handleExportPDF}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Export PDF
+                  </button>
+                  <button
+                    onClick={handleExportExcel}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Export Excel
+                  </button>
+                  <button
+                    onClick={handleExportCSV}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </button>
+                </div>
+              </div>
+            )}
+            
             <div className="mt-4">
               <div className="flex items-center mb-4">
                 <input
@@ -241,7 +412,7 @@ export default function IncomeStatementPage() {
       </div>
 
       {incomeStatement && (
-        <div className="bg-white shadow rounded-lg">
+        <div ref={printRef} className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-medium text-gray-900 text-center">
               {incomeStatement.company_name}

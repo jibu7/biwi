@@ -130,7 +130,7 @@ export default function BalanceSheetPage() {
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right print:text-black print:border-b">
-                  {formatCurrency(line.amount)}
+                  {formatCurrency(Number(line.amount))}
                 </td>
                 {showComparative && (
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right print:text-black print:border-b">
@@ -296,9 +296,9 @@ export default function BalanceSheetPage() {
             <div className="p-6 print:p-4">
               {showDetails && (
                 <>
-                  {renderSection('ASSETS', balanceSheet.assets, balanceSheet.total_assets)}
-                  {renderSection('LIABILITIES', balanceSheet.liabilities, balanceSheet.total_liabilities)}
-                  {renderSection('EQUITY', balanceSheet.equity, balanceSheet.total_equity)}
+                  {renderSection('ASSETS', balanceSheet.assets, Number(balanceSheet.total_assets))}
+                  {renderSection('LIABILITIES', balanceSheet.liabilities, Number(balanceSheet.total_liabilities))}
+                  {renderSection('EQUITY', balanceSheet.equity, Number(balanceSheet.total_equity))}
                 </>
               )}
               
@@ -309,19 +309,19 @@ export default function BalanceSheetPage() {
                     <div className="bg-blue-50 p-4 rounded-lg print:bg-white print:border">
                       <h3 className="text-lg font-semibold text-blue-800 print:text-black">ASSETS</h3>
                       <p className="text-2xl font-bold text-blue-600 print:text-black">
-                        {formatCurrency(balanceSheet.total_assets)}
+                        {formatCurrency(Number(balanceSheet.total_assets))}
                       </p>
                     </div>
                     <div className="bg-red-50 p-4 rounded-lg print:bg-white print:border">
                       <h3 className="text-lg font-semibold text-red-800 print:text-black">LIABILITIES</h3>
                       <p className="text-2xl font-bold text-red-600 print:text-black">
-                        {formatCurrency(balanceSheet.total_liabilities)}
+                        {formatCurrency(Number(balanceSheet.total_liabilities))}
                       </p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg print:bg-white print:border">
                       <h3 className="text-lg font-semibold text-green-800 print:text-black">EQUITY</h3>
                       <p className="text-2xl font-bold text-green-600 print:text-black">
-                        {formatCurrency(balanceSheet.total_equity)}
+                        {formatCurrency(Number(balanceSheet.total_equity))}
                       </p>
                     </div>
                   </div>
@@ -331,13 +331,13 @@ export default function BalanceSheetPage() {
               <div className="mt-6 p-4 bg-gray-100 rounded print:bg-white print:border print:border-black">
                 <div className="flex justify-between items-center font-bold text-lg print:text-black">
                   <span>Total Liabilities and Equity:</span>
-                  <span>{formatCurrency(balanceSheet.total_liabilities + balanceSheet.total_equity)}</span>
+                  <span>{formatCurrency(Number(balanceSheet.total_liabilities) + Number(balanceSheet.total_equity))}</span>
                 </div>
                 <div className="text-sm text-gray-600 mt-2 print:text-black">
                   Balance Check: Assets = Liabilities + Equity
                   <br />
-                  {formatCurrency(balanceSheet.total_assets)} = {formatCurrency(balanceSheet.total_liabilities + balanceSheet.total_equity)}
-                  {balanceSheet.total_assets === (balanceSheet.total_liabilities + balanceSheet.total_equity) ? 
+                  {formatCurrency(Number(balanceSheet.total_assets))} = {formatCurrency(Number(balanceSheet.total_liabilities) + Number(balanceSheet.total_equity))}
+                  {Number(balanceSheet.total_assets) === (Number(balanceSheet.total_liabilities) + Number(balanceSheet.total_equity)) ? 
                     ' ✓ Balanced' : ' ⚠ Not Balanced'}
                 </div>
               </div>

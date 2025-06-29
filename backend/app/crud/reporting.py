@@ -31,27 +31,56 @@ def generate_balance_sheet(
     total_liabilities = Decimal('0.00')
     total_equity = Decimal('0.00')
     
+    # Calculate retained earnings from income and expense accounts
+    retained_earnings = Decimal('0.00')
+    
     for account in accounts_query:
         # Calculate balance as of date by summing all transactions up to that date
-        balance = calculate_account_balance_as_of_date(db, account.id, as_of_date)
+        raw_balance = calculate_account_balance_as_of_date(db, account.id, as_of_date)
         
-        if balance != 0:  # Only include accounts with balances
+        # Normalize balance based on account type
+        # For Assets and Expenses: positive debit balance is displayed as positive
+        # For Liabilities, Equity, Income: positive credit balance (negative raw) is displayed as positive
+        if account.account_type in ["Asset", "Assets", "Expense", "Expenses"]:
+            display_balance = raw_balance
+        else:
+            # For Liability, Equity, Income accounts, flip the sign for proper display
+            display_balance = -raw_balance
+        
+        if raw_balance != 0:  # Only include accounts with balances
             line = schemas.FinancialStatementLine(
                 account_code=account.account_code,
                 account_name=account.account_name,
-                amount=balance,
+                amount=display_balance,
                 level=0  # Can be enhanced for hierarchical accounts
             )
             
             if account.account_type in ["Asset", "Assets"]:
                 assets.append(line)
-                total_assets += balance
+                total_assets += display_balance
             elif account.account_type in ["Liability", "Liabilities"]:
                 liabilities.append(line)
-                total_liabilities += balance
+                total_liabilities += display_balance
             elif account.account_type in ["Equity", "Owner's Equity"]:
                 equity.append(line)
-                total_equity += balance
+                total_equity += display_balance
+            elif account.account_type == "Income":
+                # Income accounts have credit balances, so they add to retained earnings
+                retained_earnings += display_balance
+            elif account.account_type in ["Expense", "Expenses"]:
+                # Expense accounts have debit balances, so they reduce retained earnings
+                retained_earnings -= display_balance
+    
+    # Add retained earnings to equity if it's not zero
+    if retained_earnings != 0:
+        retained_earnings_line = schemas.FinancialStatementLine(
+            account_code="3999",
+            account_name="Retained Earnings",
+            amount=retained_earnings,
+            level=0
+        )
+        equity.append(retained_earnings_line)
+        total_equity += retained_earnings
     
     return schemas.BalanceSheetData(
         assets=assets,

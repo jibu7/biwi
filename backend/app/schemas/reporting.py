@@ -1,9 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import date, datetime
 from decimal import Decimal
 
 class FinancialStatementLine(BaseModel):
+    model_config = ConfigDict(json_encoders={Decimal: float})
+    
     account_code: str
     account_name: str
     amount: Decimal
@@ -12,6 +14,8 @@ class FinancialStatementLine(BaseModel):
     is_subtotal: bool = False
 
 class BalanceSheetData(BaseModel):
+    model_config = ConfigDict(json_encoders={Decimal: float})
+    
     assets: List[FinancialStatementLine]
     liabilities: List[FinancialStatementLine]
     equity: List[FinancialStatementLine]
@@ -22,6 +26,8 @@ class BalanceSheetData(BaseModel):
     company_name: str
 
 class IncomeStatementData(BaseModel):
+    model_config = ConfigDict(json_encoders={Decimal: float})
+    
     revenue: List[FinancialStatementLine]
     expenses: List[FinancialStatementLine]
     total_revenue: Decimal
@@ -32,6 +38,8 @@ class IncomeStatementData(BaseModel):
     company_name: str
 
 class CashFlowData(BaseModel):
+    model_config = ConfigDict(json_encoders={Decimal: float})
+    
     operating_activities: List[FinancialStatementLine]
     investing_activities: List[FinancialStatementLine]
     financing_activities: List[FinancialStatementLine]
@@ -65,6 +73,8 @@ class ReportTemplate(ReportTemplateBase):
         from_attributes = True
 
 class BankReconciliationBase(BaseModel):
+    model_config = ConfigDict(json_encoders={Decimal: float})
+    
     bank_gl_account_id: int
     reconciliation_date: date
     statement_balance: Decimal
@@ -84,6 +94,8 @@ class BankReconciliation(BankReconciliationBase):
         from_attributes = True
 
 class ARAgingDetail(BaseModel):
+    model_config = ConfigDict(json_encoders={Decimal: float})
+    
     customer_id: int
     customer_name: str
     customer_code: str
@@ -97,6 +109,8 @@ class ARAgingDetail(BaseModel):
     last_payment_date: Optional[date]
 
 class APAgingDetail(BaseModel):
+    model_config = ConfigDict(json_encoders={Decimal: float})
+    
     supplier_id: int
     supplier_name: str
     supplier_code: str
