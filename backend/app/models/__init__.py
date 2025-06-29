@@ -25,3 +25,7 @@ from .bom import (
     BOMHeader, BOMComponent, ManufacturingOrder, ManufacturingOrderComponent, 
     BOMDefaults
 )
+from .pos import (
+    Till, POSTransactionType, POSSession, POSTransaction, POSTransactionLine,
+    POSCashMovement, POSDefaults
+)

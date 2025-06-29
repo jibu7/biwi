@@ -85,6 +85,17 @@ from .bom import (
     MRPRequest, MRPResult
 )
 
+from .pos import (
+    Till, TillCreate, TillUpdate,
+    POSTransactionType, POSTransactionTypeCreate, POSTransactionTypeUpdate,
+    POSSession, POSSessionCreate, POSSessionClose,
+    POSTransaction, POSTransactionCreate,
+    POSTransactionLine, POSTransactionLineCreate,
+    POSCashMovement, POSCashMovementCreate,
+    POSDefaults, POSDefaultsCreate, POSDefaultsUpdate,
+    CashierSalesReport, InventorySalesReport
+)
+
 __all__ = [
     "Company", "CompanyCreate", "CompanyUpdate",
     "Role", "RoleCreate", "RoleUpdate", 
@@ -144,5 +155,13 @@ __all__ = [
     "ManufacturingOrder", "ManufacturingOrderCreate", "ManufacturingOrderUpdate", "ManufacturingOrderRead",
     "ManufacturingOrderComponent", "ManufacturingOrderComponentCreate", "ManufacturingOrderComponentRead",
     "BOMDefaults", "BOMDefaultsCreate", "BOMDefaultsUpdate", "BOMDefaultsRead",
-    "MRPRequest", "MRPResult"
+    "MRPRequest", "MRPResult",
+    "Till", "TillCreate", "TillUpdate",
+    "POSTransactionType", "POSTransactionTypeCreate", "POSTransactionTypeUpdate",
+    "POSSession", "POSSessionCreate", "POSSessionClose",
+    "POSTransaction", "POSTransactionCreate",
+    "POSTransactionLine", "POSTransactionLineCreate",
+    "POSCashMovement", "POSCashMovementCreate",
+    "POSDefaults", "POSDefaultsCreate", "POSDefaultsUpdate",
+    "CashierSalesReport", "InventorySalesReport"
 ]

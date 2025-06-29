@@ -65,3 +65,13 @@ export const REPORTING_BANK_RECONCILIATION = "reporting:bank_reconciliation";
 export const BOM_SETUP_MANAGE = "bom:setup_manage";
 export const BOM_MANUFACTURING_PROCESS = "bom:manufacturing_process";
 export const BOM_REPORTS_VIEW = "bom:reports_view";
+
+// POS Permissions
+export const POS_SETUP_MANAGE = "pos:setup_manage";
+export const POS_TILL_MANAGE = "pos:till_manage";
+export const POS_SESSION_OPEN = "pos:session_open";
+export const POS_SESSION_CLOSE = "pos:session_close";
+export const POS_SALES_PROCESS = "pos:sales_process";
+export const POS_RETURNS_PROCESS = "pos:returns_process";
+export const POS_CASH_MANAGE = "pos:cash_manage";
+export const POS_REPORTS_VIEW = "pos:reports_view";

@@ -1,4 +1,4 @@
-from . import core, gl, ar, ap, inventory, oe, common, reporting, bom
+from . import core, gl, ar, ap, inventory, oe, common, reporting, bom, pos
 
 # Inventory imports
 from .inventory import (
@@ -36,4 +36,15 @@ from .bom import (
     get_manufacturing_order, update_manufacturing_order, release_manufacturing_order,
     process_manufacturing_order, cancel_manufacturing_order, calculate_mrp, get_bom_cost_analysis,
     get_or_create_bom_defaults, get_bom_defaults, update_bom_defaults, get_bom_where_used, copy_bom
+)
+
+# POS imports
+from .pos import (
+    create_till, get_tills_by_company, get_till,
+    create_pos_transaction_type, get_pos_transaction_types_by_company,
+    get_pos_defaults, update_pos_defaults,
+    open_pos_session, close_pos_session, get_active_session,
+    process_pos_sale, process_pos_return, get_pos_transaction,
+    record_cash_movement,
+    get_cashier_sales_report, get_inventory_sales_report
 )

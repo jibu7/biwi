@@ -215,6 +215,28 @@ export const navItems: NavItem[] = [
         ]
       },
       {
+        label: "POS Setup",
+        href: "/maintenance/pos",
+        requiredPermission: permissions.POS_SETUP_MANAGE,
+        children: [
+          { 
+            label: "Tills", 
+            href: "/maintenance/pos/tills", 
+            requiredPermission: permissions.POS_TILL_MANAGE 
+          },
+          { 
+            label: "Transaction Types", 
+            href: "/maintenance/pos/transaction-types", 
+            requiredPermission: permissions.POS_SETUP_MANAGE 
+          },
+          { 
+            label: "Defaults", 
+            href: "/maintenance/pos/defaults", 
+            requiredPermission: permissions.POS_SETUP_MANAGE 
+          },
+        ]
+      },
+      {
         label: "Common",
         href: "/maintenance/common",
         icon: Globe,
@@ -416,6 +438,33 @@ export const navItems: NavItem[] = [
             requiredPermission: permissions.BOM_MANUFACTURING_PROCESS 
           }
         ]
+      },
+      {
+        label: "Point of Sale",
+        href: "/transactions/pos",
+        requiredPermission: permissions.POS_SALES_PROCESS,
+        children: [
+          { 
+            label: "POS Terminal", 
+            href: "/transactions/pos/terminal", 
+            requiredPermission: permissions.POS_SALES_PROCESS 
+          },
+          { 
+            label: "Session Management", 
+            href: "/transactions/pos/sessions", 
+            requiredPermission: permissions.POS_SESSION_OPEN 
+          },
+          { 
+            label: "Cash Management", 
+            href: "/transactions/pos/cash", 
+            requiredPermission: permissions.POS_CASH_MANAGE 
+          },
+          { 
+            label: "Transaction History", 
+            href: "/transactions/pos/history", 
+            requiredPermission: permissions.POS_SALES_PROCESS 
+          },
+        ]
       }
     ]
   },
@@ -610,6 +659,28 @@ export const navItems: NavItem[] = [
             href: "/reports/bom/manufacturing-process", 
             requiredPermission: permissions.BOM_REPORTS_VIEW 
           }
+        ]
+      },
+      {
+        label: "POS Reports",
+        href: "/reports/pos",
+        requiredPermission: permissions.POS_REPORTS_VIEW,
+        children: [
+          { 
+            label: "Cashier Sales Report", 
+            href: "/reports/pos/cashier-sales", 
+            requiredPermission: permissions.POS_REPORTS_VIEW 
+          },
+          { 
+            label: "Inventory Sales Report", 
+            href: "/reports/pos/inventory-sales", 
+            requiredPermission: permissions.POS_REPORTS_VIEW 
+          },
+          { 
+            label: "Session Summary", 
+            href: "/reports/pos/session-summary", 
+            requiredPermission: permissions.POS_REPORTS_VIEW 
+          },
         ]
       },
       {
