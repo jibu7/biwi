@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import datetime
 from decimal import Decimal
@@ -43,12 +43,22 @@ def create_bom_header(db: Session, bom_in: schemas.BOMHeaderCreate, company_id: 
     return db_bom
 
 def get_bom_headers_by_company(db: Session, company_id: int, skip: int = 0, limit: int = 100) -> List[models.BOMHeader]:
-    return db.query(models.BOMHeader).filter(
+    return db.query(models.BOMHeader).options(
+        joinedload(models.BOMHeader.parent_item),
+        joinedload(models.BOMHeader.unit_of_measure),
+        joinedload(models.BOMHeader.components).joinedload(models.BOMComponent.component_item),
+        joinedload(models.BOMHeader.components).joinedload(models.BOMComponent.unit_of_measure)
+    ).filter(
         models.BOMHeader.company_id == company_id
     ).offset(skip).limit(limit).all()
 
 def get_bom_header(db: Session, bom_id: int, company_id: int) -> Optional[models.BOMHeader]:
-    return db.query(models.BOMHeader).filter(
+    return db.query(models.BOMHeader).options(
+        joinedload(models.BOMHeader.parent_item),
+        joinedload(models.BOMHeader.unit_of_measure),
+        joinedload(models.BOMHeader.components).joinedload(models.BOMComponent.component_item),
+        joinedload(models.BOMHeader.components).joinedload(models.BOMComponent.unit_of_measure)
+    ).filter(
         models.BOMHeader.id == bom_id,
         models.BOMHeader.company_id == company_id
     ).first()

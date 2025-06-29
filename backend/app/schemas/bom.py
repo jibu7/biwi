@@ -1,7 +1,10 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime
 from decimal import Decimal
+
+if TYPE_CHECKING:
+    from .inventory import InventoryItem, UnitOfMeasure
 
 # BOM Header Schemas
 class BOMHeaderBase(BaseModel):
@@ -29,6 +32,8 @@ class BOMHeaderUpdate(BaseModel):
 class BOMHeaderRead(BOMHeaderBase):
     id: int
     company_id: int
+    parent_item: Optional["InventoryItem"] = None
+    unit_of_measure: Optional["UnitOfMeasure"] = None
     components: List["BOMComponentRead"] = []
     
     class Config:
@@ -56,6 +61,8 @@ class BOMComponentUpdate(BaseModel):
 class BOMComponentRead(BOMComponentBase):
     id: int
     bom_header_id: int
+    component_item: Optional["InventoryItem"] = None
+    unit_of_measure: Optional["UnitOfMeasure"] = None
     
     class Config:
         from_attributes = True
@@ -143,3 +150,10 @@ class ManufacturingOrderComponentRead(ManufacturingOrderComponentBase):
     
     class Config:
         from_attributes = True
+
+# Import here to avoid circular imports
+from .inventory import InventoryItem, UnitOfMeasure
+
+# Update forward references
+BOMHeaderRead.model_rebuild()
+BOMComponentRead.model_rebuild()

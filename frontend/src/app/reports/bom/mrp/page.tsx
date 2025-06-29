@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { bomService } from '@/services/bomService';
 import { inventoryService } from '@/services/inventoryService';
@@ -10,7 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MRPResult } from '@/types/bom';
+
+const mrpSchema = z.object({
+  bom_header_id: z.number(),
+  quantity_to_produce: z.number().positive(),
+  warehouse_id: z.number(),
+  include_phantom_items: z.boolean()
+});
 
 interface MRPFormData {
   bom_header_id: number;
@@ -20,7 +28,7 @@ interface MRPFormData {
 }
 
 export default function MRPPage() {
-  const [results, setResults] = useState<MRPResult[]>([]);
+  const [results, setResults] = useState<any[]>([]);
 
   const { data: boms } = useQuery({
     queryKey: ['boms'],
@@ -33,6 +41,7 @@ export default function MRPPage() {
   });
 
   const form = useForm<MRPFormData>({
+    resolver: zodResolver(mrpSchema),
     defaultValues: {
       bom_header_id: 0,
       quantity_to_produce: 1,
@@ -48,15 +57,15 @@ export default function MRPPage() {
     }
   });
 
-  const onSubmit = form.handleSubmit((data: MRPFormData) => {
+  const onSubmit = (data: MRPFormData) => {
     calculateMutation.mutate(data);
-  });
+  };
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Material Requirements Planning</h1>
 
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="bom_header_id">Bill of Materials</Label>

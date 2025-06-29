@@ -10,7 +10,8 @@ import {
   CreditCard, 
   Package, 
   ShoppingCart, 
-  Globe 
+  Globe,
+  Wrench
 } from 'lucide-react';
 import * as permissions from '@/lib/permissions';
 
@@ -72,6 +73,15 @@ export default function MaintenancePage() {
       color: 'bg-indigo-500',
       requiredPermission: permissions.OE_SETUP_MANAGE,
       items: ['Sales Order Types', 'Purchase Order Types']
+    },
+    {
+      title: 'Bill of Materials',
+      description: 'Manage BOMs and manufacturing defaults',
+      icon: Wrench,
+      href: '/maintenance/bom',
+      color: 'bg-purple-500',
+      requiredPermission: permissions.BOM_SETUP_MANAGE,
+      items: ['BOM Headers', 'Manufacturing Settings', 'Default Accounts']
     },
     {
       title: 'Common',
