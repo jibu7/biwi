@@ -20,10 +20,17 @@ class SalesOrder(Base):
     sales_representative_id = Column(Integer, ForeignKey("sales_representatives.id"), nullable=True)
     ar_invoice_id = Column(Integer, ForeignKey("ar_transactions.id"), nullable=True)
     
+    # Multi-currency support
+    currency_id = Column(Integer, ForeignKey("currencies.id"), nullable=True)
+    exchange_rate = Column(Numeric(15, 6), default=1.000000)
+    base_currency_amount = Column(Numeric(15, 2))  # Amount in company's base currency
+    foreign_currency_amount = Column(Numeric(15, 2))  # Amount in transaction currency
+    
     # Relationships
     lines = relationship("SalesOrderLine", back_populates="sales_order")
     customer = relationship("Customer")
     sales_representative = relationship("SalesRepresentative")
+    currency = relationship("Currency")
 
 class SalesOrderLine(Base):
     __tablename__ = "sales_order_lines"
@@ -36,13 +43,15 @@ class SalesOrderLine(Base):
     quantity_invoiced = Column(Numeric, default=0)
     unit_price = Column(Numeric, nullable=False)
     discount_percentage = Column(Numeric, default=0)
-    tax_type_id = Column(Integer, nullable=True)  # Future: ForeignKey("tax_types.id")
+    tax_type_id = Column(Integer, ForeignKey("tax_types.id"), nullable=True)
     tax_amount = Column(Numeric, default=0)
+    base_currency_tax_amount = Column(Numeric(15, 2))
     line_total = Column(Numeric, nullable=False)
     
     # Relationships
     sales_order = relationship("SalesOrder", back_populates="lines")
     item = relationship("InventoryItem")
+    tax_type = relationship("TaxType")
 
 class PurchaseOrder(Base):
     __tablename__ = "purchase_orders"
@@ -59,10 +68,17 @@ class PurchaseOrder(Base):
     notes = Column(Text, nullable=True)
     delivery_address_warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=False)
     
+    # Multi-currency support
+    currency_id = Column(Integer, ForeignKey("currencies.id"), nullable=True)
+    exchange_rate = Column(Numeric(15, 6), default=1.000000)
+    base_currency_amount = Column(Numeric(15, 2))  # Amount in company's base currency
+    foreign_currency_amount = Column(Numeric(15, 2))  # Amount in transaction currency
+    
     # Relationships
     lines = relationship("PurchaseOrderLine", back_populates="purchase_order")
     supplier = relationship("Supplier")
     warehouse = relationship("Warehouse")
+    currency = relationship("Currency")
 
 class PurchaseOrderLine(Base):
     __tablename__ = "purchase_order_lines"
@@ -75,13 +91,15 @@ class PurchaseOrderLine(Base):
     quantity_received = Column(Numeric, default=0)
     unit_price = Column(Numeric, nullable=False)
     discount_percentage = Column(Numeric, default=0)
-    tax_type_id = Column(Integer, nullable=True)  # Future: ForeignKey("tax_types.id")
+    tax_type_id = Column(Integer, ForeignKey("tax_types.id"), nullable=True)
     tax_amount = Column(Numeric, default=0)
+    base_currency_tax_amount = Column(Numeric(15, 2))
     line_total = Column(Numeric, nullable=False)
     
     # Relationships
     purchase_order = relationship("PurchaseOrder", back_populates="lines")
     item = relationship("InventoryItem")
+    tax_type = relationship("TaxType")
 
 class GoodsReceivedVoucher(Base):
     __tablename__ = "goods_received_vouchers"

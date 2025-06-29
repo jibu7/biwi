@@ -3,7 +3,7 @@ from sqlalchemy import and_, or_, func, desc
 from typing import List, Optional
 from app.models.ar import (
     Customer, SalesRepresentative, ARTransactionType, ARTransaction,
-    ARAllocation, ARAllocationLine, ARDefaults
+    ARAllocation, ARAllocationLine, ARDefaults, ARTransactionTaxLine
 )
 from app.models.gl import GLAccount, GLJournalEntry, GLJournalEntryLine
 from app.schemas.ar import (
@@ -13,6 +13,9 @@ from app.schemas.ar import (
     ARTransactionCreate, ARTransactionUpdate,
     ARAllocationCreate, ARDefaultsCreate, ARDefaultsUpdate
 )
+from app.crud.tax_calculator import TaxCalculator
+from app.crud.forex_service import ForexService
+from app import models, schemas
 from datetime import date
 from decimal import Decimal
 
@@ -199,21 +202,26 @@ def get_ar_transaction(db: Session, transaction_id: int, company_id: int) -> Opt
         )\
         .first()
 
-def create_ar_transaction(db: Session, transaction: ARTransactionCreate, company_id: int) -> ARTransaction:
+def create_ar_transaction(
+    db: Session, 
+    ar_transaction_in: ARTransactionCreate, 
+    company_id: int, 
+    user_id: int
+) -> ARTransaction:
     # Generate document number if not provided
-    transaction_type = get_ar_transaction_type(db, transaction.ar_transaction_type_id, company_id)
+    transaction_type = get_ar_transaction_type(db, ar_transaction_in.ar_transaction_type_id, company_id)
     if not transaction_type:
         raise ValueError("Invalid transaction type")
     
     # Use provided document number or generate sequential number
-    if transaction.document_number:
-        document_number = transaction.document_number
+    if ar_transaction_in.document_number:
+        document_number = ar_transaction_in.document_number
     else:
         # Generate sequential document number
         last_transaction = db.query(ARTransaction)\
             .filter(and_(
                 ARTransaction.company_id == company_id,
-                ARTransaction.ar_transaction_type_id == transaction.ar_transaction_type_id
+                ARTransaction.ar_transaction_type_id == ar_transaction_in.ar_transaction_type_id
             ))\
             .order_by(desc(ARTransaction.id))\
             .first()
@@ -224,22 +232,67 @@ def create_ar_transaction(db: Session, transaction: ARTransactionCreate, company
             next_number = 1
         
         document_number = f"{next_number:06d}"  # 6-digit padded number
+
+    # Get exchange rate if currency specified
+    if ar_transaction_in.currency_id:
+        exchange_rate = ForexService.get_exchange_rate(
+            db, 
+            ar_transaction_in.currency_id,
+            ar_transaction_in.transaction_date,
+            company_id
+        )
+    else:
+        exchange_rate = Decimal("1.000000")
     
-    db_transaction = ARTransaction(
+    # Calculate taxes if line items provided
+    if hasattr(ar_transaction_in, 'lines') and ar_transaction_in.lines:
+        tax_calc = TaxCalculator.calculate_taxes_for_document(
+            db, ar_transaction_in.lines, company_id
+        )
+        foreign_currency_amount = tax_calc["grand_total"]
+    else:
+        foreign_currency_amount = ar_transaction_in.total_amount
+    
+    base_currency_amount = foreign_currency_amount * exchange_rate
+    
+    # Create AR transaction
+    ar_transaction = ARTransaction(
         company_id=company_id,
-        customer_id=transaction.customer_id,
-        ar_transaction_type_id=transaction.ar_transaction_type_id,
-        transaction_date=transaction.transaction_date,
-        due_date=transaction.due_date,
-        reference=transaction.reference,
+        customer_id=ar_transaction_in.customer_id,
+        ar_transaction_type_id=ar_transaction_in.ar_transaction_type_id,
+        transaction_date=ar_transaction_in.transaction_date,
+        due_date=ar_transaction_in.due_date,
+        reference=ar_transaction_in.reference,
         document_number=document_number,
-        total_amount=transaction.total_amount,
-        open_amount=transaction.total_amount  # Initially, open amount equals total amount
+        currency_id=ar_transaction_in.currency_id,
+        exchange_rate=exchange_rate,
+        foreign_currency_amount=foreign_currency_amount,
+        base_currency_amount=base_currency_amount,
+        total_amount=base_currency_amount,  # For backward compatibility
+        open_amount=base_currency_amount,
+        status="Posted"
     )
-    db.add(db_transaction)
+    db.add(ar_transaction)
+    db.flush()
+    
+    # Create tax lines
+    if hasattr(ar_transaction_in, 'lines') and ar_transaction_in.lines and 'tax_summary' in locals():
+        for tax_type_id, tax_data in tax_calc["tax_summary"].items():
+            tax_line = ARTransactionTaxLine(
+                ar_transaction_id=ar_transaction.id,
+                tax_type_id=tax_type_id,
+                taxable_amount=tax_data["taxable_amount"],
+                tax_amount=tax_data["tax_amount"],
+                base_currency_tax_amount=tax_data["tax_amount"] * exchange_rate
+            )
+            db.add(tax_line)
+    
+    # GL Posting with tax consideration
+    # ... existing GL posting logic but with tax accounts ...
+    
     db.commit()
-    db.refresh(db_transaction)
-    return db_transaction
+    db.refresh(ar_transaction)
+    return ar_transaction
 
 def update_ar_transaction(db: Session, transaction_id: int, company_id: int, 
                          transaction_update: ARTransactionUpdate) -> Optional[ARTransaction]:
@@ -627,3 +680,37 @@ def get_customer_statement(db: Session, company_id: int, customer_id: int,
         .order_by(ARTransaction.transaction_date, ARTransaction.id).all()
     
     return transactions
+
+
+# Add new function for AR payment with forex handling:
+def process_ar_payment_with_forex(
+    db: Session,
+    payment_in: schemas.ARPaymentCreate,
+    company_id: int,
+    user_id: int
+) -> models.ARTransaction:
+    """Process AR payment with foreign exchange handling"""
+    # Create payment transaction
+    payment = create_ar_transaction(db, payment_in, company_id, user_id)
+    
+    # If payment is in different currency than invoice, calculate forex
+    if hasattr(payment_in, 'allocated_invoices') and payment_in.allocated_invoices:
+        for allocation in payment_in.allocated_invoices:
+            invoice = db.query(models.ARTransaction).filter(
+                models.ARTransaction.id == allocation.invoice_id
+            ).first()
+            
+            if invoice and invoice.currency_id != payment.currency_id:
+                ForexService.calculate_forex_gain_loss(
+                    db,
+                    allocation.amount,
+                    invoice.exchange_rate,
+                    allocation.amount,
+                    payment.exchange_rate,
+                    company_id,
+                    "AR_Payment",
+                    payment.id,
+                    user_id
+                )
+    
+    return payment

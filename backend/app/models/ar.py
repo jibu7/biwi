@@ -18,12 +18,14 @@ class Customer(Base):
     current_balance = Column(Numeric(precision=15, scale=2), default=0.00)
     sales_representative_id = Column(Integer, ForeignKey("sales_representatives.id"), nullable=True)
     default_ar_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
+    default_currency_id = Column(Integer, ForeignKey("currencies.id"), nullable=True)
     is_active = Column(Boolean, default=True)
     
     # Relationships
     company = relationship("Company")
     sales_representative = relationship("SalesRepresentative", back_populates="customers")
     default_ar_gl_account = relationship("GLAccount")
+    currency = relationship("Currency")
     transactions = relationship("ARTransaction", back_populates="customer")
     
     __table_args__ = (
@@ -83,11 +85,19 @@ class ARTransaction(Base):
     is_posted_to_gl = Column(Boolean, default=False)
     status = Column(String, nullable=False, default="Draft")  # Draft, Posted, Paid, PartiallyPaid
     
+    # Multi-currency support
+    currency_id = Column(Integer, ForeignKey("currencies.id"), nullable=True)
+    exchange_rate = Column(Numeric(15, 6), default=1.000000)
+    base_currency_amount = Column(Numeric(15, 2))  # Amount in company's base currency
+    foreign_currency_amount = Column(Numeric(15, 2))  # Amount in transaction currency
+    
     # Relationships
     company = relationship("Company")
     customer = relationship("Customer", back_populates="transactions")
     ar_transaction_type = relationship("ARTransactionType")
     linked_gl_journal_entry = relationship("GLJournalEntry")
+    currency = relationship("Currency")
+    tax_lines = relationship("ARTransactionTaxLine", back_populates="ar_transaction", cascade="all, delete-orphan")
     
     __table_args__ = (
         UniqueConstraint('document_number', 'company_id', 'ar_transaction_type_id', 
@@ -179,3 +189,17 @@ class ARWriteOff(Base):
     __table_args__ = (
         UniqueConstraint('document_number', 'company_id', name='uq_writeoff_document_company'),
     )
+
+
+class ARTransactionTaxLine(Base):
+    __tablename__ = "ar_transaction_tax_lines"
+    
+    id = Column(Integer, primary_key=True)
+    ar_transaction_id = Column(Integer, ForeignKey("ar_transactions.id"))
+    tax_type_id = Column(Integer, ForeignKey("tax_types.id"))
+    taxable_amount = Column(Numeric(15, 2))
+    tax_amount = Column(Numeric(15, 2))
+    base_currency_tax_amount = Column(Numeric(15, 2))
+    
+    ar_transaction = relationship("ARTransaction", back_populates="tax_lines")
+    tax_type = relationship("TaxType")

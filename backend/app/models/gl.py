@@ -52,9 +52,16 @@ class GLJournalEntryLine(Base):
     debit_amount = Column(Numeric(precision=15, scale=2), default=0.00)
     credit_amount = Column(Numeric(precision=15, scale=2), default=0.00)
     
+    # Multi-currency support for foreign currency transactions
+    currency_id = Column(Integer, ForeignKey("currencies.id"), nullable=True)
+    exchange_rate = Column(Numeric(15, 6), default=1.000000)
+    foreign_currency_debit_amount = Column(Numeric(15, 2), default=0.00)
+    foreign_currency_credit_amount = Column(Numeric(15, 2), default=0.00)
+    
     # Relationships
     journal_entry = relationship("GLJournalEntry", back_populates="lines")
     gl_account = relationship("GLAccount")
+    currency = relationship("Currency")
 
 class GLTransactionType(Base):
     __tablename__ = "gl_transaction_types"
@@ -85,6 +92,8 @@ class GLDefaults(Base):
     default_cash_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     default_ar_control_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     default_ap_control_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
+    forex_gain_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
+    forex_loss_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     
     # Relationships
     company = relationship("Company")
@@ -92,3 +101,5 @@ class GLDefaults(Base):
     default_cash_account = relationship("GLAccount", foreign_keys=[default_cash_account_id])
     default_ar_control_account = relationship("GLAccount", foreign_keys=[default_ar_control_account_id])
     default_ap_control_account = relationship("GLAccount", foreign_keys=[default_ap_control_account_id])
+    forex_gain_account = relationship("GLAccount", foreign_keys=[forex_gain_account_id])
+    forex_loss_account = relationship("GLAccount", foreign_keys=[forex_loss_account_id])

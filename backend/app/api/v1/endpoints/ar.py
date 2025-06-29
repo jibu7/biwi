@@ -396,6 +396,19 @@ def post_ar_transaction(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
+# AR Payment endpoints
+@router.post("/payments", response_model=schemas.ARTransaction)
+def create_ar_payment(
+    payment_in: schemas.ARPaymentCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """Create an AR payment with forex support"""
+    require_permission(current_user, AR_TRANSACTIONS_POST)
+    return crud.ar.process_ar_payment_with_forex(
+        db, payment_in, current_user.company_id, current_user.id
+    )
+
 # AR Allocation endpoints
 @router.get("/allocations", response_model=List[schemas.ARAllocation])
 def get_ar_allocations(

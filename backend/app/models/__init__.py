@@ -2,11 +2,11 @@ from .core import User, Role, UserRole, Company, AccountingPeriod
 from .gl import GLAccount, GLJournalEntry, GLJournalEntryLine, GLTransactionType, GLDefaults
 from .ar import (
     Customer, SalesRepresentative, ARTransactionType, ARTransaction, 
-    ARAllocation, ARAllocationLine, ARDefaults, ARWriteOff
+    ARAllocation, ARAllocationLine, ARDefaults, ARWriteOff, ARTransactionTaxLine
 )
 from .ap import (
     Supplier, APTransactionType, APTransaction, APAllocation, 
-    APAllocationLine, APDefaults
+    APAllocationLine, APDefaults, APTransactionTaxLine
 )
 from .inventory import (
     UnitOfMeasure, Warehouse, InventoryItem, ItemBarcode,
@@ -18,6 +18,7 @@ from .oe import (
     GoodsReceivedVoucher, GoodsReceivedVoucherLine, OrderDefaults
 )
 from .common import Currency, TaxType, Branch
+from .forex import ExchangeRateHistory, ForexGainLoss
 from .reporting import (
     ReportTemplate, ReportSchedule, BankReconciliation, BankReconciliationItem
 )

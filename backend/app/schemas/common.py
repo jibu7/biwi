@@ -94,3 +94,14 @@ class Branch(BranchBase):
 
     class Config:
         from_attributes = True
+
+
+# Generic Document Line with Tax Schema for Tax Calculations
+class DocumentLineWithTax(BaseModel):
+    quantity: Decimal = Field(..., gt=0, description="Line item quantity")
+    unit_price: Decimal = Field(..., ge=0, description="Unit price")
+    discount_percentage: Decimal = Field(default=Decimal("0"), ge=0, le=100, description="Discount percentage")
+    tax_type_id: Optional[int] = Field(None, description="Tax type ID for line item")
+
+    class Config:
+        from_attributes = True

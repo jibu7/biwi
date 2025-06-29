@@ -15,11 +15,13 @@ class Supplier(Base):
     payment_terms = Column(String, nullable=True)  # e.g., "Net 30"
     current_balance = Column(Numeric(precision=15, scale=2), default=0.00)
     default_ap_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
+    default_currency_id = Column(Integer, ForeignKey("currencies.id"), nullable=True)
     is_active = Column(Boolean, default=True)
     
     # Relationships
     company = relationship("Company")
     default_ap_gl_account = relationship("GLAccount")
+    currency = relationship("Currency")
     transactions = relationship("APTransaction", back_populates="supplier")
     
     __table_args__ = (
@@ -66,11 +68,19 @@ class APTransaction(Base):
     is_posted_to_gl = Column(Boolean, default=False)
     status = Column(String, nullable=False, default="Draft")  # Draft, Posted, Paid, PartiallyPaid
     
+    # Multi-currency support
+    currency_id = Column(Integer, ForeignKey("currencies.id"), nullable=True)
+    exchange_rate = Column(Numeric(15, 6), default=1.000000)
+    base_currency_amount = Column(Numeric(15, 2))  # Amount in company's base currency
+    foreign_currency_amount = Column(Numeric(15, 2))  # Amount in transaction currency
+    
     # Relationships
     company = relationship("Company")
     supplier = relationship("Supplier", back_populates="transactions")
     ap_transaction_type = relationship("APTransactionType")
     linked_gl_journal_entry = relationship("GLJournalEntry")
+    currency = relationship("Currency")
+    tax_lines = relationship("APTransactionTaxLine", back_populates="ap_transaction", cascade="all, delete-orphan")
     
     __table_args__ = (
         UniqueConstraint('document_number', 'company_id', 'ap_transaction_type_id', 
@@ -120,3 +130,16 @@ class APDefaults(Base):
     default_expense_gl_account = relationship("GLAccount", foreign_keys=[default_expense_gl_account_id])
     default_payment_gl_account = relationship("GLAccount", foreign_keys=[default_payment_gl_account_id])
     default_purchase_discount_gl_account = relationship("GLAccount", foreign_keys=[default_purchase_discount_gl_account_id])
+
+class APTransactionTaxLine(Base):
+    __tablename__ = "ap_transaction_tax_lines"
+    
+    id = Column(Integer, primary_key=True)
+    ap_transaction_id = Column(Integer, ForeignKey("ap_transactions.id"))
+    tax_type_id = Column(Integer, ForeignKey("tax_types.id"))
+    taxable_amount = Column(Numeric(15, 2))
+    tax_amount = Column(Numeric(15, 2))
+    base_currency_tax_amount = Column(Numeric(15, 2))
+    
+    ap_transaction = relationship("APTransaction", back_populates="tax_lines")
+    tax_type = relationship("TaxType")

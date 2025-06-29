@@ -47,9 +47,15 @@ class InventoryItem(Base):
     default_cogs_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     default_sales_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     
+    # Tax defaults for sales and purchases
+    default_sales_tax_type_id = Column(Integer, ForeignKey("tax_types.id"), nullable=True)
+    default_purchase_tax_type_id = Column(Integer, ForeignKey("tax_types.id"), nullable=True)
+    
     unit_of_measure = relationship("UnitOfMeasure")
     barcodes = relationship("ItemBarcode", back_populates="item")
     locations = relationship("InventoryItemLocation", back_populates="item")
+    default_sales_tax_type = relationship("TaxType", foreign_keys=[default_sales_tax_type_id])
+    default_purchase_tax_type = relationship("TaxType", foreign_keys=[default_purchase_tax_type_id])
     
     __table_args__ = (UniqueConstraint('item_code', 'company_id', name='uq_inventoryitem_code_company'),)
 
@@ -121,9 +127,18 @@ class InventoryTransaction(Base):
     reference_document_id = Column(Integer, nullable=True)
     notes = Column(Text, nullable=True)
     
+    # Multi-currency support for cost tracking
+    currency_id = Column(Integer, ForeignKey("currencies.id"), nullable=True)
+    exchange_rate = Column(Numeric(15, 6), default=1.000000)
+    base_currency_unit_cost = Column(Numeric(15, 2))  # Cost in company's base currency
+    base_currency_total_value = Column(Numeric(15, 2))  # Value in company's base currency
+    foreign_currency_unit_cost = Column(Numeric(15, 2))  # Cost in transaction currency
+    foreign_currency_total_value = Column(Numeric(15, 2))  # Value in transaction currency
+    
     item = relationship("InventoryItem")
     warehouse = relationship("Warehouse")
     transaction_type = relationship("InventoryTransactionType")
+    currency = relationship("Currency")
 
 class InventoryDefaults(Base):
     __tablename__ = "inventory_defaults"
