@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { customerService, salesRepService } from '@/services/arService';
 import { glService } from '@/services/glService';
+import { commonService } from '@/services/commonService';
 import { SalesRepresentative } from '@/types/ar';
 
 const customerSchema = z.object({
@@ -17,6 +18,7 @@ const customerSchema = z.object({
   credit_limit: z.number().min(0),
   sales_representative_id: z.number().nullable(),
   default_ar_gl_account_id: z.number().nullable(),
+  default_currency_id: z.number().nullable(),
   is_active: z.boolean(),
   address: z.object({
     street: z.string().optional(),
@@ -64,6 +66,11 @@ export default function EditCustomerPage({ params }: PageProps) {
     queryFn: () => glService.getGLAccounts(),
   });
 
+  const { data: currencies = [] } = useQuery({
+    queryKey: ['currencies'],
+    queryFn: () => commonService.getCurrencies(),
+  });
+
   const {
     register,
     handleSubmit,
@@ -77,6 +84,7 @@ export default function EditCustomerPage({ params }: PageProps) {
       credit_limit: customer.credit_limit || 0,
       sales_representative_id: customer.sales_representative_id || null,
       default_ar_gl_account_id: customer.default_ar_gl_account_id || null,
+      default_currency_id: customer.default_currency_id || null,
       is_active: customer.is_active,
       address: customer.address || {},
       contact_info: customer.contact_info || {},
@@ -89,6 +97,7 @@ export default function EditCustomerPage({ params }: PageProps) {
         ...data,
         sales_representative_id: data.sales_representative_id || undefined,
         default_ar_gl_account_id: data.default_ar_gl_account_id || undefined,
+        default_currency_id: data.default_currency_id || undefined,
       }),
     onSuccess: () => {
       router.push('/maintenance/ar/customers');
@@ -291,6 +300,31 @@ export default function EditCustomerPage({ params }: PageProps) {
                     ))}
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Default Currency
+                </label>
+                <select
+                  {...register('default_currency_id', {
+                    setValueAs: (v) => v === '' ? null : parseInt(v)
+                  })}
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition duration-150 ease-in-out"
+                >
+                  <option value="">Use System Default</option>
+                  {currencies
+                    .filter(currency => currency.is_active)
+                    .map((currency) => (
+                      <option key={currency.id} value={currency.id}>
+                        {currency.code} - {currency.name}
+                        {currency.is_base_currency ? ' (Base Currency)' : ''}
+                      </option>
+                    ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Default currency for transactions with this customer
+                </p>
+              </div>
             </div>
 
             {/* Current Balance Display */}
@@ -300,12 +334,32 @@ export default function EditCustomerPage({ params }: PageProps) {
                 <span className={`text-lg font-semibold ${
                   (customer?.current_balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                  }).format(customer?.current_balance || 0)}
+                  {(() => {
+                    const baseCurrency = currencies.find(c => c.is_base_currency);
+                    const customerCurrency = customer?.default_currency_id 
+                      ? currencies.find(c => c.id === customer.default_currency_id)
+                      : baseCurrency;
+                    
+                    const currencyCode = customerCurrency?.code || 'USD';
+                    
+                    return new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: currencyCode,
+                    }).format(customer?.current_balance || 0);
+                  })()}
                 </span>
               </div>
+              {customer?.default_currency_id && (
+                <div className="flex items-center justify-between mt-2 text-sm text-gray-500">
+                  <span>Currency:</span>
+                  <span>
+                    {(() => {
+                      const currency = currencies.find(c => c.id === customer.default_currency_id);
+                      return currency ? `${currency.code} - ${currency.name}` : 'System Default';
+                    })()}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

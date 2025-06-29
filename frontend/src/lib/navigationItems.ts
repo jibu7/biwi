@@ -16,7 +16,8 @@ import {
   GitBranch,
   Settings,
   Factory,
-  Wrench
+  Wrench,
+  Calculator
 } from 'lucide-react';
 import * as permissions from './permissions';
 
@@ -681,6 +682,22 @@ export const navItems: NavItem[] = [
             href: "/reports/pos/session-summary", 
             requiredPermission: permissions.POS_REPORTS_VIEW 
           },
+        ]
+      },
+      {
+        label: "Tax Reports",
+        icon: Calculator,
+        children: [
+          { 
+            label: "Tax Summary", 
+            href: "/reports/tax/summary", 
+            requiredPermission: permissions.GL_REPORTS_VIEW 
+          },
+          { 
+            label: "Tax Details by Invoice", 
+            href: "/reports/tax/details", 
+            requiredPermission: permissions.GL_REPORTS_VIEW 
+          }
         ]
       },
       {

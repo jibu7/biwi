@@ -10,6 +10,7 @@ export interface Customer {
   current_balance: number;
   sales_representative_id?: number;
   default_ar_gl_account_id?: number;
+  default_currency_id?: number;
   is_active: boolean;
   sales_representative_name?: string;
   default_ar_gl_account_name?: string;
@@ -24,6 +25,7 @@ export interface CustomerCreate {
   credit_limit?: number;
   sales_representative_id?: number;
   default_ar_gl_account_id?: number;
+  default_currency_id?: number;
   is_active?: boolean;
 }
 
@@ -36,6 +38,7 @@ export interface CustomerUpdate {
   credit_limit?: number;
   sales_representative_id?: number;
   default_ar_gl_account_id?: number;
+  default_currency_id?: number;
   is_active?: boolean;
 }
 

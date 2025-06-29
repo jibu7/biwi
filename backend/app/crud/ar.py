@@ -25,7 +25,8 @@ def get_customers(db: Session, company_id: int, skip: int = 0, limit: int = 100)
         .filter(Customer.company_id == company_id)\
         .options(
             joinedload(Customer.sales_representative),
-            joinedload(Customer.default_ar_gl_account)
+            joinedload(Customer.default_ar_gl_account),
+            joinedload(Customer.currency)
         )\
         .offset(skip).limit(limit).all()
 
@@ -34,7 +35,8 @@ def get_customer(db: Session, customer_id: int, company_id: int) -> Optional[Cus
         .filter(and_(Customer.id == customer_id, Customer.company_id == company_id))\
         .options(
             joinedload(Customer.sales_representative),
-            joinedload(Customer.default_ar_gl_account)
+            joinedload(Customer.default_ar_gl_account),
+            joinedload(Customer.currency)
         )\
         .first()
 

@@ -8,6 +8,7 @@ export interface Supplier {
   payment_terms?: string;
   current_balance: number;
   default_ap_gl_account_id?: number;
+  default_currency_id?: number;
   is_active: boolean;
 }
 
@@ -18,6 +19,7 @@ export interface SupplierCreate {
   contact_info?: any;
   payment_terms?: string;
   default_ap_gl_account_id?: number;
+  default_currency_id?: number;
   is_active?: boolean;
 }
 
@@ -28,6 +30,7 @@ export interface SupplierUpdate {
   contact_info?: any;
   payment_terms?: string;
   default_ap_gl_account_id?: number;
+  default_currency_id?: number;
   is_active?: boolean;
 }
 

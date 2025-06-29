@@ -30,6 +30,86 @@ import {
   WriteOffRecovery,
 } from '@/types/ar';
 
+// Add interfaces for tax and currency
+interface ARTransactionWithTax {
+  id: number;
+  company_id: number;
+  customer_id: number;
+  ar_transaction_type_id: number;
+  linked_gl_journal_entry_id?: number;
+  sales_order_id?: number;
+  transaction_date: string;
+  due_date?: string;
+  reference?: string;
+  document_number: string;
+  total_amount: number;
+  open_amount: number;
+  is_posted_to_gl: boolean;
+  status: 'Draft' | 'Posted' | 'Paid' | 'PartiallyPaid';
+  customer_name?: string;
+  ar_transaction_type_name?: string;
+  currencyId?: string;
+  exchangeRate?: number;
+  foreignCurrencyAmount?: number;
+  baseCurrencyAmount?: number;
+  taxLines?: ARTaxLine[];
+}
+
+interface ARTaxLine {
+  taxTypeId: string;
+  taxableAmount: number;
+  taxAmount: number;
+}
+
+// Extend ARTransactionCreate to include tax and currency fields
+interface ARInvoiceCreateSchema extends ARTransactionCreate {
+  currencyId?: string;
+  exchangeRate?: number;
+  foreignCurrencyAmount?: number;
+  baseCurrencyAmount?: number;
+  taxLines?: ARTaxLine[];
+}
+
+// Add interfaces for tax and currency
+interface ARTransactionWithTax {
+  id: number;
+  company_id: number;
+  customer_id: number;
+  ar_transaction_type_id: number;
+  linked_gl_journal_entry_id?: number;
+  sales_order_id?: number;
+  transaction_date: string;
+  due_date?: string;
+  reference?: string;
+  document_number: string;
+  total_amount: number;
+  open_amount: number;
+  is_posted_to_gl: boolean;
+  status: 'Draft' | 'Posted' | 'Paid' | 'PartiallyPaid';
+  customer_name?: string;
+  ar_transaction_type_name?: string;
+  currencyId?: string;
+  exchangeRate?: number;
+  foreignCurrencyAmount?: number;
+  baseCurrencyAmount?: number;
+  taxLines?: ARTaxLine[];
+}
+
+interface ARTaxLine {
+  taxTypeId: string;
+  taxableAmount: number;
+  taxAmount: number;
+}
+
+// Extend ARTransactionCreate to include tax and currency fields
+interface ARInvoiceCreateSchema extends ARTransactionCreate {
+  currencyId?: string;
+  exchangeRate?: number;
+  foreignCurrencyAmount?: number;
+  baseCurrencyAmount?: number;
+  taxLines?: ARTaxLine[];
+}
+
 // Customer API functions
 export const customerService = {
   getAll: async (): Promise<Customer[]> => {
@@ -200,6 +280,18 @@ export const arTransactionService = {
     const response = await axiosInstance.post(`/ar/transactions/${id}/post`);
     return response.data;
   },
+
+  // Invoice creation with tax and currency
+  createInvoice: async (data: ARInvoiceCreateSchema): Promise<ARTransaction> => {
+    const response = await axiosInstance.post('/ar/transactions/invoice', data);
+    return response.data;
+  },
+};
+
+// Update create functions to handle tax/currency
+export const createARInvoice = async (data: ARInvoiceCreateSchema): Promise<ARTransactionWithTax> => {
+  const response = await axiosInstance.post<ARTransactionWithTax>('/ar/transactions', data);
+  return response.data;
 };
 
 // AR Allocation API functions

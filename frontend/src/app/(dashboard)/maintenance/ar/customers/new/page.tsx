@@ -9,6 +9,7 @@ import { CustomerCreate } from '@/types/ar';
 import { GLAccount } from '@/types/gl';
 import { customerService, salesRepService } from '@/services/arService';
 import { glService } from '@/services/glService';
+import { commonService } from '@/services/commonService';
 import { usePermissions } from '@/hooks/usePermissions';
 import { AR_SETUP_MANAGE } from '@/lib/permissions';
 
@@ -37,6 +38,7 @@ export default function NewCustomerPage() {
     credit_limit: 0,
     sales_representative_id: undefined,
     default_ar_gl_account_id: undefined,
+    default_currency_id: undefined,
     is_active: true,
   });
 
@@ -76,6 +78,12 @@ export default function NewCustomerPage() {
   const { data: glAccounts = [] } = useQuery<GLAccount[]>({
     queryKey: ['glAccounts'],
     queryFn: () => glService.getGLAccounts(),
+  });
+
+  // Fetch currencies
+  const { data: currencies = [] } = useQuery({
+    queryKey: ['currencies'],
+    queryFn: () => commonService.getCurrencies(),
   });
 
   const createMutation = useMutation({
@@ -392,6 +400,30 @@ export default function NewCustomerPage() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Default Currency
+                  </label>
+                  <select
+                    value={formData.default_currency_id || ''}
+                    onChange={(e) => handleInputChange('default_currency_id', e.target.value ? parseInt(e.target.value) : undefined)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+                  >
+                    <option value="">Use System Default</option>
+                    {currencies
+                      .filter(currency => currency.is_active)
+                      .map((currency) => (
+                        <option key={currency.id} value={currency.id}>
+                          {currency.code} - {currency.name}
+                          {currency.is_base_currency ? ' (Base Currency)' : ''}
+                        </option>
+                      ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Default currency for transactions with this customer
+                  </p>
                 </div>
               </div>
 

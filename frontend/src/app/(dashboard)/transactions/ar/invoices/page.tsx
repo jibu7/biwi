@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -25,7 +25,6 @@ export default function ARInvoicesPage() {
   const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredInvoices, setFilteredInvoices] = useState<ARTransaction[]>([]);
   const [postingTransactionId, setPostingTransactionId] = useState<number | null>(null);
 
   const { data: transactions = [], isLoading, error, refetch } = useQuery({
@@ -55,15 +54,15 @@ export default function ARInvoicesPage() {
     await postTransactionMutation.mutateAsync(transactionId);
   };
 
-  useEffect(() => {
-    if (transactions) {
-      const filtered = transactions.filter((transaction: ARTransaction) =>
-        transaction.document_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.reference?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredInvoices(filtered);
+  const filteredInvoices = useMemo(() => {
+    if (!transactions || transactions.length === 0) {
+      return [];
     }
+    return transactions.filter((transaction: ARTransaction) =>
+      transaction.document_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.reference?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   }, [transactions, searchTerm]);
 
   const formatCurrency = (amount: number) => {
@@ -71,6 +70,17 @@ export default function ARInvoicesPage() {
       style: 'currency',
       currency: 'USD',
     }).format(amount);
+  };
+
+  const safeParseAmount = (amount: any): number => {
+    if (typeof amount === 'number' && !isNaN(amount)) {
+      return amount;
+    }
+    if (typeof amount === 'string') {
+      const parsed = parseFloat(amount);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
   };
 
   const getStatusColor = (status: string) => {
@@ -254,18 +264,12 @@ export default function ARInvoicesPage() {
                       )}
                     </td>
                     <td className="px-4 py-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <DollarSign className="h-4 w-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">{formatCurrency(invoice.total_amount)}</span>
-                      </div>
+                      <span className="font-medium text-gray-900">{formatCurrency(safeParseAmount(invoice.total_amount))}</span>
                     </td>
                     <td className="px-4 py-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <DollarSign className="h-4 w-4 text-gray-600" />
-                        <span className={`font-medium ${invoice.open_amount > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {formatCurrency(invoice.open_amount)}
-                        </span>
-                      </div>
+                      <span className={`font-medium ${safeParseAmount(invoice.open_amount) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {formatCurrency(safeParseAmount(invoice.open_amount))}
+                      </span>
                     </td>
                     <td className="px-4 py-4 text-center">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
@@ -323,10 +327,10 @@ export default function ARInvoicesPage() {
             </span>
             <div className="flex space-x-6">
               <span>
-                Total: {formatCurrency(filteredInvoices.reduce((sum, inv) => sum + inv.total_amount, 0))}
+                Total: {formatCurrency(filteredInvoices.reduce((sum, inv) => sum + safeParseAmount(inv.total_amount), 0))}
               </span>
               <span>
-                Outstanding: {formatCurrency(filteredInvoices.reduce((sum, inv) => sum + inv.open_amount, 0))}
+                Outstanding: {formatCurrency(filteredInvoices.reduce((sum, inv) => sum + safeParseAmount(inv.open_amount), 0))}
               </span>
             </div>
           </div>

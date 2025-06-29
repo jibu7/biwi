@@ -9,12 +9,14 @@ import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apService } from '@/services/apService';
 import { glService } from '@/services/glService';
+import { commonService } from '@/services/commonService';
 
 const supplierSchema = z.object({
   supplier_code: z.string().min(1, 'Supplier code is required'),
   name: z.string().min(1, 'Name is required'),
   payment_terms: z.string().optional(),
-  default_ap_gl_account_id: z.number().nullable(),
+  default_ap_gl_account_id: z.number().optional(),
+  default_currency_id: z.number().optional(),
   is_active: z.boolean(),
   address: z.object({
     street: z.string().optional(),
@@ -36,7 +38,7 @@ export default function EditSupplierPage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
-  const supplierId = resolvedParams ? parseInt(resolvedParams.id as string) : 0;
+  const supplierId = params?.id ? parseInt(params.id as string) : 0;
 
   const { data: supplier, isLoading } = useQuery({
     queryKey: ['supplier', supplierId],
@@ -47,6 +49,11 @@ export default function EditSupplierPage() {
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['glAccounts'],
     queryFn: () => glService.getGLAccounts(),
+  });
+
+  const { data: currencies = [] } = useQuery({
+    queryKey: ['currencies'],
+    queryFn: () => commonService.getCurrencies(),
   });
 
   const {
@@ -62,7 +69,8 @@ export default function EditSupplierPage() {
     if (supplier) {
       reset({
         ...supplier,
-        default_ap_gl_account_id: supplier.default_ap_gl_account_id || null,
+        default_ap_gl_account_id: supplier.default_ap_gl_account_id || undefined,
+        default_currency_id: supplier.default_currency_id || undefined,
       });
     }
   }, [supplier, reset]);
@@ -77,10 +85,7 @@ export default function EditSupplierPage() {
   });
 
   const onSubmit = async (data: SupplierFormData) => {
-    await updateMutation.mutateAsync({
-      ...data,
-      default_ap_gl_account_id: data.default_ap_gl_account_id === null ? undefined : data.default_ap_gl_account_id,
-    });
+    await updateMutation.mutateAsync(data);
   };
 
   if (isLoading) {
@@ -140,7 +145,7 @@ export default function EditSupplierPage() {
           </label>
           <select
             {...register('default_ap_gl_account_id', {
-              setValueAs: (v) => v === '' ? null : parseInt(v)
+              setValueAs: (v) => v === '' ? undefined : parseInt(v)
             })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
@@ -153,6 +158,31 @@ export default function EditSupplierPage() {
                 </option>
               ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Default Currency
+          </label>
+          <select
+            {...register('default_currency_id', {
+              setValueAs: (v) => v === '' ? undefined : parseInt(v)
+            })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          >
+            <option value="">Use System Default</option>
+            {currencies
+              .filter(currency => currency.is_active)
+              .map((currency) => (
+                <option key={currency.id} value={currency.id}>
+                  {currency.code} - {currency.name}
+                  {currency.is_base_currency ? ' (Base Currency)' : ''}
+                </option>
+              ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            Default currency for transactions with this supplier
+          </p>
         </div>
 
         <div className="space-y-4">

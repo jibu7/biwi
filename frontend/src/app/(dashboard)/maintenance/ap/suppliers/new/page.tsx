@@ -7,12 +7,14 @@ import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apService } from '@/services/apService';
 import { glService } from '@/services/glService';
+import { commonService } from '@/services/commonService';
 
 const supplierSchema = z.object({
   supplier_code: z.string().min(1, 'Supplier code is required'),
   name: z.string().min(1, 'Name is required'),
   payment_terms: z.string().optional(),
-  default_ap_gl_account_id: z.number().nullable(),
+  default_ap_gl_account_id: z.number().optional(),
+  default_currency_id: z.number().optional(),
   is_active: z.boolean(),
   address: z.object({
     street: z.string().optional(),
@@ -38,6 +40,11 @@ export default function NewSupplierPage() {
     queryFn: () => glService.getGLAccounts(),
   });
 
+  const { data: currencies = [] } = useQuery({
+    queryKey: ['currencies'],
+    queryFn: () => commonService.getCurrencies(),
+  });
+
   const {
     register,
     handleSubmit,
@@ -46,7 +53,8 @@ export default function NewSupplierPage() {
     resolver: zodResolver(supplierSchema),
     defaultValues: {
       is_active: true,
-      default_ap_gl_account_id: null,
+      default_ap_gl_account_id: undefined,
+      default_currency_id: undefined,
     },
   });
 
@@ -61,6 +69,7 @@ export default function NewSupplierPage() {
     await createMutation.mutateAsync({
       ...data,
       default_ap_gl_account_id: data.default_ap_gl_account_id || undefined,
+      default_currency_id: data.default_currency_id || undefined,
     });
   };
 
@@ -117,7 +126,7 @@ export default function NewSupplierPage() {
           </label>
           <select
             {...register('default_ap_gl_account_id', {
-              setValueAs: (v) => v === '' ? null : parseInt(v)
+              setValueAs: (v) => v === '' ? undefined : parseInt(v)
             })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
@@ -130,6 +139,31 @@ export default function NewSupplierPage() {
                 </option>
               ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Default Currency
+          </label>
+          <select
+            {...register('default_currency_id', {
+              setValueAs: (v) => v === '' ? undefined : parseInt(v)
+            })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          >
+            <option value="">Use System Default</option>
+            {currencies
+              .filter(currency => currency.is_active)
+              .map((currency) => (
+                <option key={currency.id} value={currency.id}>
+                  {currency.code} - {currency.name}
+                  {currency.is_base_currency ? ' (Base Currency)' : ''}
+                </option>
+              ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            Default currency for transactions with this supplier
+          </p>
         </div>
 
         <div className="space-y-4">

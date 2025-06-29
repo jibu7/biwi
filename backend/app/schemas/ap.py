@@ -11,6 +11,7 @@ class SupplierBase(BaseModel):
     contact_info: Optional[dict] = None
     payment_terms: Optional[str] = None
     default_ap_gl_account_id: Optional[int] = None
+    default_currency_id: Optional[int] = None
     is_active: bool = True
 
 class SupplierCreate(SupplierBase):
@@ -23,6 +24,7 @@ class SupplierUpdate(BaseModel):
     contact_info: Optional[dict] = None
     payment_terms: Optional[str] = None
     default_ap_gl_account_id: Optional[int] = None
+    default_currency_id: Optional[int] = None
     is_active: Optional[bool] = None
 
 class Supplier(SupplierBase):

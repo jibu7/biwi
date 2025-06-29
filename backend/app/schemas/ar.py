@@ -13,6 +13,7 @@ class CustomerBase(BaseModel):
     credit_limit: Decimal = Decimal('0.00')
     sales_representative_id: Optional[int] = None
     default_ar_gl_account_id: Optional[int] = None
+    default_currency_id: Optional[int] = None
     is_active: bool = True
 
 class CustomerCreate(CustomerBase):
@@ -27,6 +28,7 @@ class CustomerUpdate(BaseModel):
     credit_limit: Optional[Decimal] = None
     sales_representative_id: Optional[int] = None
     default_ar_gl_account_id: Optional[int] = None
+    default_currency_id: Optional[int] = None
     is_active: Optional[bool] = None
 
 class Customer(CustomerBase):

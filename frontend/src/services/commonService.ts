@@ -114,6 +114,13 @@ export const commonService = {
     await axiosInstance.delete(`/common/currencies/${id}`);
   },
 
+  getExchangeRate: async (currencyId: string, date: Date): Promise<number> => {
+    const response = await axiosInstance.get(`/common/currencies/${currencyId}/exchange-rate`, {
+      params: { date: date.toISOString().split('T')[0] }
+    });
+    return response.data.exchange_rate || 1;
+  },
+
   // Tax Type methods
   getTaxTypes: async (): Promise<TaxType[]> => {
     const response = await axiosInstance.get('/common/tax-types/');

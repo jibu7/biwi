@@ -44,12 +44,18 @@ def get_suppliers_by_company(
     query = db.query(models.Supplier).filter(models.Supplier.company_id == company_id)
     if not include_inactive:
         query = query.filter(models.Supplier.is_active == True)
-    return query.order_by(models.Supplier.supplier_code).offset(skip).limit(limit).all()
+    return query.options(
+        joinedload(models.Supplier.default_ap_gl_account),
+        joinedload(models.Supplier.currency)
+    ).order_by(models.Supplier.supplier_code).offset(skip).limit(limit).all()
 
 def get_supplier(db: Session, supplier_id: int, company_id: int) -> Optional[models.Supplier]:
     return db.query(models.Supplier).filter(
         models.Supplier.id == supplier_id,
         models.Supplier.company_id == company_id
+    ).options(
+        joinedload(models.Supplier.default_ap_gl_account),
+        joinedload(models.Supplier.currency)
     ).first()
 
 def update_supplier(
