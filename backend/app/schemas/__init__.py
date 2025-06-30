@@ -20,6 +20,7 @@ from .ar import (
     SalesRepresentative, SalesRepresentativeCreate, SalesRepresentativeUpdate,
     ARTransactionType, ARTransactionTypeCreate, ARTransactionTypeUpdate,
     ARTransaction, ARTransactionCreate, ARTransactionUpdate,
+    ARPaymentCreate, ARPaymentAllocationItem,
     ARAllocation, ARAllocationCreate, ARAllocationLine, ARAllocationLineCreate,
     ARDefaults, ARDefaultsCreate, ARDefaultsUpdate,
     ARWriteOff, ARWriteOffCreate, ARWriteOffUpdate, ARWriteOffApproval,
@@ -66,7 +67,8 @@ from .oe import (
 from .common import (
     Currency, CurrencyCreate, CurrencyUpdate,
     TaxType, TaxTypeCreate, TaxTypeUpdate,
-    Branch, BranchCreate, BranchUpdate
+    Branch, BranchCreate, BranchUpdate,
+    DocumentLineWithTax
 )
 
 from .reporting import (
@@ -112,6 +114,7 @@ __all__ = [
     "SalesRepresentative", "SalesRepresentativeCreate", "SalesRepresentativeUpdate",
     "ARTransactionType", "ARTransactionTypeCreate", "ARTransactionTypeUpdate",
     "ARTransaction", "ARTransactionCreate", "ARTransactionUpdate",
+    "ARPaymentCreate", "ARPaymentAllocationItem",
     "ARAllocation", "ARAllocationCreate", "ARAllocationLine", "ARAllocationLineCreate",
     "ARDefaults", "ARDefaultsCreate", "ARDefaultsUpdate",
     "ARWriteOff", "ARWriteOffCreate", "ARWriteOffUpdate", "ARWriteOffApproval",
@@ -146,15 +149,16 @@ __all__ = [
     "Currency", "CurrencyCreate", "CurrencyUpdate",
     "TaxType", "TaxTypeCreate", "TaxTypeUpdate",
     "Branch", "BranchCreate", "BranchUpdate",
+    "DocumentLineWithTax",
     "FinancialStatementLine", "BalanceSheetData", "IncomeStatementData", "CashFlowData",
     "ReportTemplate", "ReportTemplateCreate", "ReportTemplateBase",
     "BankReconciliation", "BankReconciliationCreate", "BankReconciliationBase",
     "ARAgingDetail", "APAgingDetail",
-    "BOMHeader", "BOMHeaderCreate", "BOMHeaderUpdate", "BOMHeaderRead",
-    "BOMComponent", "BOMComponentCreate", "BOMComponentUpdate", "BOMComponentRead",
-    "ManufacturingOrder", "ManufacturingOrderCreate", "ManufacturingOrderUpdate", "ManufacturingOrderRead",
-    "ManufacturingOrderComponent", "ManufacturingOrderComponentCreate", "ManufacturingOrderComponentRead",
-    "BOMDefaults", "BOMDefaultsCreate", "BOMDefaultsUpdate", "BOMDefaultsRead",
+    "BOMHeaderBase", "BOMHeaderCreate", "BOMHeaderUpdate", "BOMHeaderRead",
+    "BOMComponentBase", "BOMComponentCreate", "BOMComponentUpdate", "BOMComponentRead",
+    "ManufacturingOrderBase", "ManufacturingOrderCreate", "ManufacturingOrderUpdate", "ManufacturingOrderRead",
+    "ManufacturingOrderComponentBase", "ManufacturingOrderComponentCreate", "ManufacturingOrderComponentRead",
+    "BOMDefaultsBase", "BOMDefaultsCreate", "BOMDefaultsUpdate", "BOMDefaultsRead",
     "MRPRequest", "MRPResult",
     "Till", "TillCreate", "TillUpdate",
     "POSTransactionType", "POSTransactionTypeCreate", "POSTransactionTypeUpdate",

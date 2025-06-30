@@ -231,6 +231,18 @@ def close_pos_session(
     
     return session
 
+def get_active_session(
+    db: Session,
+    till_id: int,
+    company_id: int
+) -> Optional[models.POSSession]:
+    """Get the currently active (open) POS session for a till"""
+    return db.query(models.POSSession).filter(
+        models.POSSession.till_id == till_id,
+        models.POSSession.company_id == company_id,
+        models.POSSession.status == "Open"
+    ).first()
+
 # POS Transaction Processing
 def process_pos_sale(
     db: Session,
@@ -448,6 +460,17 @@ def process_pos_return(
     
     # Process as negative sale
     return process_pos_sale(db, return_in, session_id, company_id, user_id)
+
+def get_pos_transaction(
+    db: Session,
+    transaction_id: int,
+    company_id: int
+) -> Optional[models.POSTransaction]:
+    """Get a specific POS transaction by ID"""
+    return db.query(models.POSTransaction).filter(
+        models.POSTransaction.id == transaction_id,
+        models.POSTransaction.company_id == company_id
+    ).first()
 
 # Cash Management
 def record_cash_movement(

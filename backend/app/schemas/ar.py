@@ -107,6 +107,26 @@ class ARTransactionBase(BaseModel):
 class ARTransactionCreate(ARTransactionBase):
     document_number: Optional[str] = None
 
+# AR Payment Create Schema (extends ARTransactionCreate for payments)
+class ARPaymentAllocationItem(BaseModel):
+    invoice_id: int
+    amount: Decimal
+    
+    @validator('amount')
+    def validate_amount(cls, v):
+        if v <= 0:
+            raise ValueError('Allocation amount must be positive')
+        return v
+
+class ARPaymentCreate(ARTransactionBase):
+    document_number: Optional[str] = None
+    allocated_invoices: Optional[List[ARPaymentAllocationItem]] = None
+    exchange_rate: Optional[Decimal] = None
+    currency_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
 class ARTransactionUpdate(BaseModel):
     transaction_date: Optional[date] = None
     due_date: Optional[date] = None

@@ -2,7 +2,6 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import models, schemas, crud
-from app.api import deps
 from app.core.permissions import (
     POS_SETUP_MANAGE, POS_TILL_MANAGE, POS_SESSION_OPEN, POS_SESSION_CLOSE,
     POS_SALES_PROCESS, POS_RETURNS_PROCESS, POS_CASH_MANAGE, POS_REPORTS_VIEW,
