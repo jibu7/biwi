@@ -1,9 +1,9 @@
 from .core import (
-    Company, CompanyCreate, CompanyUpdate,
+    Company, CompanyCreate, CompanyUpdate, CompanyWithStats,
     Role, RoleCreate, RoleUpdate,
     User, UserCreate, UserUpdate, UserLogin,
     AccountingPeriod, AccountingPeriodCreate, AccountingPeriodUpdate,
-    Token, TokenData
+    Token, TokenData, PlatformAuditLog, PlatformAuditLogCreate
 )
 
 from .gl import (

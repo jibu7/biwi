@@ -1,21 +1,33 @@
 from sqlalchemy.orm import Session
 from typing import Optional, List
+from datetime import datetime
 from app import models, schemas
 from app.core.security import get_password_hash
+from app.models.core import UserType
 
 # User CRUD
 def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
     return db.query(models.User).filter(models.User.email == email).first()
 
-def create_user(db: Session, user: schemas.UserCreate, company_id: int) -> models.User:
+def create_user(db: Session, user: schemas.UserCreate, company_id: Optional[int] = None) -> models.User:
     hashed_password = get_password_hash(user.password)
+    
+    # For platform admins, company_id can be None
+    if user.user_type == UserType.PLATFORM_ADMIN:
+        user_company_id = None
+    else:
+        user_company_id = company_id or user.company_id
+        if not user_company_id:
+            raise ValueError("company_id is required for non-platform users")
+    
     db_user = models.User(
         email=user.email,
         hashed_password=hashed_password,
         full_name=user.full_name,
         is_active=user.is_active,
         is_superuser=user.is_superuser,
-        company_id=company_id
+        user_type=user.user_type,
+        company_id=user_company_id
     )
     db.add(db_user)
     db.commit()
@@ -26,6 +38,9 @@ def update_user(db: Session, user_db_obj: models.User, user_in: schemas.UserUpda
     update_data = user_in.model_dump(exclude_unset=True)
     if "password" in update_data:
         update_data["hashed_password"] = get_password_hash(update_data.pop("password"))
+    
+    # Update last_login and updated_at timestamps
+    update_data["updated_at"] = datetime.utcnow()
     
     for field, value in update_data.items():
         setattr(user_db_obj, field, value)
@@ -203,3 +218,74 @@ def delete_accounting_period(db: Session, period_id: int, company_id: int) -> Op
         db.delete(period)
         db.commit()
     return period
+
+# Platform-specific CRUD functions
+
+def update_user_last_login(db: Session, user: models.User) -> models.User:
+    """Update user's last login timestamp"""
+    user.last_login = datetime.utcnow()
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+def get_platform_admins(db: Session, skip: int = 0, limit: int = 100) -> List[models.User]:
+    """Get all platform administrators"""
+    return db.query(models.User).filter(
+        models.User.user_type == UserType.PLATFORM_ADMIN
+    ).offset(skip).limit(limit).all()
+
+def get_users_by_type(db: Session, user_type: UserType, skip: int = 0, limit: int = 100) -> List[models.User]:
+    """Get users by type"""
+    return db.query(models.User).filter(
+        models.User.user_type == user_type
+    ).offset(skip).limit(limit).all()
+
+def create_platform_audit_log(db: Session, audit_log: schemas.PlatformAuditLogCreate) -> models.PlatformAuditLog:
+    """Create a platform audit log entry"""
+    db_audit_log = models.PlatformAuditLog(**audit_log.model_dump())
+    db.add(db_audit_log)
+    db.commit()
+    db.refresh(db_audit_log)
+    return db_audit_log
+
+def get_platform_audit_logs(
+    db: Session, 
+    skip: int = 0, 
+    limit: int = 100,
+    company_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    action: Optional[str] = None
+) -> List[models.PlatformAuditLog]:
+    """Get platform audit logs with optional filters"""
+    query = db.query(models.PlatformAuditLog)
+    
+    if company_id:
+        query = query.filter(models.PlatformAuditLog.company_id == company_id)
+    if user_id:
+        query = query.filter(models.PlatformAuditLog.user_id == user_id)
+    if action:
+        query = query.filter(models.PlatformAuditLog.action == action)
+    
+    return query.order_by(models.PlatformAuditLog.timestamp.desc()).offset(skip).limit(limit).all()
+
+def get_companies_for_platform_admin(db: Session, skip: int = 0, limit: int = 100) -> List[models.Company]:
+    """Get all companies for platform administration"""
+    return db.query(models.Company).filter(
+        models.Company.is_deleted == False
+    ).offset(skip).limit(limit).all()
+
+def create_company_with_audit(
+    db: Session, 
+    company: schemas.CompanyCreate, 
+    created_by_user_id: int
+) -> models.Company:
+    """Create a company with audit trail"""
+    db_company = models.Company(
+        **company.model_dump(),
+        created_by_user_id=created_by_user_id
+    )
+    db.add(db_company)
+    db.commit()
+    db.refresh(db_company)
+    return db_company
