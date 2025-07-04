@@ -1,4 +1,4 @@
-import axiosInstance from '@/lib/axiosInstance';
+import platformAxiosInstance from '@/lib/platformAxiosInstance';
 
 export interface CompanyFilters {
   search?: string;
@@ -88,46 +88,46 @@ export interface ImpersonationResponse {
 export const platformService = {
   // Companies
   getCompanies: async (filters?: CompanyFilters): Promise<CompanyWithStats[]> => {
-    const response = await axiosInstance.get('/platform/companies', { params: filters });
+    const response = await platformAxiosInstance.get('/platform/companies', { params: filters });
     return response.data;
   },
   
   createCompany: async (data: CompanyCreate) => {
-    const response = await axiosInstance.post('/platform/companies', data);
+    const response = await platformAxiosInstance.post('/platform/companies', data);
     return response.data;
   },
   
   impersonateCompany: async (companyId: number, reason?: string): Promise<ImpersonationResponse> => {
-    const response = await axiosInstance.post(`/platform/companies/${companyId}/impersonate`, {
+    const response = await platformAxiosInstance.post(`/platform/companies/${companyId}/impersonate`, {
       reason: reason || 'Platform administration'
     });
     return response.data;
   },
   
   getCompanyHealth: async (companyId: number) => {
-    const response = await axiosInstance.get(`/platform/companies/${companyId}/health`);
+    const response = await platformAxiosInstance.get(`/platform/companies/${companyId}/health`);
     return response.data;
   },
   
   suspendCompany: async (companyId: number, reason: string) => {
-    const response = await axiosInstance.post(`/platform/companies/${companyId}/suspend`, { reason });
+    const response = await platformAxiosInstance.post(`/platform/companies/${companyId}/suspend`, { reason });
     return response.data;
   },
   
   activateCompany: async (companyId: number, reason: string) => {
-    const response = await axiosInstance.post(`/platform/companies/${companyId}/activate`, { reason });
+    const response = await platformAxiosInstance.post(`/platform/companies/${companyId}/activate`, { reason });
     return response.data;
   },
   
   // Metrics
   getMetrics: async (): Promise<PlatformMetrics> => {
-    const response = await axiosInstance.get('/platform/metrics/summary');
+    const response = await platformAxiosInstance.get('/platform/metrics/summary');
     return response.data;
   },
   
   // Audit Logs
   getAuditLogs: async (filters?: AuditLogFilters): Promise<PlatformAuditLog[]> => {
-    const response = await axiosInstance.get('/platform/audit-logs', { params: filters });
+    const response = await platformAxiosInstance.get('/platform/audit-logs', { params: filters });
     return response.data;
   },
 };

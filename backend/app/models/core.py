@@ -72,7 +72,7 @@ class User(Base):
     full_name = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)  # Deprecated, use user_type
-    user_type = Column(String, default="company_user", nullable=False)
+    user_type = Column(String, default=UserType.COMPANY_USER.value, nullable=False)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
     
     # Platform admins can have a default company for context

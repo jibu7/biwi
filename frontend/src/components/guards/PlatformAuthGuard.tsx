@@ -9,22 +9,29 @@ export default function PlatformAuthGuard({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, token } = usePlatformAuthStore();
+  const { user, token, isLoading, isAuthenticated, initAuth } = usePlatformAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    if (!token) {
+    initAuth();
+  }, [initAuth]);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
       router.push("/platform-login");
     }
-  }, [token, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  if (!user && token) {
-    // If we have a token but no user, we are likely still loading the user data
-    return <div>Loading platform session...</div>; // Or a proper loader
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
-  if (!user) {
-    return null; // Or a redirect, or a loading spinner
+  if (!isAuthenticated) {
+    return null;
   }
 
   return <>{children}</>;

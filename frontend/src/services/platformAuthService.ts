@@ -1,5 +1,6 @@
-import axiosInstance from '@/lib/axiosInstance';
-import { User, UserLogin, Token } from '@/types';
+import platformAxiosInstance from '@/lib/platformAxiosInstance';
+import { UserLogin, Token } from '@/types';
+import { PlatformUser } from '@/types/platform';
 import Cookies from 'js-cookie';
 
 export const platformAuthService = {
@@ -8,7 +9,7 @@ export const platformAuthService = {
     formData.append('username', credentials.email);
     formData.append('password', credentials.password);
     
-    const response = await axiosInstance.post<Token>('/auth/login', formData, {
+    const response = await platformAxiosInstance.post<Token>('/auth/platform-login', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     
@@ -21,8 +22,8 @@ export const platformAuthService = {
     return response.data;
   },
 
-  async getMe(): Promise<User> {
-    const response = await axiosInstance.get<User>('/auth/me');
+  async getMe(): Promise<PlatformUser> {
+    const response = await platformAxiosInstance.get<PlatformUser>('/auth/me');
     return response.data;
   },
 
