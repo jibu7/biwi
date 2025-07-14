@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Save, X } from 'lucide-react';
 import Link from 'next/link';
 import { arTransactionService, customerService, arTransactionTypeService } from '@/services/arService';
-import { ARTransaction, ARTransactionUpdate, Customer, ARTransactionType } from '@/types/ar';
+import { ARTransactionUpdate } from '@/types/ar';
 import { usePermissions } from '@/hooks/usePermissions';
 import { AR_TRANSACTIONS_POST } from '@/lib/permissions';
 
@@ -57,10 +57,16 @@ export default function ARTransactionEditPage() {
       queryClient.invalidateQueries({ queryKey: ['ar-transactions'] });
       router.push(`/transactions/ar/transactions/${transactionId}`);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Failed to update transaction:', error);
-      if (error.response?.data?.detail) {
-        setErrors({ submit: error.response.data.detail });
+      type ErrorResponse = { response?: { data?: { detail?: string } } };
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as ErrorResponse).response?.data?.detail === 'string'
+      ) {
+        setErrors({ submit: (error as ErrorResponse).response!.data!.detail! });
       } else {
         setErrors({ submit: 'Failed to update transaction. Please try again.' });
       }
@@ -86,7 +92,7 @@ export default function ARTransactionEditPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
-          <p className="text-gray-600 mt-2">You don't have permission to edit AR transactions.</p>
+          <p className="text-gray-600 mt-2">You don&apos;t have permission to edit AR transactions.</p>
         </div>
       </div>
     );

@@ -8,7 +8,6 @@ import { Table } from '@/components/ui/Table';
 import { usePermissions } from '@/hooks/usePermissions';
 import * as permissions from '@/lib/permissions';
 import { cn } from '@/lib/utils';
-
 // Temporary interface until backend implementation
 interface PaymentMethod {
   id: number;
@@ -21,7 +20,6 @@ interface PaymentMethod {
   requires_reference: boolean;
   is_active: boolean;
 }
-
 // Mock data for development - will be replaced with API calls
 const mockPaymentMethods: PaymentMethod[] = [
   {
@@ -69,18 +67,10 @@ const mockPaymentMethods: PaymentMethod[] = [
     is_active: true,
   },
 ];
-
 export default function PaymentMethodsPage() {
-  const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
-
   // Mock queries - will be replaced with actual API calls
-  const { data: paymentMethods = mockPaymentMethods, isLoading = false } = useQuery({
-    queryKey: ['paymentMethods'],
-    queryFn: () => Promise.resolve(mockPaymentMethods), // Temporary mock
-    enabled: false, // Disable until backend is ready
-  });
 
   // Use mock data for now
   const currentPaymentMethods = mockPaymentMethods;
@@ -288,12 +278,7 @@ export default function PaymentMethodsPage() {
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Payment Methods ({filteredPaymentMethods.length})
             </h3>
-            {isLoading ? (
-              <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <p className="mt-2 text-gray-600">Loading payment methods...</p>
-              </div>
-            ) : filteredPaymentMethods.length === 0 ? (
+            {filteredPaymentMethods.length === 0 ? (
               <div className="text-center py-8">
                 <CreditCard className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-sm font-medium text-gray-900">No payment methods found</h3>

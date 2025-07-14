@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -28,7 +27,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { AR_SETUP_MANAGE } from '@/lib/permissions';
 
 export default function CustomersPage() {
-  const router = useRouter();
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -42,10 +40,13 @@ export default function CustomersPage() {
     enabled: canManageCustomers,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: unknown) => {
       // Don't retry on authentication errors
-      if (error?.response?.status === 401) {
-        return false;
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const response = (error as { response?: { status?: number } }).response;
+        if (response?.status === 401) {
+          return false;
+        }
       }
       return failureCount < 3;
     },
@@ -108,8 +109,11 @@ export default function CustomersPage() {
       try {
         await customerService.delete(customer.id);
         refetch();
-      } catch (error: any) {
-        const errorMessage = error.response?.data?.detail || 'Failed to delete customer';
+      } catch (error: unknown) {
+        let errorMessage = 'Failed to delete customer';
+        if (typeof error === 'object' && error !== null && 'response' in error) {
+          errorMessage = ((error as { response?: { data?: { detail?: string } } }).response?.data?.detail) || errorMessage;
+        }
         alert(errorMessage);
       }
     }
@@ -151,7 +155,7 @@ export default function CustomersPage() {
 
   // Error state
   if (error) {
-    const isAuthError = (error as any)?.response?.status === 401;
+    const isAuthError = typeof error === 'object' && error !== null && 'response' in error && ((error as { response?: { status?: number } }).response?.status === 401);
     const errorMessage = isAuthError 
       ? 'Authentication required. Please log in to access customer data.'
       : error instanceof Error ? error.message : 'There was a problem loading the customer data. Please try again.';

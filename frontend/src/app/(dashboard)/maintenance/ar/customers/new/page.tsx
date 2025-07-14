@@ -1,10 +1,9 @@
+import { ArrowLeft, Save, User, Building2, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { ArrowLeft, Save, User, Building2, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 import { CustomerCreate } from '@/types/ar';
 import { GLAccount } from '@/types/gl';
 import { customerService, salesRepService } from '@/services/arService';
@@ -12,7 +11,6 @@ import { glService } from '@/services/glService';
 import { commonService } from '@/services/commonService';
 import { usePermissions } from '@/hooks/usePermissions';
 import { AR_SETUP_MANAGE } from '@/lib/permissions';
-
 export default function NewCustomerPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -41,7 +39,6 @@ export default function NewCustomerPage() {
     default_currency_id: undefined,
     is_active: true,
   });
-
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Auto-generate customer code based on customer name

@@ -2,14 +2,13 @@
 
 import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import reportingService from '@/services/reportingService';
 import { format, subMonths } from 'date-fns';
 import '@/styles/reports.css';
 
 export default function CashFlowPage() {
   const [startDate, setStartDate] = useState(format(subMonths(new Date(), 1), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [showComparative, setShowComparative] = useState(false);
+
   const printRef = useRef<HTMLDivElement>(null);
 
   // Placeholder query - would need to implement in reportingService

@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -22,7 +21,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { AR_SETUP_MANAGE } from '@/lib/permissions';
 
 export default function CustomersPage() {
-  const router = useRouter();
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -56,8 +54,12 @@ export default function CustomersPage() {
       try {
         await customerService.delete(id);
         refetch();
-      } catch (error: any) {
-        alert(error.response?.data?.detail || 'Failed to delete customer');
+      } catch (error: unknown) {
+        let errorMessage = 'Failed to delete customer';
+        if (typeof error === 'object' && error !== null && 'response' in error) {
+          errorMessage = ((error as { response?: { data?: { detail?: string } } }).response?.data?.detail) || errorMessage;
+        }
+        alert(errorMessage);
       }
     }
   };

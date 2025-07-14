@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Save, Settings } from 'lucide-react';
@@ -20,13 +19,11 @@ export default function ARDefaultsPage() {
     default_payment_terms: '',
     default_credit_limit: 0,
   });
-
   const { data: arDefaults, isLoading: defaultsLoading } = useQuery({
     queryKey: ['ar-defaults'],
     queryFn: arDefaultsService.get,
     enabled: hasPermission(AR_SETUP_MANAGE),
   });
-
   const { data: glAccounts = [] } = useQuery({
     queryKey: ['gl-accounts'],
     queryFn: () => glService.getGLAccounts(),
@@ -38,8 +35,12 @@ export default function ARDefaultsPage() {
     onSuccess: () => {
       alert('AR defaults updated successfully');
     },
-    onError: (error: any) => {
-      alert('Error updating AR defaults: ' + (error.response?.data?.detail || error.message));
+    onError: (error: unknown) => {
+      let errorMessage = 'Error updating AR defaults';
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        errorMessage = ((error as { response?: { data?: { detail?: string }, message?: string } }).response?.data?.detail) || (error as { message?: string }).message || errorMessage;
+      }
+      alert(errorMessage);
     },
   });
 

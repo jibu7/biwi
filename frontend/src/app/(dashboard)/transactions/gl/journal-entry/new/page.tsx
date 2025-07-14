@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +7,6 @@ import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import { glService } from '@/services/glService';
-import { GLAccount } from '@/types/gl';
 
 const journalLineSchema = z.object({
   gl_account_id: z.number().min(1, 'Account is required'),
@@ -35,7 +33,6 @@ type JournalEntryFormData = z.infer<typeof journalEntrySchema>;
 
 export default function NewJournalEntryPage() {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState('');
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['glAccounts'],
@@ -80,11 +77,6 @@ export default function NewJournalEntryPage() {
     await createMutation.mutateAsync(data);
   };
 
-  const filteredAccounts = accounts.filter(
-    account =>
-      account.account_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      account.account_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="max-w-6xl">

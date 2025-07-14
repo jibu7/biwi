@@ -32,8 +32,12 @@ export default function LoginPage() {
       setError(null);
       await login(data);
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid email or password');
+    } catch (err: unknown) {
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        setError((err as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Invalid email or password');
+      } else {
+        setError('Invalid email or password');
+      }
     }
   };
 

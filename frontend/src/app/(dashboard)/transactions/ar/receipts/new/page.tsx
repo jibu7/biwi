@@ -10,7 +10,6 @@ import { ArrowLeft, Save, FileText, Calendar, User, DollarSign, CreditCard, Book
 import Link from 'next/link';
 import { ARTransactionCreate } from '@/types/ar';
 import { arTransactionService, customerService, arTransactionTypeService } from '@/services/arService';
-import { glService } from '@/services/glService';
 import { usePermissions } from '@/hooks/usePermissions';
 import { AR_TRANSACTIONS_POST } from '@/lib/permissions';
 import Toast from '@/components/ui/Toast';
@@ -87,9 +86,18 @@ export default function NewReceiptPage() {
         router.push('/transactions/ar/receipts');
       }, 3000);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Error creating receipt:', error);
-      const errorMessage = error?.response?.data?.detail || 'Failed to create receipt';
+      type ErrorResponse = { response?: { data?: { detail?: string } } };
+      let errorMessage = 'Failed to create receipt';
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as ErrorResponse).response?.data?.detail === 'string'
+      ) {
+        errorMessage = (error as ErrorResponse).response!.data!.detail!;
+      }
       setToast({ message: errorMessage, type: 'error' });
     },
   });
@@ -114,7 +122,7 @@ export default function NewReceiptPage() {
       };
 
       await createMutation.mutateAsync(transactionData);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error:', error);
       // Error handling is done in the mutation's onError callback
     } finally {

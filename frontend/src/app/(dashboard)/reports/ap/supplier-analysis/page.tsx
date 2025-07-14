@@ -176,7 +176,7 @@ export default function SupplierAnalysisPage() {
   };
 
   // Filter and sort data
-  let filteredData = supplierAnalysis.filter(supplier => {
+  const filteredData = supplierAnalysis.filter(supplier => {
     if (supplierCategory && supplier.supplier_category !== supplierCategory) return false;
     if (performanceRating && supplier.performance_rating !== performanceRating) return false;
     return true;

@@ -35,7 +35,7 @@ export default function APDefaultsPage() {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { isSubmitting },
   } = useForm<DefaultsFormData>({
     resolver: zodResolver(defaultsSchema),
   });

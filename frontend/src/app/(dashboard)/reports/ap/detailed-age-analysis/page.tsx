@@ -158,7 +158,7 @@ export default function APDetailedAgeAnalysisPage() {
   };
 
   // Filter and sort data
-  let filteredData = detailedAgeData.filter(item => {
+  const filteredData = detailedAgeData.filter(item => {
     if (ageBracket && item.age_bracket !== ageBracket) return false;
     if (minimumAmount && item.outstanding_amount < parseFloat(minimumAmount)) return false;
     if (!showZeroBalances && item.outstanding_amount === 0) return false;

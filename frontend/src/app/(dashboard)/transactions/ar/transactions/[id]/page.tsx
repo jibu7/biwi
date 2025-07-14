@@ -1,20 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Edit, FileText, DollarSign, Calendar, User, Building, MessageSquare, CheckCircle, Printer, Download } from 'lucide-react';
+import { ArrowLeft, Edit, FileText, DollarSign, Calendar, Building, MessageSquare, CheckCircle, Printer, Download } from 'lucide-react';
 import Link from 'next/link';
 import { arTransactionService, arTransactionTypeService } from '@/services/arService';
 import { companyService } from '@/services/companyService';
-import { ARTransaction } from '@/types/ar';
-import { Company } from '@/types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { AR_TRANSACTIONS_POST, AR_REPORTS_VIEW } from '@/lib/permissions';
 
 export default function ARTransactionDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const { hasPermission } = usePermissions();
   const transactionId = params ? parseInt(params.id as string, 10) : 0;
   const [showPrintDialog, setShowPrintDialog] = useState(false);
@@ -420,7 +417,8 @@ export default function ARTransactionDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
-          <p className="text-gray-600 mt-2">You don't have permission to view AR transactions.</p>
+          <p className="text-gray-600 mt-2">You don&apos;t have permission to view AR transactions.</p>
+          <p className="text-gray-600 mt-2">You can&apos;t have permission to view AR transactions.</p>
         </div>
       </div>
     );
@@ -500,25 +498,6 @@ export default function ARTransactionDetailPage() {
     }
   };
 
-  const handlePrintInvoice = (format: 'pdf' | 'html') => {
-    if (format === 'pdf') {
-      // Create print-friendly content in a new window
-      const printContent = createPrintContent();
-      const printWindow = window.open('', '_blank', 'width=800,height=600');
-      if (printWindow) {
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-        // Small delay to ensure content is loaded before printing
-        setTimeout(() => {
-          printWindow.print();
-        }, 500);
-      }
-    } else {
-      // Direct print of current page
-      window.print();
-    }
-    setShowPrintDialog(false);
-  };
 
   return (
     <>

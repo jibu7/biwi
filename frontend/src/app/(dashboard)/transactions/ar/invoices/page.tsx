@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { 
@@ -11,7 +10,6 @@ import {
   Eye, 
   FileText,
   Calendar,
-  DollarSign,
   User,
   CheckCircle
 } from 'lucide-react';
@@ -21,13 +19,12 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { AR_TRANSACTIONS_POST, AR_REPORTS_VIEW } from '@/lib/permissions';
 
 export default function ARInvoicesPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [postingTransactionId, setPostingTransactionId] = useState<number | null>(null);
 
-  const { data: transactions = [], isLoading, error, refetch } = useQuery({
+  const { data: transactions = [], isLoading, error } = useQuery({
     queryKey: ['ar-transactions', 'Invoice'],
     queryFn: () => arTransactionService.getByType('Invoice'),
     enabled: hasPermission(AR_REPORTS_VIEW),
@@ -39,7 +36,7 @@ export default function ARInvoicesPage() {
       queryClient.invalidateQueries({ queryKey: ['ar-transactions'] });
       setPostingTransactionId(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       console.error('Error posting transaction:', error);
       alert('Failed to post invoice. Please try again.');
       setPostingTransactionId(null);
@@ -72,7 +69,7 @@ export default function ARInvoicesPage() {
     }).format(amount);
   };
 
-  const safeParseAmount = (amount: any): number => {
+  const safeParseAmount = (amount: unknown): number => {
     if (typeof amount === 'number' && !isNaN(amount)) {
       return amount;
     }

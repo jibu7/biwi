@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { 
-  Plus, 
   Search, 
   Edit, 
   Eye, 
@@ -26,7 +25,7 @@ export default function ARTransactionsListPage() {
   const [typeFilter, setTypeFilter] = useState('');
   const [filteredTransactions, setFilteredTransactions] = useState<ARTransaction[]>([]);
 
-  const { data: transactions = [], isLoading, error, refetch } = useQuery({
+  const { data: transactions = [], isLoading, error } = useQuery({
     queryKey: ['ar-transactions'],
     queryFn: () => arTransactionService.getAll(),
     enabled: hasPermission(AR_REPORTS_VIEW),

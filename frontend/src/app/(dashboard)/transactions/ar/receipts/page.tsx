@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { 
@@ -22,14 +21,13 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { AR_TRANSACTIONS_POST, AR_REPORTS_VIEW } from '@/lib/permissions';
 
 export default function ARReceiptsPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredReceipts, setFilteredReceipts] = useState<ARTransaction[]>([]);
   const [postingTransactionId, setPostingTransactionId] = useState<number | null>(null);
 
-  const { data: transactions = [], isLoading, error, refetch } = useQuery({
+  const { data: transactions = [], isLoading, error } = useQuery({
     queryKey: ['ar-transactions', 'Receipt'],
     queryFn: () => arTransactionService.getByType('Receipt'),
     enabled: hasPermission(AR_REPORTS_VIEW),
@@ -42,9 +40,18 @@ export default function ARReceiptsPage() {
       setPostingTransactionId(null);
       // Optional: Add success toast notification here
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Error posting transaction:', error);
-      const errorMessage = error?.response?.data?.detail || 'Failed to post receipt. Please try again.';
+      type ErrorResponse = { response?: { data?: { detail?: string } } };
+      let errorMessage = 'Failed to post receipt. Please try again.';
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as ErrorResponse).response?.data?.detail === 'string'
+      ) {
+        errorMessage = (error as ErrorResponse).response!.data!.detail!;
+      }
       alert(`Posting failed: ${errorMessage}`);
       setPostingTransactionId(null);
     },

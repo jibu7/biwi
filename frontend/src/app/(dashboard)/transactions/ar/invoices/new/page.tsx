@@ -6,16 +6,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Save, FileText, Calendar, User, DollarSign, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Calendar, User, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { ARTransactionCreate } from '@/types/ar';
-import { arTransactionService, customerService, arTransactionTypeService, createARInvoice } from '@/services/arService';
+import { customerService, arTransactionTypeService, createARInvoice } from '@/services/arService';
 import { commonService } from '@/services/commonService';
 import { TaxCalculator } from '@/lib/taxCalculator';
-import { CustomerSelect } from '@/components/ui/CustomerSelect';
 import { usePermissions } from '@/hooks/usePermissions';
 import { AR_TRANSACTIONS_POST } from '@/lib/permissions';
+
+interface ARTaxLine {
+  taxTypeId: string;
+  taxableAmount: number;
+  taxAmount: number;
+}
 
 const invoiceSchema = z.object({
   customer_id: z.number().min(1, 'Customer is required'),
@@ -29,7 +33,7 @@ const invoiceSchema = z.object({
     description: z.string().min(1, 'Description is required'),
     quantity: z.number().min(1, 'Quantity must be at least 1'),
     unitPrice: z.number().min(0, 'Unit price must be non-negative'),
-    discountPercentage: z.number().min(0).max(100).optional().default(0),
+    discountPercentage: z.number().min(0).max(100).default(0),
     taxTypeId: z.string().optional(),
   })).min(1, 'At least one line item is required')
 });
@@ -137,13 +141,13 @@ export default function NewInvoicePage() {
   }, [setValue]);
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => createARInvoice(data),
+    mutationFn: (data: InvoiceFormData & { exchangeRate: number; total_amount: number; taxLines: ARTaxLine[] }) => createARInvoice(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ar-transactions'] });
       toast.success('Invoice created successfully');
       router.push('/transactions/ar/invoices');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       console.error('Error creating invoice:', error);
       toast.error('Failed to create invoice');
     },
@@ -167,7 +171,7 @@ export default function NewInvoicePage() {
           taxAmount: amount,
         })),
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error:', error);
     } finally {
       setIsSubmitting(false);

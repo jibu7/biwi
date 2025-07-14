@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
@@ -9,7 +8,6 @@ import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apService } from '@/services/apService';
 import { glService } from '@/services/glService';
-
 const transactionTypeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
@@ -26,7 +24,7 @@ export default function EditAPTransactionTypePage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
-  const transactionTypeId = resolvedParams ? parseInt(resolvedParams.id as string) : 0;
+  const transactionTypeId = params ? parseInt(params.id as string) : 0;
 
   const { data: transactionType, isLoading } = useQuery({
     queryKey: ['apTransactionType', transactionTypeId],

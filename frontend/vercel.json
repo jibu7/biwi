@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "name": "channelzap",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/v1/(.*)",
+      "dest": "/api/v1/$1"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_APP_NAME": "ChannelZap ERP",
+    "NEXT_PUBLIC_DOMAIN": "channelzap.com"
+  }
+}

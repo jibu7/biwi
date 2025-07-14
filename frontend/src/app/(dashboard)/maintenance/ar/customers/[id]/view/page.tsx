@@ -1,9 +1,8 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { 
   ArrowLeft, 
   Edit, 
@@ -25,22 +24,17 @@ import { Customer } from '@/types/ar';
 import { customerService } from '@/services/arService';
 import { usePermissions } from '@/hooks/usePermissions';
 import { AR_SETUP_MANAGE } from '@/lib/permissions';
-
 interface PageProps {
   params: Promise<{ id: string }>;
 }
-
 export default function ViewCustomerPage({ params }: PageProps) {
   const router = useRouter();
   const { hasPermission } = usePermissions();
   const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
-
   useEffect(() => {
     params.then(setResolvedParams);
   }, [params]);
-
   const customerId = resolvedParams ? parseInt(resolvedParams.id) : 0;
-
   const { data: customer, isLoading, error } = useQuery({
     queryKey: ['customer', customerId],
     queryFn: () => customerService.getById(customerId),

@@ -39,8 +39,12 @@ export default function PlatformLoginPage() {
       toast.success('Login successful!');
       router.push('/platform');
     },
-    onError: (err: any) => {
-      setError(err.response?.data?.detail || 'An unexpected error occurred.');
+    onError: (err: unknown) => {
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        setError((err as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'An unexpected error occurred.');
+      } else {
+        setError('An unexpected error occurred.');
+      }
     },
   });
 

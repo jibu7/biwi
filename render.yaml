@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: channelzap-backend
+    runtime: python
+    buildCommand: "./backend/render-build.sh"
+    startCommand: "./backend/render-start.sh"
+    plan: free
+    region: ohio
+    branch: main
+    rootDir: backend
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: API_V1_STR
+        value: /api/v1
+      - key: PROJECT_NAME
+        value: "ChannelZap ERP"
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      # These will be set manually in Render dashboard:
+      # - DATABASE_URL (from Neon)
+      # - SECRET_KEY (generated)
+      # - CORS_ORIGINS

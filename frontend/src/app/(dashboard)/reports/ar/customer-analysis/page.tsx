@@ -143,7 +143,7 @@ export default function CustomerAnalysisPage() {
   };
 
   // Filter and sort data
-  let filteredData = customerAnalysis.filter(customer => {
+  const filteredData = customerAnalysis.filter(customer => {
     if (riskLevel && customer.risk_score !== riskLevel) return false;
     return true;
   });

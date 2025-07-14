@@ -41,7 +41,7 @@ export default function DebugUserPermissions() {
           {userRolesLoading && <p>Loading user roles...</p>}
           {userRolesError && (
             <div className="text-red-600">
-              <p>Error: {(userRolesError as any).message}</p>
+              <p>Error: {typeof userRolesError === 'object' && userRolesError !== null && 'message' in userRolesError ? (userRolesError as { message?: string }).message : String(userRolesError)}</p>
               <pre className="text-xs bg-red-50 p-2 rounded mt-2">
                 {JSON.stringify(userRolesError, null, 2)}
               </pre>
@@ -58,7 +58,7 @@ export default function DebugUserPermissions() {
           <h3 className="font-semibold">All Available Roles:</h3>
           {allRolesError && (
             <div className="text-red-600">
-              <p>Error: {(allRolesError as any).message}</p>
+              <p>Error: {typeof allRolesError === 'object' && allRolesError !== null && 'message' in allRolesError ? (allRolesError as { message?: string }).message : String(allRolesError)}</p>
             </div>
           )}
           {allRoles && (

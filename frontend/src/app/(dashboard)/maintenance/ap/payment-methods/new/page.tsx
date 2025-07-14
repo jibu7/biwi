@@ -27,7 +27,6 @@ export default function NewPaymentMethodPage() {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm<PaymentMethodFormData>({
     resolver: zodResolver(paymentMethodSchema),
@@ -57,7 +56,6 @@ export default function NewPaymentMethodPage() {
     }
   };
 
-  const methodType = watch('method_type');
 
   return (
     <div className="min-h-screen bg-gray-50">

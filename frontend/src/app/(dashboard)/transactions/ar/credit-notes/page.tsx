@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { 
@@ -20,12 +19,11 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { AR_TRANSACTIONS_POST, AR_REPORTS_VIEW } from '@/lib/permissions';
 
 export default function ARCreditNotesPage() {
-  const router = useRouter();
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredCreditNotes, setFilteredCreditNotes] = useState<ARTransaction[]>([]);
 
-  const { data: transactions = [], isLoading, error, refetch } = useQuery({
+  const { data: transactions = [], isLoading, error } = useQuery({
     queryKey: ['ar-transactions', 'Credit Note'],
     queryFn: () => arTransactionService.getByType('Credit Note'),
     enabled: hasPermission(AR_REPORTS_VIEW),
