@@ -10,7 +10,13 @@ pip install poetry
 # Install dependencies
 echo "📦 Installing Python dependencies..."
 poetry config virtualenvs.create false
-poetry install --only main --no-interaction --no-ansi
+
+# Update lock file if needed (in case of changes)
+echo "🔄 Checking Poetry lock file..."
+poetry lock --check || poetry lock
+
+# Install dependencies
+poetry install --only main --no-interaction --no-ansi --no-root
 
 # Run database migrations
 echo "🗄️ Running database migrations..."
