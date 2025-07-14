@@ -2,12 +2,17 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# Install Poetry
 RUN pip install poetry
 
+# Copy dependency files first for better layer caching
 COPY pyproject.toml poetry.lock* /app/
 
-RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --only main --no-root
+# Configure poetry and install dependencies
+RUN poetry config virtualenvs.create false && \
+    poetry install --no-interaction --no-ansi --only main --no-root
 
+# Copy source code
 COPY . /app
 
 EXPOSE 8000

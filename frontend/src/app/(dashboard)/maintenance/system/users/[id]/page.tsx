@@ -32,18 +32,6 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
   const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
   const [rolesInitialized, setRolesInitialized] = useState(false);
 
-  // Check permissions
-  if (!hasPermission(permissions.USER_UPDATE)) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-red-800 font-medium">Access Denied</h3>
-          <p className="text-red-600">You don't have permission to edit users.</p>
-        </div>
-      </div>
-    );
-  }
-
   const { data: user, isLoading } = useQuery({
     queryKey: ['user', userId],
     queryFn: () => userService.getUser(userId),
@@ -117,6 +105,18 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
       // Don't auto-invalidate to prevent loops - we'll update state manually  
     },
   });
+
+  // Check permissions
+  if (!hasPermission(permissions.USER_UPDATE)) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 className="text-red-800 font-medium">Access Denied</h3>
+          <p className="text-red-600">You don't have permission to edit users.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleRoleToggle = async (roleId: number, isAssigned: boolean) => {
     try {
