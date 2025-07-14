@@ -44,6 +44,10 @@ class Company(Base):
     roles = relationship("Role", back_populates="company")
     accounting_periods = relationship("AccountingPeriod", back_populates="company")
     
+    # Billing relationships
+    billing_configuration = relationship("BillingConfiguration", back_populates="company", uselist=False)
+    usage_alerts = relationship("UsageAlert", back_populates="company")
+    
     # Reporting relationships
     report_templates = relationship("ReportTemplate", back_populates="company")
     report_schedules = relationship("ReportSchedule", back_populates="company")

@@ -1,7 +1,7 @@
 from .core import (
     Company, CompanyCreate, CompanyUpdate, CompanyWithStats,
     Role, RoleCreate, RoleUpdate,
-    User, UserCreate, UserUpdate, UserLogin,
+    User, UserCreate, UserUpdate, UserLogin, PlatformUser,
     AccountingPeriod, AccountingPeriodCreate, AccountingPeriodUpdate,
     Token, TokenData, PlatformAuditLog, PlatformAuditLogCreate
 )
@@ -101,7 +101,7 @@ from .pos import (
 __all__ = [
     "Company", "CompanyCreate", "CompanyUpdate",
     "Role", "RoleCreate", "RoleUpdate", 
-    "User", "UserCreate", "UserUpdate", "UserLogin",
+    "User", "UserCreate", "UserUpdate", "UserLogin", "PlatformUser",
     "AccountingPeriod", "AccountingPeriodCreate", "AccountingPeriodUpdate",
     "Token", "TokenData",
     "GLAccount", "GLAccountCreate", "GLAccountUpdate",

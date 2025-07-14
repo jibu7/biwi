@@ -10,7 +10,7 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { platformService, CompanyWithStats } from '@/services/platformService';
-import { Eye, Pause, Play, Settings, AlertTriangle, Users, HardDrive, Building, X, Plus } from 'lucide-react';
+import { Eye, Pause, Play, Settings, AlertTriangle, Users, HardDrive, Building, X, Plus, Edit, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -29,6 +29,19 @@ interface CreateCompanyDialogState {
     email: string;
     userLimit: string;
     storageLimit: string;
+  };
+}
+
+interface EditCompanyDialogState {
+  isOpen: boolean;
+  company: CompanyWithStats | null;
+  formData: {
+    name: string;
+    code: string;
+    email: string;
+    userLimit: string;
+    storageLimit: string;
+    subscriptionStatus: string;
   };
 }
 
@@ -51,6 +64,18 @@ export default function PlatformCompaniesPage() {
       email: '',
       userLimit: '50',
       storageLimit: '10'
+    }
+  });
+  const [editDialog, setEditDialog] = useState<EditCompanyDialogState>({
+    isOpen: false,
+    company: null,
+    formData: {
+      name: '',
+      code: '',
+      email: '',
+      userLimit: '50',
+      storageLimit: '10',
+      subscriptionStatus: 'trial'
     }
   });
 
@@ -117,6 +142,34 @@ export default function PlatformCompaniesPage() {
     },
   });
 
+  const updateCompanyMutation = useMutation({
+    mutationFn: ({ companyId, data }: { companyId: number, data: any }) => 
+      platformService.updateCompany(companyId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['platform-companies'] });
+      toast.success('Company updated successfully');
+      setEditDialog({
+        isOpen: false,
+        company: null,
+        formData: { name: '', code: '', email: '', userLimit: '50', storageLimit: '10', subscriptionStatus: 'trial' }
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Failed to update company');
+    },
+  });
+
+  const deleteCompanyMutation = useMutation({
+    mutationFn: (companyId: number) => platformService.deleteCompany(companyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['platform-companies'] });
+      toast.success('Company deleted successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Failed to delete company');
+    },
+  });
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -170,6 +223,44 @@ export default function PlatformCompaniesPage() {
       user_limit: parseInt(formData.userLimit),
       storage_limit_gb: parseInt(formData.storageLimit)
     });
+  };
+
+  const handleEditCompany = (company: CompanyWithStats) => {
+    setEditDialog({
+      isOpen: true,
+      company,
+      formData: {
+        name: company.company.name,
+        code: company.company.code,
+        email: company.company.primary_contact_email || '',
+        userLimit: company.company.user_limit?.toString() || '50',
+        storageLimit: company.company.storage_limit_gb?.toString() || '10',
+        subscriptionStatus: company.company.subscription_status || 'trial'
+      }
+    });
+  };
+
+  const handleUpdateCompany = () => {
+    if (!editDialog.company) return;
+    
+    const { formData } = editDialog;
+    updateCompanyMutation.mutate({
+      companyId: editDialog.company.company.id,
+      data: {
+        name: formData.name,
+        code: formData.code,
+        primary_contact_email: formData.email,
+        user_limit: parseInt(formData.userLimit),
+        storage_limit_gb: parseInt(formData.storageLimit),
+        subscription_status: formData.subscriptionStatus
+      }
+    });
+  };
+
+  const handleDeleteCompany = (company: CompanyWithStats) => {
+    if (window.confirm(`Are you sure you want to delete "${company.company.name}"? This action cannot be undone.`)) {
+      deleteCompanyMutation.mutate(company.company.id);
+    }
   };
 
   const columns: Column<CompanyWithStats>[] = [
@@ -250,8 +341,18 @@ export default function PlatformCompaniesPage() {
               size="sm"
               onClick={() => handleAction('impersonate', company)}
               disabled={isSuspended}
+              title="Impersonate Company"
             >
               <Eye className="h-3 w-3" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleEditCompany(company)}
+              title="Edit Company"
+            >
+              <Edit className="h-3 w-3" />
             </Button>
             
             {isActive && (
@@ -259,6 +360,7 @@ export default function PlatformCompaniesPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleAction('suspend', company)}
+                title="Suspend Company"
               >
                 <Pause className="h-3 w-3" />
               </Button>
@@ -269,10 +371,21 @@ export default function PlatformCompaniesPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleAction('activate', company)}
+                title="Activate Company"
               >
                 <Play className="h-3 w-3" />
               </Button>
             )}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDeleteCompany(company)}
+              title="Delete Company"
+              className="text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
           </div>
         );
       },
@@ -491,6 +604,119 @@ export default function PlatformCompaniesPage() {
                   disabled={!createDialog.formData.name || !createDialog.formData.code || !createDialog.formData.email}
                 >
                   Create Company
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit Company Dialog */}
+      {editDialog.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Edit Company</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditDialog({ ...editDialog, isOpen: false })}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Company Name</label>
+                <Input
+                  placeholder="Enter company name"
+                  value={editDialog.formData.name}
+                  onChange={(e) => setEditDialog({
+                    ...editDialog,
+                    formData: { ...editDialog.formData, name: e.target.value }
+                  })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Company Code</label>
+                <Input
+                  placeholder="Enter company code"
+                  value={editDialog.formData.code}
+                  onChange={(e) => setEditDialog({
+                    ...editDialog,
+                    formData: { ...editDialog.formData, code: e.target.value }
+                  })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Primary Contact Email</label>
+                <Input
+                  type="email"
+                  placeholder="Enter primary contact email"
+                  value={editDialog.formData.email}
+                  onChange={(e) => setEditDialog({
+                    ...editDialog,
+                    formData: { ...editDialog.formData, email: e.target.value }
+                  })}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">User Limit</label>
+                  <Input
+                    type="number"
+                    value={editDialog.formData.userLimit}
+                    onChange={(e) => setEditDialog({
+                      ...editDialog,
+                      formData: { ...editDialog.formData, userLimit: e.target.value }
+                    })}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Storage Limit (GB)</label>
+                  <Input
+                    type="number"
+                    value={editDialog.formData.storageLimit}
+                    onChange={(e) => setEditDialog({
+                      ...editDialog,
+                      formData: { ...editDialog.formData, storageLimit: e.target.value }
+                    })}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Subscription Status</label>
+                <Select
+                  value={editDialog.formData.subscriptionStatus}
+                  onChange={(e) => setEditDialog({
+                    ...editDialog,
+                    formData: { ...editDialog.formData, subscriptionStatus: e.target.value }
+                  })}
+                >
+                  <option value="trial">Trial</option>
+                  <option value="active">Active</option>
+                  <option value="suspended">Suspended</option>
+                  <option value="cancelled">Cancelled</option>
+                </Select>
+              </div>
+              
+              <div className="flex gap-2 justify-end pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditDialog({ ...editDialog, isOpen: false })}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleUpdateCompany}
+                  disabled={!editDialog.formData.name || !editDialog.formData.code || !editDialog.formData.email}
+                >
+                  Update Company
                 </Button>
               </div>
             </CardContent>

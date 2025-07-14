@@ -37,7 +37,7 @@ export default function PlatformLoginPage() {
     mutationFn: login,
     onSuccess: () => {
       toast.success('Login successful!');
-      router.push('/platform/dashboard');
+      router.push('/platform');
     },
     onError: (err: any) => {
       setError(err.response?.data?.detail || 'An unexpected error occurred.');

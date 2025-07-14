@@ -1,7 +1,14 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import date, datetime
+from enum import Enum
 from app.models.core import UserType
+
+# User Type Enum
+class UserType(str, Enum):
+    PLATFORM_ADMIN = "platform_admin"
+    COMPANY_ADMIN = "company_admin"
+    COMPANY_USER = "company_user"
 
 # Company Schemas
 class CompanyBase(BaseModel):
@@ -84,35 +91,40 @@ class UserBase(BaseModel):
     full_name: Optional[str] = None
     is_active: bool = True
     is_superuser: bool = False
-    user_type: UserType = UserType.COMPANY_USER
 
 class UserCreate(UserBase):
     password: str
-    company_id: Optional[int] = None  # Required for non-platform users
+    user_type: Optional[UserType] = UserType.COMPANY_USER
+    company_id: Optional[int] = None
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
-    password: Optional[str] = None
     is_active: Optional[bool] = None
     is_superuser: Optional[bool] = None
+    password: Optional[str] = None
     user_type: Optional[UserType] = None
-    default_company_id: Optional[int] = None
+    company_id: Optional[int] = None
 
 class User(UserBase):
     id: int
+    user_type: UserType
     company_id: Optional[int] = None
-    default_company_id: Optional[int] = None
     last_login: Optional[datetime] = None
-    created_at: Optional[datetime] = None
+    created_at: datetime
     updated_at: Optional[datetime] = None
-    
+
     class Config:
         from_attributes = True
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+# Platform User Schema (extends User with company info)
+class PlatformUser(User):
+    company_name: Optional[str] = None
+    company_code: Optional[str] = None
 
 # Accounting Period Schemas
 class AccountingPeriodBase(BaseModel):
@@ -170,3 +182,47 @@ class PlatformAuditLog(PlatformAuditLogBase):
     
     class Config:
         from_attributes = True
+
+# Platform-specific schemas
+class ImpersonationRequest(BaseModel):
+    reason: Optional[str] = "Platform administration"
+
+class ImpersonationToken(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    company: Company
+    expires_in: int
+
+class PlatformMetrics(BaseModel):
+    total_companies: int
+    active_companies: int
+    suspended_companies: int
+    trial_companies: int
+    total_users: int
+    active_users_today: int
+    total_transactions: int
+    revenue_this_month: Optional[float] = None
+
+class CompanyHealthMetrics(BaseModel):
+    company_id: int
+    company_name: str
+    subscription_status: str
+    user_count: int
+    user_limit: int
+    storage_used_gb: float
+    storage_limit_gb: int
+    storage_percentage: float
+    health_status: str  # "healthy", "warning", "critical"
+
+class AuditLogFilters(BaseModel):
+    company_id: Optional[int] = None
+    user_id: Optional[int] = None
+    action: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+
+class SubscriptionStatus(str, Enum):
+    TRIAL = "trial"
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    CANCELLED = "cancelled"

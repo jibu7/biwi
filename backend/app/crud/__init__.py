@@ -48,3 +48,24 @@ from .pos import (
     record_cash_movement,
     get_cashier_sales_report, get_inventory_sales_report
 )
+
+from app.crud.core import (
+    get_user_by_email,
+    get_user,
+    get_company,
+    create_user,
+    update_user,
+    delete_user,
+    get_user_roles
+)
+
+# Export all functions
+__all__ = [
+    "get_user_by_email",
+    "get_user",
+    "get_company", 
+    "create_user",
+    "update_user",
+    "delete_user",
+    "get_user_roles"
+]

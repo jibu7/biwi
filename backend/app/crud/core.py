@@ -36,16 +36,17 @@ def create_user(db: Session, user: schemas.UserCreate, company_id: Optional[int]
 
 def update_user(db: Session, user_db_obj: models.User, user_in: schemas.UserUpdate) -> models.User:
     update_data = user_in.model_dump(exclude_unset=True)
-    if "password" in update_data:
-        update_data["hashed_password"] = get_password_hash(update_data.pop("password"))
     
-    # Update last_login and updated_at timestamps
-    update_data["updated_at"] = datetime.utcnow()
+    # Handle password update separately
+    if "password" in update_data and update_data["password"]:
+        hashed_password = get_password_hash(update_data["password"])
+        del update_data["password"]
+        setattr(user_db_obj, "hashed_password", hashed_password)
     
+    # Update other fields
     for field, value in update_data.items():
         setattr(user_db_obj, field, value)
     
-    db.add(user_db_obj)
     db.commit()
     db.refresh(user_db_obj)
     return user_db_obj
@@ -66,10 +67,10 @@ def delete_user(db: Session, user_id: int) -> Optional[models.User]:
     return user
 
 def get_user_roles(db: Session, user_id: int) -> List[models.Role]:
-    """Get all roles assigned to a specific user"""
-    return db.query(models.Role).join(models.UserRole).filter(
-        models.UserRole.user_id == user_id
-    ).all()
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user:
+        return user.roles
+    return []
 
 # Role CRUD
 def create_role(db: Session, role: schemas.RoleCreate, company_id: int) -> models.Role:

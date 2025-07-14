@@ -1,4 +1,5 @@
 from .core import User, Role, UserRole, Company, AccountingPeriod, UserType, PlatformAuditLog
+from .billing import ResourceUsage, BillingConfiguration, UsageAlert, BillingTransaction
 from .gl import GLAccount, GLJournalEntry, GLJournalEntryLine, GLTransactionType, GLDefaults
 from .ar import (
     Customer, SalesRepresentative, ARTransactionType, ARTransaction, 
