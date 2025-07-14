@@ -10,7 +10,7 @@ pip install poetry
 # Install dependencies
 echo "📦 Installing Python dependencies..."
 poetry config virtualenvs.create false
-poetry install --no-dev --no-interaction --no-ansi
+poetry install --only main --no-interaction --no-ansi
 
 # Run database migrations
 echo "🗄️ Running database migrations..."
