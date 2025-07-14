@@ -11,7 +11,11 @@ app.add_middleware(
         "http://localhost:3000", 
         "http://127.0.0.1:3000",
         "http://172.18.0.4:3000",  # Frontend container IP
-        "http://frontend:3000"      # Frontend container name
+        "http://frontend:3000",    # Frontend container name
+        "https://channelzap.com",  # Production domain
+        "https://www.channelzap.com",  # Production domain with www
+        "https://channelzap.vercel.app",  # Vercel default domain
+        "https://*.vercel.app"     # Any Vercel preview deployments
     ],
     allow_credentials=True,
     allow_methods=["*"],
