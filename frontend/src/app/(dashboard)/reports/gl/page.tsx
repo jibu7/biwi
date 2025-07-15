@@ -1,5 +1,6 @@
 'use client';
 
+
 import Link from 'next/link';
 import { BarChart3, FileText, Calculator, TrendingUp } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';

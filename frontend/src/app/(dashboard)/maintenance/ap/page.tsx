@@ -1,5 +1,6 @@
 'use client';
 
+
 import Link from 'next/link';
 import { Building2, Settings, FileText, CreditCard } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';

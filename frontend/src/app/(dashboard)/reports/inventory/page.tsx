@@ -1,5 +1,6 @@
 'use client';
 
+
 import Link from 'next/link';
 import { FileText, DollarSign, Package, TrendingUp, List } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';

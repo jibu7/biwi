@@ -1,5 +1,6 @@
 'use client';
 
+
 import WriteOffManagement from '@/components/ar/WriteOffManagement';
 
 export default function WriteOffsPage() {

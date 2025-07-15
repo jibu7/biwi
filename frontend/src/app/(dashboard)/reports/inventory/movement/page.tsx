@@ -1,5 +1,6 @@
 'use client';
 
+
 export default function InventoryMovementReportPage() {
   return (
     <div className="p-6">

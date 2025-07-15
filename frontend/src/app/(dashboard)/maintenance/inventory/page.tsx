@@ -1,5 +1,6 @@
 'use client';
 
+
 import Link from 'next/link';
 import { Package, Warehouse, Ruler, Settings, BarChart3, Tag } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';

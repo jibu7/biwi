@@ -1,5 +1,6 @@
 'use client';
 
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
