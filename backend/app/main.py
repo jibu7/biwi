@@ -14,7 +14,7 @@ app.add_middleware(
         "http://frontend:3000",    # Frontend container name
         "https://channelzap.com",  # Production domain
         "https://www.channelzap.com",  # Production domain with www
-        "https://channelzap.vercel.app",  # Vercel default domain
+        "https://biwi-ne1r8tkep-jibu7s-projects.vercel.app", # Vercel preview domain
         "https://*.vercel.app"     # Any Vercel preview deployments
     ],
     allow_credentials=True,
