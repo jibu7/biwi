@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Numeric, Text, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Numeric, Text, Boolean, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from app.database.database import Base
@@ -31,6 +31,12 @@ class SalesOrder(Base):
     customer = relationship("Customer")
     sales_representative = relationship("SalesRepresentative")
     currency = relationship("Currency")
+    
+    __table_args__ = (
+        Index('idx_so_company_customer', 'company_id', 'customer_id'),
+        Index('idx_so_company_date', 'company_id', 'order_date'),
+        Index('idx_so_company_status', 'company_id', 'status'),
+    )
 
 class SalesOrderLine(Base):
     __tablename__ = "sales_order_lines"
@@ -79,6 +85,12 @@ class PurchaseOrder(Base):
     supplier = relationship("Supplier")
     warehouse = relationship("Warehouse")
     currency = relationship("Currency")
+    
+    __table_args__ = (
+        Index('idx_po_company_supplier', 'company_id', 'supplier_id'),
+        Index('idx_po_company_date', 'company_id', 'order_date'),
+        Index('idx_po_company_status', 'company_id', 'status'),
+    )
 
 class PurchaseOrderLine(Base):
     __tablename__ = "purchase_order_lines"
@@ -119,6 +131,12 @@ class GoodsReceivedVoucher(Base):
     lines = relationship("GoodsReceivedVoucherLine", back_populates="grv")
     purchase_order = relationship("PurchaseOrder")
     supplier = relationship("Supplier")
+    
+    __table_args__ = (
+        Index('idx_grv_company_supplier', 'company_id', 'supplier_id'),
+        Index('idx_grv_company_date', 'company_id', 'grv_date'),
+        Index('idx_grv_company_status', 'company_id', 'status'),
+    )
 
 class GoodsReceivedVoucherLine(Base):
     __tablename__ = "goods_received_voucher_lines"

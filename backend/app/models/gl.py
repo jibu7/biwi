@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, Text, DateTime, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, Text, DateTime, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database.database import Base
@@ -22,6 +22,8 @@ class GLAccount(Base):
     
     __table_args__ = (
         UniqueConstraint('account_code', 'company_id', name='uq_glaccount_code_company'),
+        Index('idx_gl_account_company_code', 'company_id', 'account_code'),
+        Index('idx_gl_account_company_active', 'company_id', 'is_active'),
     )
 
 class GLJournalEntry(Base):
@@ -41,6 +43,11 @@ class GLJournalEntry(Base):
     company = relationship("Company")
     posted_by = relationship("User")
     lines = relationship("GLJournalEntryLine", back_populates="journal_entry", cascade="all, delete-orphan")
+    
+    __table_args__ = (
+        Index('idx_gl_je_company_date', 'company_id', 'entry_date'),
+        Index('idx_gl_je_company_status', 'company_id', 'status'),
+    )
 
 class GLJournalEntryLine(Base):
     __tablename__ = "gl_journal_entry_lines"
@@ -81,6 +88,7 @@ class GLTransactionType(Base):
     
     __table_args__ = (
         UniqueConstraint('name', 'company_id', name='uq_gltransactiontype_name_company'),
+        Index('idx_gl_trans_type_company', 'company_id'),
     )
 
 class GLDefaults(Base):

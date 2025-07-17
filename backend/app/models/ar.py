@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, UniqueConstraint, Text, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, UniqueConstraint, Text, DateTime, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -30,6 +30,8 @@ class Customer(Base):
     
     __table_args__ = (
         UniqueConstraint('customer_code', 'company_id', name='uq_customer_code_company'),
+        Index('idx_customer_company_active', 'company_id', 'is_active'),
+        Index('idx_customer_company_balance', 'company_id', 'current_balance'),
     )
 
 class SalesRepresentative(Base):
@@ -102,6 +104,9 @@ class ARTransaction(Base):
     __table_args__ = (
         UniqueConstraint('document_number', 'company_id', 'ar_transaction_type_id', 
                         name='uq_ar_doc_number_company_type'),
+        Index('idx_ar_trans_company_customer', 'company_id', 'customer_id'),
+        Index('idx_ar_trans_company_date', 'company_id', 'transaction_date'),
+        Index('idx_ar_trans_company_open', 'company_id', 'open_amount'),
     )
 
 class ARAllocation(Base):

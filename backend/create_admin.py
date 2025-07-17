@@ -8,7 +8,7 @@ def create_platform_admin():
     try:
         # Check if platform admin already exists
         existing_admin = db.query(models.User).filter(
-            models.User.user_type == "platform_admin"
+            models.User.user_type == models.UserType.PLATFORM_ADMIN
         ).first()
         
         if existing_admin:
@@ -20,8 +20,10 @@ def create_platform_admin():
             email="platform@vinea-erp.com",
             hashed_password=get_password_hash("platformadmin123"),
             full_name="Platform Administrator",
-            user_type="platform_admin",
-            is_active=True
+            user_type=models.UserType.PLATFORM_ADMIN,
+            company_id=None,
+            is_active=True,
+            is_superuser=True
         )
         
         db.add(admin)

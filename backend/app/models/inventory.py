@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, Text, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, Text, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 from app.database.database import Base
 
@@ -24,7 +24,10 @@ class Warehouse(Base):
     is_default = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     
-    __table_args__ = (UniqueConstraint('name', 'company_id', name='uq_warehouse_name_company'),)
+    __table_args__ = (
+        UniqueConstraint('name', 'company_id', name='uq_warehouse_name_company'),
+        Index('idx_warehouse_company_default', 'company_id', 'is_default'),
+    )
 
 class InventoryItem(Base):
     __tablename__ = "inventory_items"
@@ -57,7 +60,11 @@ class InventoryItem(Base):
     default_sales_tax_type = relationship("TaxType", foreign_keys=[default_sales_tax_type_id])
     default_purchase_tax_type = relationship("TaxType", foreign_keys=[default_purchase_tax_type_id])
     
-    __table_args__ = (UniqueConstraint('item_code', 'company_id', name='uq_inventoryitem_code_company'),)
+    __table_args__ = (
+        UniqueConstraint('item_code', 'company_id', name='uq_inventoryitem_code_company'),
+        Index('idx_inv_item_company_active', 'company_id', 'is_active'),
+        Index('idx_inv_item_company_type', 'company_id', 'item_type'),
+    )
 
 class ItemBarcode(Base):
     __tablename__ = "item_barcodes"
@@ -88,7 +95,10 @@ class InventoryItemLocation(Base):
     item = relationship("InventoryItem", back_populates="locations")
     warehouse = relationship("Warehouse")
     
-    __table_args__ = (UniqueConstraint('item_id', 'warehouse_id', 'company_id', name='uq_item_warehouse_company'),)
+    __table_args__ = (
+        UniqueConstraint('item_id', 'warehouse_id', 'company_id', name='uq_item_warehouse_company'),
+        Index('idx_inv_location_company_qty', 'company_id', 'quantity_on_hand'),
+    )
 
 class InventoryTransactionType(Base):
     __tablename__ = "inventory_transaction_types"
@@ -139,6 +149,12 @@ class InventoryTransaction(Base):
     warehouse = relationship("Warehouse")
     transaction_type = relationship("InventoryTransactionType")
     currency = relationship("Currency")
+    
+    __table_args__ = (
+        Index('idx_inv_trans_company_item', 'company_id', 'item_id'),
+        Index('idx_inv_trans_company_date', 'company_id', 'transaction_date'),
+        Index('idx_inv_trans_company_warehouse', 'company_id', 'warehouse_id'),
+    )
 
 class InventoryDefaults(Base):
     __tablename__ = "inventory_defaults"
