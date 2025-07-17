@@ -256,13 +256,15 @@ class PermissionChecker:
         user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
     ):
-        if user.is_superuser or user.user_type == UserType.PLATFORM_ADMIN:
+        if user.is_superuser:
             return user
         
         # Get user's permissions from all roles
         user_permissions = []
         for user_role in user.roles:
-            role = user_role.role
+            role = db.query(Role).filter(
+                Role.id == user_role.role_id
+            ).first()
             if role and role.permissions:
                 user_permissions.extend(role.permissions)
         
@@ -284,6 +286,7 @@ class PermissionChecker:
         
         return user
 
+# Simplified permission checking functions for backward compatibility
 def require_permission(required_permission: str):
     """
     Dependency to require a specific permission.
@@ -321,3 +324,4 @@ def require_permission(required_permission: str):
 
 def get_all_permissions() -> List[str]:
     return ALL_PERMISSIONS_LIST
+        )

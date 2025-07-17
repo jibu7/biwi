@@ -1,0 +1,132 @@
+# Multi-tenant ERP Docker Environment
+# This configuration supports the enhanced API route protection system
+
+services:
+  db:
+    image: postgres:15
+    container_name: biwi_db
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: biwi_user
+      POSTGRES_PASSWORD: biwi_password
+      POSTGRES_DB: biwi_db
+      # Enable performance optimizations
+      POSTGRES_SHARED_PRELOAD_LIBRARIES: pg_stat_statements
+    networks:
+      - biwi_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U biwi_user -d biwi_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: biwi_backend
+    restart: unless-stopped
+    command: >
+      sh -c "
+        poetry run alembic upgrade head &&
+        poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    volumes:
+      - ./backend:/app
+      - backend_logs:/app/logs
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      # Additional environment variables for multi-tenant support
+      ENABLE_PLATFORM_ADMIN: "true"
+      MAX_COMPANIES_PER_PLATFORM: "100"
+      DEFAULT_USER_LIMIT_PER_COMPANY: "5"
+      DEFAULT_STORAGE_LIMIT_GB: "10"
+    networks:
+      - biwi_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    container_name: biwi_frontend
+    restart: unless-stopped
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+      # Support for platform admin features
+      NEXT_PUBLIC_ENABLE_PLATFORM_ADMIN: "true"
+      NEXT_PUBLIC_ENABLE_MULTI_TENANT: "true"
+    networks:
+      - biwi_network
+
+  # Optional: Redis for session management and caching
+  redis:
+    image: redis:7-alpine
+    container_name: biwi_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - biwi_network
+    command: redis-server --appendonly yes
+
+  # Optional: Nginx for reverse proxy in production
+  nginx:
+    image: nginx:alpine
+    container_name: biwi_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - biwi_network
+    profiles:
+      - production
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_logs:
+    driver: local
+
+networks:
+  biwi_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

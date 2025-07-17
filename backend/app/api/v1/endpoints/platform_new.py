@@ -3,8 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.database.database import get_db
 from app.models.core import User, Company, PlatformAuditLog, SubscriptionStatus
-from app.schemas.core import Company as CompanySchema, CompanyCreate, CompanyUpdate
-from app.schemas.core import User as UserSchema
+from app.schemas.company import Company as CompanySchema, CompanyCreate, CompanyUpdate
+from app.schemas.user import User as UserSchema
 from app.api.deps import get_current_platform_admin
 from app.core.context_managers import tenant_context
 
