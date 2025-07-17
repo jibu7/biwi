@@ -2,7 +2,7 @@
 
 
 import Link from 'next/link';
-import { useAuth } from '@/store/authStore';
+import { useAuthStore } from '@/store/authStore';
 import { usePermissions } from '@/hooks/usePermissions';
 import { 
   Building, 
@@ -16,7 +16,7 @@ import {
 import * as permissions from '@/lib/permissions';
 
 export default function SystemMaintenancePage() {
-  const { user, company } = useAuth();
+  const { user, company } = useAuthStore();
   const { hasPermission } = usePermissions();
 
   const systemModules = [

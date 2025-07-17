@@ -1,11 +1,11 @@
-import { useAuth } from '@/store/authStore';
+import { useAuthStore } from '@/store/authStore';
 import { userService } from '@/services/userService';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { Role } from '@/types';
 
 export const usePermissions = () => {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   
   const { data: userRoles = [] } = useQuery({
     queryKey: ['userRoles', user?.id],

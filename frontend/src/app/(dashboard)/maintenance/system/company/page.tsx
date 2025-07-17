@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { Building, Save, AlertCircle } from 'lucide-react';
 import { companyService } from '@/services/companyService';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useAuth } from '@/store/authStore';
+import { useAuthStore } from '@/store/authStore';
 import * as permissions from '@/lib/permissions';
 import { Company, CompanyUpdate } from '@/types';
 
@@ -36,7 +36,7 @@ type CompanyFormData = z.infer<typeof companySchema>;
 export default function CompanyDetailsPage() {
   const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
 
   const canUpdate = hasPermission(permissions.COMPANY_UPDATE);

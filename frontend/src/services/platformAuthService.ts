@@ -9,8 +9,8 @@ export const platformAuthService = {
     formData.append('username', credentials.email);
     formData.append('password', credentials.password);
     
-    const response = await platformAxiosInstance.post<Token>('/auth/platform-login', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+    const response = await platformAxiosInstance.post<Token>('/platform/auth/login', formData, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
     
     // Store token in a separate cookie for platform admins
@@ -18,11 +18,9 @@ export const platformAuthService = {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict'
     });
-    
-    return response.data;
-  },
 
-  async getMe(): Promise<PlatformUser> {
+    return response.data;
+  },  async getMe(): Promise<PlatformUser> {
     const response = await platformAxiosInstance.get<PlatformUser>('/auth/me');
     return response.data;
   },

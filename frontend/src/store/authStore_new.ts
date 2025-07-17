@@ -92,7 +92,7 @@ export const useAuthStore = create<AuthState>()(
           }
           
           const response = await fetch(
-            otpCode ? '/api/v1/api/v1/platform/auth/login-mfa' : '/api/v1/api/v1/platform/auth/login',
+            otpCode ? '/api/v1/platform/auth/login-mfa' : '/api/v1/platform/auth/login',
             {
               method: 'POST',
               headers,

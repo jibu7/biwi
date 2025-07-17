@@ -86,7 +86,7 @@ class User(Base):
     is_superuser = Column(Boolean, default=False)  # Deprecated, use user_type
     
     # NEW FIELDS
-    user_type = Column(Enum(UserType), default=UserType.COMPANY_USER, nullable=False)
+    user_type = Column(String, default=UserType.COMPANY_USER.value, nullable=False)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)  # Now nullable!
     default_company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
     last_login = Column(DateTime, nullable=True)
@@ -104,6 +104,10 @@ class User(Base):
         CheckConstraint(
             "user_type = 'platform_admin' OR company_id IS NOT NULL",
             name='ck_company_required_for_non_platform_users'
+        ),
+        CheckConstraint(
+            "user_type IN ('platform_admin', 'company_admin', 'company_user')",
+            name='ck_valid_user_type'
         ),
     )
 

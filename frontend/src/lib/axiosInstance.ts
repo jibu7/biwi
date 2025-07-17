@@ -1,20 +1,7 @@
 import axios from 'axios';
-import Cookies from 'js-cookie';
+import { useAuthStore } from '@/store/authStore';
 
-const isServer = typeof window === 'undefined';
-
-// Default to an API prefix matching the Next.js rewrite for client, and backend URL for server
-const DEFAULT_SERVER_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000/api/v1';
-const DEFAULT_CLIENT_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  (typeof window !== 'undefined'
-    ? `${window.location.origin}/api/v1`
-    : '');
-
-// Use the server-side URL when on the server, and the public one for the client
-const API_BASE_URL = isServer
-  ? DEFAULT_SERVER_BASE_URL
-  : DEFAULT_CLIENT_BASE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -26,13 +13,17 @@ const axiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Handle token only on the client-side where cookies are available
-    if (!isServer) {
-      const token = Cookies.get('access_token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+    const { token, selectedCompanyId, isPlatformAdmin } = useAuthStore.getState();
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Add target company header for platform admins
+    if (isPlatformAdmin && selectedCompanyId) {
+      config.headers['X-Target-Company-ID'] = selectedCompanyId.toString();
+    }
+    
     return config;
   },
   (error) => {
@@ -42,15 +33,21 @@ axiosInstance.interceptors.request.use(
 
 // Response interceptor
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   async (error) => {
-    // Handle 401 error only on the client-side
-    if (!isServer && error.response?.status === 401) {
-      Cookies.remove('access_token');
-      window.location.href = '/login';
+    if (error.response?.status === 401) {
+      // Unauthorized - clear auth and redirect to login
+      useAuthStore.getState().logout();
+      
+      // Redirect based on user type
+      const currentPath = window.location.pathname;
+      if (currentPath.startsWith('/platform')) {
+        window.location.href = '/platform-login';
+      } else {
+        window.location.href = '/login';
+      }
     }
+    
     return Promise.reject(error);
   }
 );

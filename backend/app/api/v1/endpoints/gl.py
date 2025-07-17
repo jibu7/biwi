@@ -1,11 +1,16 @@
-from typing import Any, List
+from app.api.deps import get_current_active_user
+from app.database.database import get_db
+from app.core.permissions import GL_SETUP_MANAGE
+from app.core.permissions import PermissionChecker
+from typing import Any, List, Optional
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.orm import Session
 
 from app import crud, models, schemas
 from app.api import deps
 from app.core.permissions import Permission, check_permissions
-from app.core.tenant_context import require_tenant_context
+from app.core.tenant_context import require_tenant
 from app.core.platform_context import is_in_platform_admin_context
 
 router = APIRouter()
@@ -176,7 +181,7 @@ def delete_gl_account(
     return account
 
 # Journal Entries endpoints
-@router.post("/journal-entries", response_model=schemas.GLJournalEntry, dependencies=[Depends(PermissionChecker([GL_JOURNAL_POST]))])
+@router.post("/journal-entries", response_model=schemas.GLJournalEntry, dependencies=[Depends(PermissionChecker([Permission.GL_JOURNAL_POST]))])
 def create_journal_entry(
     *,
     db: Session = Depends(get_db),
@@ -191,7 +196,7 @@ def create_journal_entry(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/journal-entries", response_model=List[schemas.GLJournalEntry], dependencies=[Depends(PermissionChecker([GL_REPORTS_VIEW]))])
+@router.get("/journal-entries", response_model=List[schemas.GLJournalEntry], dependencies=[Depends(PermissionChecker([Permission.GL_REPORTS_VIEW]))])
 def read_journal_entries(
     db: Session = Depends(get_db),
     skip: int = 0,
@@ -206,7 +211,7 @@ def read_journal_entries(
         start_date=start_date, end_date=end_date
     )
 
-@router.get("/journal-entries/{entry_id}", response_model=schemas.GLJournalEntry, dependencies=[Depends(PermissionChecker([GL_REPORTS_VIEW]))])
+@router.get("/journal-entries/{entry_id}", response_model=schemas.GLJournalEntry, dependencies=[Depends(PermissionChecker([Permission.GL_REPORTS_VIEW]))])
 def read_journal_entry(
     entry_id: int,
     current_user: models.User = Depends(get_current_active_user),
@@ -218,7 +223,7 @@ def read_journal_entry(
         raise HTTPException(status_code=404, detail="Journal entry not found")
     return entry
 
-@router.post("/journal-entries/{entry_id}/post", response_model=schemas.GLJournalEntry, dependencies=[Depends(PermissionChecker([GL_JOURNAL_POST]))])
+@router.post("/journal-entries/{entry_id}/post", response_model=schemas.GLJournalEntry, dependencies=[Depends(PermissionChecker([Permission.GL_JOURNAL_POST]))])
 def post_journal_entry(
     *,
     db: Session = Depends(get_db),
@@ -232,7 +237,7 @@ def post_journal_entry(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.put("/journal-entries/{entry_id}", response_model=schemas.GLJournalEntry, dependencies=[Depends(PermissionChecker([GL_JOURNAL_POST]))])
+@router.put("/journal-entries/{entry_id}", response_model=schemas.GLJournalEntry, dependencies=[Depends(PermissionChecker([Permission.GL_JOURNAL_POST]))])
 def update_journal_entry(
     *,
     db: Session = Depends(get_db),
@@ -251,7 +256,7 @@ def update_journal_entry(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.delete("/journal-entries/{entry_id}", dependencies=[Depends(PermissionChecker([GL_JOURNAL_POST]))])
+@router.delete("/journal-entries/{entry_id}", dependencies=[Depends(PermissionChecker([Permission.GL_JOURNAL_POST]))])
 def delete_journal_entry(
     *,
     db: Session = Depends(get_db),
@@ -353,7 +358,7 @@ def update_gl_defaults(
     return crud.gl.create_or_update_gl_defaults(db, defaults_in=defaults_in, company_id=current_user.company_id)
 
 # GL Reports endpoints
-@router.get("/reports/trial-balance", response_model=List[schemas.TrialBalanceItem], dependencies=[Depends(PermissionChecker([GL_REPORTS_VIEW]))])
+@router.get("/reports/trial-balance", response_model=List[schemas.TrialBalanceItem], dependencies=[Depends(PermissionChecker([Permission.GL_REPORTS_VIEW]))])
 def get_trial_balance(
     end_date: date = Query(..., description="As of date for trial balance"),
     current_user: models.User = Depends(get_current_active_user),
@@ -363,7 +368,7 @@ def get_trial_balance(
     trial_balance = crud.gl.get_trial_balance(db, company_id=current_user.company_id, as_of_date=end_date)
     return trial_balance.accounts
 
-@router.get("/reports/account-transactions", response_model=List[schemas.AccountTransaction], dependencies=[Depends(PermissionChecker([GL_REPORTS_VIEW]))])
+@router.get("/reports/account-transactions", response_model=List[schemas.AccountTransaction], dependencies=[Depends(PermissionChecker([Permission.GL_REPORTS_VIEW]))])
 def get_account_transactions(
     account_id: int = Query(..., description="GL Account ID"),
     start_date: date = Query(..., description="Start date"),

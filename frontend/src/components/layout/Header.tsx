@@ -4,14 +4,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut, ChevronDown, Building } from 'lucide-react';
-import { useAuth } from '@/store/authStore';
+import { useAuthStore } from '@/store/authStore';
 import { useQuery } from '@tanstack/react-query';
 import { companyService } from '@/services/companyService';
 import { cn } from '@/lib/utils';
 
 export function Header() {
   const router = useRouter();
-  const { user, company, logout, selectedCompanyId, setSelectedCompanyId } = useAuth();
+  const { user, company, logout, selectedCompanyId, setTargetCompany } = useAuthStore();
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
 
   const { data: companies } = useQuery({
@@ -26,7 +26,7 @@ export function Header() {
   };
 
   const handleCompanyChange = (companyId: string) => {
-    setSelectedCompanyId(companyId);
+    setTargetCompany(parseInt(companyId, 10));
     setShowCompanyDropdown(false);
     // Refresh page to reload data for new company
     window.location.reload();
@@ -54,7 +54,7 @@ export function Header() {
                       onClick={() => handleCompanyChange(comp.id.toString())}
                       className={cn(
                         'w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors',
-                        selectedCompanyId === comp.id.toString() && 'bg-blue-50'
+                        selectedCompanyId === comp.id && 'bg-blue-50'
                       )}
                     >
                       {comp.name}

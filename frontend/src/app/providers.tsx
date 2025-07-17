@@ -2,8 +2,6 @@
 
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { useAuthStore } from '@/store/authStore';
 import { Toaster } from 'sonner';
 
 const queryClient = new QueryClient({
@@ -16,11 +14,7 @@ const queryClient = new QueryClient({
 });
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const loadAuthData = useAuthStore((state) => state.loadAuthData);
-
-  useEffect(() => {
-    loadAuthData();
-  }, []); // Empty dependency array - we only want to load auth data once on mount
+  // Auth store now uses Zustand persistence, so no manual loading needed
 
   return (
     <QueryClientProvider client={queryClient}>
