@@ -17,6 +17,7 @@ interface AuthState {
   setTargetCompany: (companyId: number | null) => void;
   refreshUser: () => Promise<void>;
   setLoading: (loading: boolean) => void;
+  initAuth: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -28,7 +29,7 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isPlatformAdmin: false,
       isAuthenticated: false,
-      isLoading: false,
+      isLoading: true,
       
       login: async (email: string, password: string) => {
         set({ isLoading: true });
@@ -92,7 +93,7 @@ export const useAuthStore = create<AuthState>()(
           }
           
           const response = await fetch(
-            otpCode ? '/api/v1/api/v1/platform/auth/login-mfa' : '/api/v1/api/v1/platform/auth/login',
+            otpCode ? '/api/v1/platform/auth/login-mfa' : '/api/v1/platform/auth/login',
             {
               method: 'POST',
               headers,
@@ -171,6 +172,58 @@ export const useAuthStore = create<AuthState>()(
       
       setLoading: (loading: boolean) => {
         set({ isLoading: loading });
+      },
+      
+      initAuth: async () => {
+        const { token } = get();
+        if (!token) {
+          set({ isAuthenticated: false, isLoading: false });
+          return;
+        }
+
+        set({ isLoading: true });
+        try {
+          // Validate token by calling /me endpoint
+          const response = await fetch('/api/v1/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            const user = await response.json();
+            set({
+              user,
+              company: user.company,
+              selectedCompanyId: user.company_id,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          } else {
+            // Token is invalid, clear auth state
+            set({
+              user: null,
+              company: null,
+              selectedCompanyId: null,
+              token: null,
+              isPlatformAdmin: false,
+              isAuthenticated: false,
+              isLoading: false,
+            });
+          }
+        } catch (error) {
+          console.error('Auth validation failed:', error);
+          // Token is invalid, clear auth state
+          set({
+            user: null,
+            company: null,
+            selectedCompanyId: null,
+            token: null,
+            isPlatformAdmin: false,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+        }
       },
     }),
     {

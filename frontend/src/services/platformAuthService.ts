@@ -21,7 +21,7 @@ export const platformAuthService = {
 
     return response.data;
   },  async getMe(): Promise<PlatformUser> {
-    const response = await platformAxiosInstance.get<PlatformUser>('/auth/me');
+    const response = await platformAxiosInstance.get<PlatformUser>('/platform/me');
     return response.data;
   },
 

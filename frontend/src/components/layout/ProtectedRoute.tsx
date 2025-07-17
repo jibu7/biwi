@@ -6,8 +6,13 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, initAuth } = useAuthStore();
   const router = useRouter();
+
+  // Initialize auth on mount to validate token
+  useEffect(() => {
+    initAuth();
+  }, [initAuth]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

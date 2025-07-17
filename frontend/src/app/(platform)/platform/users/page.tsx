@@ -21,10 +21,10 @@ export default function PlatformUsersPage() {
   const [selectedUser, setSelectedUser] = useState<PlatformUser | undefined>();
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
 
-  // Fetch user statistics
+  // Fetch user statistics - using dashboard stats for now
   const { data: userStats, isLoading: statsLoading } = useQuery({
     queryKey: ['platform-user-stats'],
-    queryFn: platformService.getUserStats,
+    queryFn: () => platformService.getDashboardStats(),
     refetchInterval: 30000,
   });
 
@@ -172,7 +172,7 @@ export default function PlatformUsersPage() {
         </Select>
         <Select value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)}>
           <option value="all">All Companies</option>
-          {companies?.map((comp) => (
+          {companies?.map((comp: any) => (
             <option key={comp.company.id} value={comp.company.id.toString()}>
               {comp.company.name}
             </option>
@@ -200,7 +200,7 @@ export default function PlatformUsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users?.map((user) => (
+                {users?.map((user: any) => (
                   <tr key={user.id} className="border-b hover:bg-gray-50">
                     <td className="p-2 font-medium">{user.full_name}</td>
                     <td className="p-2">{user.email}</td>

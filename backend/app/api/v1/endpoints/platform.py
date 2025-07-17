@@ -1,29 +1,330 @@
 from typing import Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from datetime import datetime, timedelta
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func, and_, or_
+
 from app.database.database import get_db
-from app.models.core import User, Company, PlatformAuditLog, SubscriptionStatus
-from app.schemas.core import Company as CompanySchema, CompanyCreate, CompanyUpdate
+from app.models.core import User, Company, PlatformAuditLog, UserType, SubscriptionStatus
+from app.models.gl import GLJournalEntry
+from app.models.ar import ARTransaction
+from app.schemas.core import Company as CompanySchema, CompanyCreate, CompanyUpdate, CompanyWithStats
 from app.schemas.core import User as UserSchema
 from app.api.deps import get_current_platform_admin
 from app.core.context_managers import tenant_context
 
 router = APIRouter()
 
-@router.get("/companies", response_model=List[CompanySchema])
+@router.get("/dashboard/stats", response_model=dict)
+def get_dashboard_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """Get platform dashboard statistics."""
+    try:
+        # Get counts
+        total_companies = db.query(Company).count()
+        active_companies = db.query(Company).filter(
+            Company.subscription_status == SubscriptionStatus.ACTIVE
+        ).count()
+        total_users = db.query(User).filter(
+            User.user_type != UserType.PLATFORM_ADMIN
+        ).count()
+        
+        # Get transaction counts (last 30 days)
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        total_transactions = db.query(GLJournalEntry).filter(
+            GLJournalEntry.created_at >= thirty_days_ago
+        ).count()
+        
+        return {
+            "total_companies": total_companies,
+            "active_companies": active_companies,
+            "suspended_companies": db.query(Company).filter(
+                Company.subscription_status == SubscriptionStatus.SUSPENDED
+            ).count(),
+            "trial_companies": db.query(Company).filter(
+                Company.subscription_status == SubscriptionStatus.TRIAL
+            ).count(),
+            "total_users": total_users,
+            "total_transactions": total_transactions,
+            "platform_admins": db.query(User).filter(
+                User.user_type == UserType.PLATFORM_ADMIN
+            ).count(),
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching dashboard stats: {str(e)}"
+        )
+
+@router.get("/companies", response_model=List[dict])
 def get_all_companies(
     db: Session = Depends(get_db),
-    skip: int = Query(0),
-    limit: int = Query(100),
+    skip: int = 0,
+    limit: int = 100,
+    search: Optional[str] = None,
+    company_status: Optional[str] = None,
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """Get all companies with statistics."""
+    try:
+        query = db.query(Company)
+        
+        # Apply filters
+        if search:
+            query = query.filter(
+                or_(
+                    Company.name.ilike(f"%{search}%"),
+                    Company.code.ilike(f"%{search}%")
+                )
+            )
+        
+        if company_status:
+            query = query.filter(Company.subscription_status == company_status)
+        
+        companies = query.offset(skip).limit(limit).all()
+        
+        # Build response with stats
+        result = []
+        for company in companies:
+            # Get user count
+            user_count = db.query(User).filter(
+                User.company_id == company.id,
+                User.is_active == True
+            ).count()
+            
+            # Get active users in last 30 days
+            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+            active_users_30d = db.query(User).filter(
+                User.company_id == company.id,
+                User.is_active == True,
+                User.last_login >= thirty_days_ago
+            ).count()
+            
+            # Get transaction count (last 30 days)
+            transaction_count = db.query(GLJournalEntry).filter(
+                GLJournalEntry.company_id == company.id,
+                GLJournalEntry.created_at >= thirty_days_ago
+            ).count()
+            
+            result.append({
+                "company": {
+                    "id": company.id,
+                    "name": company.name,
+                    "code": company.code,
+                    "primary_contact_email": company.primary_contact_email,
+                    "subscription_status": company.subscription_status.value,
+                    "subscription_plan": company.subscription_plan,
+                    "subscription_expires": company.subscription_expires.isoformat() if company.subscription_expires else None,
+                    "storage_limit_gb": company.storage_limit_gb,
+                    "user_limit": company.user_limit,
+                    "is_active": company.is_active,
+                    "created_at": company.created_at.isoformat()
+                },
+                "user_count": user_count,
+                "active_users_30d": active_users_30d,
+                "transaction_count": transaction_count,
+                "storage_used_gb": 0.0  # TODO: Implement storage tracking
+            })
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching companies: {str(e)}"
+        )
+
+@router.get("/audit-logs", response_model=List[dict])
+def get_audit_logs(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    company_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    action: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """Get platform audit logs."""
+    try:
+        query = db.query(PlatformAuditLog)
+        
+        # Apply filters
+        if company_id:
+            query = query.filter(PlatformAuditLog.company_id == company_id)
+        if user_id:
+            query = query.filter(PlatformAuditLog.user_id == user_id)
+        if action:
+            query = query.filter(PlatformAuditLog.action.ilike(f"%{action}%"))
+        if start_date:
+            query = query.filter(PlatformAuditLog.timestamp >= start_date)
+        if end_date:
+            query = query.filter(PlatformAuditLog.timestamp <= end_date)
+        
+        # Sort by timestamp descending
+        query = query.order_by(PlatformAuditLog.timestamp.desc())
+        
+        # Get total count for pagination
+        total_count = query.count()
+        
+        # Get paginated results
+        logs = query.offset(skip).limit(limit).all()
+        
+        # Convert to dict for response
+        result = []
+        for log in logs:
+            # Get user info
+            user_info = None
+            if log.user_id:
+                user = db.query(User).filter(User.id == log.user_id).first()
+                if user:
+                    user_info = {
+                        "id": user.id,
+                        "email": user.email,
+                        "full_name": user.full_name
+                    }
+            
+            # Get company info
+            company_info = None
+            if log.company_id:
+                company = db.query(Company).filter(Company.id == log.company_id).first()
+                if company:
+                    company_info = {
+                        "id": company.id,
+                        "name": company.name,
+                        "code": company.code
+                    }
+            
+            result.append({
+                "id": log.id,
+                "user": user_info,
+                "company": company_info,
+                "action": log.action,
+                "resource_type": log.resource_type,
+                "resource_id": log.resource_id,
+                "details": log.details or {},
+                "ip_address": log.ip_address,
+                "timestamp": log.timestamp.isoformat(),
+            })
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching audit logs: {str(e)}"
+        )
+
+@router.get("/users", response_model=List[dict])
+def get_all_users(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    company_id: Optional[int] = None,
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """Get all users across companies."""
+    try:
+        query = db.query(User).filter(User.user_type != UserType.PLATFORM_ADMIN)
+        
+        if company_id:
+            query = query.filter(User.company_id == company_id)
+        
+        users = query.offset(skip).limit(limit).all()
+        
+        result = []
+        for user in users:
+            company_info = None
+            if user.company_id:
+                company = db.query(Company).filter(Company.id == user.company_id).first()
+                if company:
+                    company_info = {
+                        "id": company.id,
+                        "name": company.name,
+                        "code": company.code
+                    }
+            
+            result.append({
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+                "is_active": user.is_active,
+                "is_superuser": user.is_superuser,
+                "user_type": user.user_type.value,
+                "company": company_info,
+                "last_login": user.last_login.isoformat() if user.last_login else None,
+                "created_at": user.created_at.isoformat()
+            })
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching users: {str(e)}"
+        )
+
+@router.post("/companies/{company_id}/impersonate", response_model=dict)
+def impersonate_company(
+    company_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """Start impersonating a company."""
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Company not found"
+        )
+    
+    # Log impersonation
+    db.add(PlatformAuditLog(
+        user_id=current_user.id,
+        company_id=company_id,
+        action="company_impersonation_started",
+        resource_type="company",
+        resource_id=company_id,
+        details={"company_name": company.name}
+    ))
+    db.commit()
+    
+    return {
+        "status": "success",
+        "company": {
+            "id": company.id,
+            "name": company.name,
+            "code": company.code
+        }
+    }
+
+@router.post("/stop-impersonation", response_model=dict)
+def stop_impersonation(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """Stop impersonating a company."""
+    # Log stop impersonation
+    db.add(PlatformAuditLog(
+        user_id=current_user.id,
+        action="company_impersonation_stopped",
+        details={}
+    ))
+    db.commit()
+    
+    return {"status": "success"}
+
+@router.get("/me", response_model=UserSchema)
+def read_platform_me(
     current_user: User = Depends(get_current_platform_admin),
 ) -> Any:
     """
-    Get all companies (platform admin only).
+    Get current platform admin user.
     """
-    companies = db.query(Company).filter(
-        Company.is_deleted == False
-    ).offset(skip).limit(limit).all()
-    return companies
+    return current_user
 
 @router.post("/companies", response_model=CompanySchema)
 def create_company(
@@ -178,50 +479,3 @@ def suspend_company(
     db.commit()
     
     return company
-
-@router.get("/audit-logs", response_model=List[dict])
-def get_audit_logs(
-    db: Session = Depends(get_db),
-    skip: int = Query(0),
-    limit: int = Query(100),
-    company_id: Optional[int] = Query(None),
-    user_id: Optional[int] = Query(None),
-    action: Optional[str] = Query(None),
-    current_user: User = Depends(get_current_platform_admin),
-) -> Any:
-    """
-    Get platform audit logs (platform admin only).
-    """
-    query = db.query(PlatformAuditLog)
-    
-    # Apply filters
-    if company_id:
-        query = query.filter(PlatformAuditLog.company_id == company_id)
-    if user_id:
-        query = query.filter(PlatformAuditLog.user_id == user_id)
-    if action:
-        query = query.filter(PlatformAuditLog.action.ilike(f"%{action}%"))
-    
-    # Sort by timestamp descending
-    query = query.order_by(PlatformAuditLog.timestamp.desc())
-    
-    # Pagination
-    logs = query.offset(skip).limit(limit).all()
-    
-    # Convert to dict for response
-    result = []
-    for log in logs:
-        log_dict = {
-            "id": log.id,
-            "user_id": log.user_id,
-            "company_id": log.company_id,
-            "action": log.action,
-            "resource_type": log.resource_type,
-            "resource_id": log.resource_id,
-            "details": log.details,
-            "ip_address": log.ip_address,
-            "timestamp": log.timestamp.isoformat(),
-        }
-        result.append(log_dict)
-    
-    return result

@@ -65,8 +65,7 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
         """Determine if tenant extraction should be skipped for this path."""
         skip_paths = [
             "/api/v1/auth/login",
-            "/api/v1/platform/auth/login",
-            "/api/v1/platform/auth/login-mfa",
+            "/api/v1/platform/",  # All platform routes
             "/docs",
             "/redoc",
             "/openapi.json",
