@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from .endpoints import auth, users, roles, companies, accounting_periods, gl, ar, ap, inventory, oe, common, reporting, bom, pos, platform, platform_reports
+from .endpoints import auth, users, roles, companies, accounting_periods, gl, ar, ap, inventory, oe, common, reporting, bom, pos, platform, platform_reports, platform_auth
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -11,6 +11,7 @@ async def health_check():
 # Platform administration endpoints (for platform admins only)
 api_router.include_router(platform.router, tags=["platform"])
 api_router.include_router(platform_reports.router, tags=["platform-reports"])
+api_router.include_router(platform_auth.router, prefix="/platform/auth", tags=["platform-auth"])
 
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])

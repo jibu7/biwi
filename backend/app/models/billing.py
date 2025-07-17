@@ -52,3 +52,25 @@ class UsageAlert(Base):
     
     company = relationship("Company")
     acknowledged_by_user = relationship("User")
+
+class BillingTransaction(Base):
+    __tablename__ = "billing_transactions"
+    
+    id = Column(Integer, primary_key=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    transaction_type = Column(String, nullable=False)  # charge, payment, refund, credit
+    amount = Column(Numeric(10, 2), nullable=False)
+    currency = Column(String, default="USD", nullable=False)
+    description = Column(String, nullable=True)
+    billing_period = Column(String, nullable=True)
+    stripe_invoice_id = Column(String, nullable=True)
+    status = Column(String, nullable=False)  # pending, paid, failed, cancelled
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    company = relationship("Company")
+    
+    __table_args__ = (
+        Index('idx_billing_transaction_company', 'company_id'),
+        Index('idx_billing_transaction_stripe_invoice', 'stripe_invoice_id'),
+    )

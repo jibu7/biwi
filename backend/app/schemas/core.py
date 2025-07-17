@@ -153,11 +153,18 @@ class AccountingPeriod(AccountingPeriodBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    is_platform_admin: Optional[bool] = False
 
 class TokenData(BaseModel):
     email: Optional[str] = None
     user_id: Optional[int] = None
     permissions: List[str] = []
+
+class TokenPayload(BaseModel):
+    sub: Optional[int] = None  # user ID
+    user_type: Optional[str] = None
+    company_id: Optional[int] = None
+    exp: Optional[int] = None
 
 # Platform Audit Log Schemas
 class PlatformAuditLogBase(BaseModel):

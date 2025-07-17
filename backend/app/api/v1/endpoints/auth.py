@@ -1,84 +1,72 @@
 from datetime import timedelta, datetime
-from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Any
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from app import crud, models, schemas
-from app.core import security
-from app.config import settings
+
 from app.database.database import get_db
+from app.models.core import User, UserType
+from app.core.security import create_access_token, verify_password, get_current_active_user
+from app.config import settings
+from app.schemas.token import Token
 
 router = APIRouter()
 
-@router.post("/login", response_model=schemas.Token)
-async def login(
+@router.post("/login", response_model=Token)
+def login_access_token(
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
-    """OAuth2 compatible token login"""
-    user = crud.core.get_user_by_email(db, email=form_data.username)
-    if not user or not security.verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+    """
+    OAuth2 compatible token login, get an access token for future requests
+    """
+    user = db.query(User).filter(User.email == form_data.username).first()
     
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = security.create_access_token(
-        {"user_id": user.id, "email": user.email}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@router.post("/platform-login", response_model=schemas.Token)
-async def platform_login(
-    db: Session = Depends(get_db),
-    form_data: OAuth2PasswordRequestForm = Depends()
-) -> Any:
-    """Platform admin login endpoint"""
-    user = crud.core.get_user_by_email(db, email=form_data.username)
-    if not user or not security.verify_password(form_data.password, user.hashed_password):
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
+    elif not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    elif user.user_type == UserType.PLATFORM_ADMIN:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
+            status_code=400, 
+            detail="Platform admins must use platform login endpoint"
+        )
+    elif not user.company_id:
+        raise HTTPException(
+            status_code=400, 
+            detail="User not associated with any company"
         )
     
-    # Check if user is platform admin
-    # if user.user_type != "platform_admin":
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail="Platform administrator access required"
-    #     )
-    
-    if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = security.create_access_token(
-        {"user_id": user.id, "email": user.email, "user_type": user.user_type}, 
+    
+    # Create token with user type and company information
+    token = create_access_token(
+        user.id, 
+        user_type=user.user_type,
+        company_id=user.company_id,
         expires_delta=access_token_expires
     )
     
-    # Update last login
+    # Update last login time
     user.last_login = datetime.utcnow()
     db.commit()
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "is_platform_admin": False
+    }
 
-@router.get("/me", response_model=schemas.User)
-async def read_users_me(
-    current_user: models.User = Depends(security.get_current_active_user),
+@router.get("/me", response_model=dict)
+def read_current_user(
+    current_user: User = Depends(get_current_active_user)
 ) -> Any:
-    """Get current user"""
-    return current_user
-
-@router.get("/me/roles", response_model=List[schemas.Role])
-async def read_users_me_roles(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(security.get_current_active_user),
-) -> Any:
-    """Get current user's roles"""
-    return crud.core.get_user_roles(db, current_user.id)
+    """Get current user information"""
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "user_type": current_user.user_type,
+        "company_id": current_user.company_id,
+        "is_active": current_user.is_active
+    }

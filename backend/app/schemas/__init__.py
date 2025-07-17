@@ -3,7 +3,7 @@ from .core import (
     Role, RoleCreate, RoleUpdate,
     User, UserCreate, UserUpdate, UserLogin, PlatformUser,
     AccountingPeriod, AccountingPeriodCreate, AccountingPeriodUpdate,
-    Token, TokenData, PlatformAuditLog, PlatformAuditLogCreate
+    Token, TokenData, TokenPayload, PlatformAuditLog, PlatformAuditLogCreate
 )
 
 from .gl import (
@@ -103,7 +103,7 @@ __all__ = [
     "Role", "RoleCreate", "RoleUpdate", 
     "User", "UserCreate", "UserUpdate", "UserLogin", "PlatformUser",
     "AccountingPeriod", "AccountingPeriodCreate", "AccountingPeriodUpdate",
-    "Token", "TokenData",
+    "Token", "TokenData", "TokenPayload",
     "GLAccount", "GLAccountCreate", "GLAccountUpdate",
     "GLJournalEntry", "GLJournalEntryCreate", "GLJournalEntryUpdate",
     "GLJournalEntryLine", "GLJournalEntryLineCreate", "GLJournalEntryLineUpdate",
