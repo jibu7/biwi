@@ -1,53 +1,147 @@
-from typing import Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Any, List
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.orm import Session
-from datetime import date
+
 from app import crud, models, schemas
-from app.core.permissions import PermissionChecker, GL_SETUP_MANAGE, GL_JOURNAL_POST, GL_REPORTS_VIEW
-from app.core.security import get_current_active_user
-from app.database.database import get_db
+from app.api import deps
+from app.core.permissions import Permission, check_permissions
+from app.core.tenant_context import require_tenant_context
+from app.core.platform_context import is_in_platform_admin_context
 
 router = APIRouter()
 
-# GL Accounts endpoints
-@router.post("/accounts", response_model=schemas.GLAccount, dependencies=[Depends(PermissionChecker([GL_SETUP_MANAGE]))])
-def create_gl_account(
-    *,
-    db: Session = Depends(get_db),
-    account_in: schemas.GLAccountCreate,
-    current_user: models.User = Depends(get_current_active_user),
-) -> Any:
-    """Create new GL account"""
-    return crud.gl.create_gl_account(db, account=account_in, company_id=current_user.company_id)
-
 @router.get("/accounts", response_model=List[schemas.GLAccount])
 def read_gl_accounts(
-    db: Session = Depends(get_db),
-    skip: int = 0,
-    limit: int = 100,
-    include_inactive: bool = False,
-    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE, GL_REPORTS_VIEW])),
+    db: Session = Depends(deps.get_db),
+    skip: int = Query(0),
+    limit: int = Query(100),
+    is_active: bool = Query(True),
+    current_user: models.User = Depends(deps.get_current_tenant_user),
+    _: bool = Depends(check_permissions([Permission.GL_ACCOUNT_READ])),
 ) -> Any:
-    """Retrieve GL accounts"""
-    return crud.gl.get_gl_accounts_by_company(
-        db, company_id=current_user.company_id, skip=skip, limit=limit, include_inactive=include_inactive
-    )
+    """
+    Retrieve GL accounts for accessible tenant.
+    """
+    if is_active:
+        gl_accounts = crud.gl.gl_account.get_all_active(db, skip=skip, limit=limit)
+    else:
+        gl_accounts = crud.gl.gl_account.get_multi(db, skip=skip, limit=limit)
+    
+    return gl_accounts
 
-@router.get("/accounts/test", response_model=List[dict])
-def test_gl_accounts() -> Any:
-    """Test endpoint without authentication"""
-    return [
-        {"id": 1, "account_code": "1000", "account_name": "Cash", "current_balance": 5000.00},
-        {"id": 2, "account_code": "1200", "account_name": "Accounts Receivable", "current_balance": 2500.00},
-        {"id": 3, "account_code": "4000", "account_name": "Sales Revenue", "current_balance": -10000.00}
-    ]
+@router.post("/accounts", response_model=schemas.GLAccount)
+def create_gl_account(
+    *,
+    db: Session = Depends(deps.get_db),
+    account_in: schemas.GLAccountCreate,
+    current_user: models.User = Depends(deps.get_current_tenant_user),
+    _: bool = Depends(check_permissions([Permission.GL_ACCOUNT_CREATE])),
+) -> Any:
+    """
+    Create new GL account for accessible tenant.
+    """
+    try:
+        gl_account = crud.gl.gl_account.create_with_validation(db=db, obj_in=account_in)
+        return gl_account
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/accounts/{account_id}", response_model=schemas.GLAccount)
 def read_gl_account(
-    account_id: int,
-    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE, GL_REPORTS_VIEW])),
-    db: Session = Depends(get_db),
+    *,
+    db: Session = Depends(deps.get_db),
+    account_id: int = Path(...),
+    current_user: models.User = Depends(deps.get_current_tenant_user),
+    _: bool = Depends(check_permissions([Permission.GL_ACCOUNT_READ])),
 ) -> Any:
+    """
+    Get specific GL account by ID, enforcing tenant isolation.
+    """
+    gl_account = crud.gl.gl_account.get(db=db, id=account_id)
+    if not gl_account:
+        raise HTTPException(status_code=404, detail="GL account not found")
+    
+    return gl_account
+
+@router.put("/accounts/{account_id}", response_model=schemas.GLAccount)
+def update_gl_account(
+    *,
+    db: Session = Depends(deps.get_db),
+    account_id: int = Path(...),
+    account_in: schemas.GLAccountUpdate,
+    current_user: models.User = Depends(deps.get_current_tenant_user),
+    _: bool = Depends(check_permissions([Permission.GL_ACCOUNT_UPDATE])),
+) -> Any:
+    """
+    Update GL account, enforcing tenant isolation.
+    """
+    gl_account = crud.gl.gl_account.get(db=db, id=account_id)
+    if not gl_account:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="GL account not found")
+    
+    try:
+        gl_account = crud.gl.gl_account.update(db=db, db_obj=gl_account, obj_in=account_in)
+        return gl_account
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+@router.delete("/accounts/{account_id}", response_model=schemas.GLAccount)
+def delete_gl_account(
+    *,
+    db: Session = Depends(deps.get_db),
+    account_id: int = Path(...),
+    current_user: models.User = Depends(deps.get_current_tenant_user),
+    _: bool = Depends(check_permissions([Permission.GL_ACCOUNT_DELETE])),
+) -> Any:
+    """
+    Delete GL account, enforcing tenant isolation.
+    """
+    gl_account = crud.gl.gl_account.get(db=db, id=account_id)
+    if not gl_account:
+        raise HTTPException(status_code=404, detail="GL account not found")
+    
+    try:
+        crud.gl.gl_account.remove(db=db, id=account_id)
+        return gl_account
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+@router.post("/journal-entries", response_model=schemas.GLJournalEntry)
+def create_journal_entry(
+    *,
+    db: Session = Depends(deps.get_db),
+    entry_in: schemas.GLJournalEntryCreate,
+    current_user: models.User = Depends(deps.get_current_tenant_user),
+    _: bool = Depends(check_permissions([Permission.GL_JOURNAL_POST])),
+) -> Any:
+    """
+    Create and post journal entry with tenant validation.
+    """
+    try:
+        journal_entry = crud.gl.gl_journal_entry.create_with_lines(db=db, obj_in=entry_in)
+        return journal_entry
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/reports/trial-balance", response_model=List[dict])
+def get_trial_balance(
+    *,
+    db: Session = Depends(deps.get_db),
+    as_of_date: str = Query(..., description="Date in YYYY-MM-DD format"),
+    current_user: models.User = Depends(deps.get_current_tenant_user),
+    _: bool = Depends(check_permissions([Permission.GL_REPORTS_VIEW])),
+) -> Any:
+    """
+    Generate trial balance report for accessible tenant.
+    """
+    from datetime import datetime
+    
+    try:
+        report_date = datetime.strptime(as_of_date, "%Y-%m-%d").date()
+        trial_balance = crud.gl.gl_journal_entry.get_trial_balance(db=db, as_of_date=report_date)
+        return trial_balance
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid date format: {e}")
     """Get GL account by ID"""
     account = crud.gl.get_gl_account(db, account_id=account_id, company_id=current_user.company_id)
     if not account:
