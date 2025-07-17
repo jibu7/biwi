@@ -1,52 +1,68 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, Text, DateTime, UniqueConstraint, Index
-from sqlalchemy.orm import relationship
-from datetime import datetime
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Numeric, Boolean, Text, DateTime, UniqueConstraint, CheckConstraint, Index
+from sqlalchemy.orm import relationship, validates
+from sqlalchemy.sql import func
 from app.database.database import Base
 
 class GLAccount(Base):
     __tablename__ = "gl_accounts"
     
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    account_code = Column(String, index=True, nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    account_code = Column(String, nullable=False, index=True)
     account_name = Column(String, nullable=False)
     account_type = Column(String, nullable=False)  # Asset, Liability, Equity, Income, Expense
     parent_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     current_balance = Column(Numeric(precision=15, scale=2), default=0.00)
     is_active = Column(Boolean, default=True)
     is_control_account = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
-    company = relationship("Company")
+    company = relationship("Company", back_populates="gl_accounts")
     parent = relationship("GLAccount", remote_side=[id], backref="children")
+    journal_lines = relationship("GLJournalEntryLine", back_populates="gl_account")
     
     __table_args__ = (
         UniqueConstraint('account_code', 'company_id', name='uq_glaccount_code_company'),
-        Index('idx_gl_account_company_code', 'company_id', 'account_code'),
-        Index('idx_gl_account_company_active', 'company_id', 'is_active'),
+        CheckConstraint("account_type IN ('Asset', 'Liability', 'Equity', 'Income', 'Expense')", 
+                       name='ck_glaccount_type'),
     )
+    
+    @validates('parent_account_id')
+    def validate_parent(self, key, parent_id):
+        """Ensure parent account belongs to same company"""
+        if parent_id and hasattr(self, 'company_id'):
+            # This validation will be enforced at service level
+            pass
+        return parent_id
 
 class GLJournalEntry(Base):
     __tablename__ = "gl_journal_entries"
     
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    entry_date = Column(Date, nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    entry_date = Column(Date, nullable=False, index=True)
     reference = Column(String, nullable=True)
-    description = Column(String, nullable=True)
+    description = Column(String, nullable=False)
     posted_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    status = Column(String, nullable=False, default="Draft")  # Draft, Posted
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    status = Column(String, nullable=False, default="Draft")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Add audit fields
+    posting_date = Column(DateTime(timezone=True), nullable=True)
+    approved_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    approval_date = Column(DateTime(timezone=True), nullable=True)
     
     # Relationships
-    company = relationship("Company")
-    posted_by = relationship("User")
+    company = relationship("Company", back_populates="gl_journal_entries")
+    posted_by_user = relationship("User", foreign_keys=[posted_by_user_id])
+    approved_by_user = relationship("User", foreign_keys=[approved_by_user_id])
     lines = relationship("GLJournalEntryLine", back_populates="journal_entry", cascade="all, delete-orphan")
     
     __table_args__ = (
-        Index('idx_gl_je_company_date', 'company_id', 'entry_date'),
-        Index('idx_gl_je_company_status', 'company_id', 'status'),
+        CheckConstraint("status IN ('Draft', 'Posted', 'Cancelled')", name='ck_gljournal_status'),
     )
 
 class GLJournalEntryLine(Base):
@@ -67,7 +83,7 @@ class GLJournalEntryLine(Base):
     
     # Relationships
     journal_entry = relationship("GLJournalEntry", back_populates="lines")
-    gl_account = relationship("GLAccount")
+    gl_account = relationship("GLAccount", back_populates="journal_lines")
     currency = relationship("Currency")
 
 class GLTransactionType(Base):

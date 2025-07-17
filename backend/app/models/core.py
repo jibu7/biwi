@@ -52,6 +52,10 @@ class Company(Base):
     accounting_periods = relationship("AccountingPeriod", back_populates="company", cascade="all, delete-orphan")
     audit_logs = relationship("PlatformAuditLog", back_populates="company")
     
+    # GL relationships
+    gl_accounts = relationship("GLAccount", back_populates="company", cascade="all, delete-orphan")
+    gl_journal_entries = relationship("GLJournalEntry", back_populates="company", cascade="all, delete-orphan")
+    
     # Billing relationships
     billing_configuration = relationship("BillingConfiguration", back_populates="company", uselist=False)
     usage_alerts = relationship("UsageAlert", back_populates="company")
@@ -60,6 +64,10 @@ class Company(Base):
     report_templates = relationship("ReportTemplate", back_populates="company")
     report_schedules = relationship("ReportSchedule", back_populates="company")
     bank_reconciliations = relationship("BankReconciliation", back_populates="company")
+    
+    # GL relationships
+    gl_accounts = relationship("GLAccount", back_populates="company")
+    gl_journal_entries = relationship("GLJournalEntry", back_populates="company")
 
 class Role(Base):
     __tablename__ = "roles"

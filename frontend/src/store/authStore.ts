@@ -15,6 +15,7 @@ interface AuthState {
   platformLogin: (email: string, password: string, otpCode?: string) => Promise<void>;
   logout: () => void;
   setTargetCompany: (companyId: number | null) => void;
+  setSelectedCompanyId: (companyId: number | null) => void;
   refreshUser: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   initAuth: () => Promise<void>;
@@ -147,6 +148,10 @@ export const useAuthStore = create<AuthState>()(
       },
       
       setTargetCompany: (companyId: number | null) => {
+        set({ selectedCompanyId: companyId });
+      },
+      
+      setSelectedCompanyId: (companyId: number | null) => {
         set({ selectedCompanyId: companyId });
       },
       

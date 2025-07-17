@@ -1,27 +1,22 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
 });
 
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    const { token, selectedCompanyId, isPlatformAdmin } = useAuthStore.getState();
+    const { token, selectedCompanyId } = useAuthStore.getState();
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Add target company header for platform admins
-    if (isPlatformAdmin && selectedCompanyId) {
-      config.headers['X-Target-Company-ID'] = selectedCompanyId.toString();
+    // Add company context header for superadmins
+    if (selectedCompanyId) {
+      config.headers['X-Company-ID'] = selectedCompanyId;
     }
     
     return config;
@@ -36,15 +31,19 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Unauthorized - clear auth and redirect to login
+      // Clear auth and redirect to login
       useAuthStore.getState().logout();
+      window.location.href = '/login';
+    }
+    
+    if (error.response?.status === 403) {
+      // Handle permission errors
+      console.error('Permission denied:', error.response.data.detail);
       
-      // Redirect based on user type
-      const currentPath = window.location.pathname;
-      if (currentPath.startsWith('/platform')) {
-        window.location.href = '/platform-login';
-      } else {
-        window.location.href = '/login';
+      // If it's a company access violation, we could emit an event or show a toast
+      if (error.response.data.detail?.includes('company') || 
+          error.response.data.detail?.includes('tenant')) {
+        console.warn('Company access violation detected');
       }
     }
     
