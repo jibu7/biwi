@@ -1,10 +1,3 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
-from typing import Optional, List
-from datetime import date, timedelta
-from decimal import Decimal
-from fastapi import HTTPException
-from app import models, schemas
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_
 from typing import Optional, List
@@ -13,16 +6,24 @@ from decimal import Decimal
 from fastapi import HTTPException
 from app import models, schemas
 from app.crud import gl as crud_gl
+from app.core.tenant_db import TenantAwareRepository
+
+# Tenant-aware repository classes
+class SupplierRepository(TenantAwareRepository):
+    model = models.Supplier
+
+class APTransactionRepository(TenantAwareRepository):
+    model = models.APTransaction
 
 # Supplier CRUD
 def create_supplier(db: Session, supplier: schemas.SupplierCreate, company_id: int) -> models.Supplier:
-    # Check if supplier code already exists
+    # Check if supplier code already exists within the company
     existing = db.query(models.Supplier).filter(
         models.Supplier.supplier_code == supplier.supplier_code,
         models.Supplier.company_id == company_id
     ).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Supplier code already exists")
+        raise HTTPException(status_code=400, detail="Supplier code already exists in this company")
     
     db_supplier = models.Supplier(
         **supplier.model_dump(),
@@ -192,15 +193,22 @@ def get_ap_transaction_by_document_number(db: Session, document_number: str,
         ))\
         .first()
 
-def create_ap_transaction(db: Session, transaction: schemas.APTransactionCreate, company_id: int) -> models.APTransaction:
-    transaction_data = transaction.model_dump()
+def create_ap_transaction(db: Session, ap_transaction_in: schemas.APTransactionCreate, company_id: int, user_id: int) -> models.APTransaction:
+    # Validate supplier belongs to company
+    supplier = get_supplier(db, ap_transaction_in.supplier_id, company_id)
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found in this company")
+    
+    # Create AP transaction with company_id
+    transaction_data = ap_transaction_in.model_dump()
     transaction_data['open_amount'] = transaction_data['total_amount']  # Initially open amount equals total
     
     # Generate document number if not provided
     if 'document_number' not in transaction_data or not transaction_data['document_number']:
         # Get transaction type for prefix
         transaction_type = db.query(models.APTransactionType).filter(
-            models.APTransactionType.id == transaction_data['ap_transaction_type_id']
+            models.APTransactionType.id == transaction_data['ap_transaction_type_id'],
+            models.APTransactionType.company_id == company_id
         ).first()
         
         if transaction_type:
@@ -222,6 +230,9 @@ def create_ap_transaction(db: Session, transaction: schemas.APTransactionCreate,
             
             next_number = count + 1
             transaction_data['document_number'] = f"{prefix}-{next_number:06d}"
+    
+    # GL Posting with company validation - ensure GL accounts belong to same company
+    # ... existing logic with tenant checks will be added here
     
     db_transaction = models.APTransaction(**transaction_data, company_id=company_id)
     db.add(db_transaction)

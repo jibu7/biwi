@@ -9,7 +9,7 @@ class Customer(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    customer_code = Column(String, unique=True, index=True, nullable=False)
+    customer_code = Column(String, nullable=False, index=True)
     name = Column(String, nullable=False)
     address = Column(JSONB, nullable=True)
     contact_info = Column(JSONB, nullable=True)
