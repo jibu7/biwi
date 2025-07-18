@@ -1,0 +1,4839 @@
+{
+  "alembic_version": {
+    "columns": [
+      {
+        "name": "version_num",
+        "type": "VARCHAR(32)"
+      }
+    ],
+    "foreign_keys": []
+  },
+  "sales_representatives": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "contact_info",
+        "type": "JSONB"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ar_transaction_types": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "base_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "default_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_ar_control_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "affects_balance_direction",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_ar_control_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ar_transactions": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "customer_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "ar_transaction_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "linked_gl_journal_entry_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "sales_order_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "transaction_date",
+        "type": "DATE"
+      },
+      {
+        "name": "due_date",
+        "type": "DATE"
+      },
+      {
+        "name": "reference",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "document_number",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "total_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "open_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "is_posted_to_gl",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "currency_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "exchange_rate",
+        "type": "NUMERIC(15, 6)"
+      },
+      {
+        "name": "base_currency_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "foreign_currency_amount",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "ar_transaction_type_id"
+        ],
+        "referred_table": "ar_transaction_types",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "currency_id"
+        ],
+        "referred_table": "currencies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "customer_id"
+        ],
+        "referred_table": "customers",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "linked_gl_journal_entry_id"
+        ],
+        "referred_table": "gl_journal_entries",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "customers": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "customer_code",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "address",
+        "type": "JSONB"
+      },
+      {
+        "name": "contact_info",
+        "type": "JSONB"
+      },
+      {
+        "name": "payment_terms",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "credit_limit",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "current_balance",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "sales_representative_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_ar_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "default_currency_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_ar_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_currency_id"
+        ],
+        "referred_table": "currencies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "sales_representative_id"
+        ],
+        "referred_table": "sales_representatives",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "accounting_periods": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "start_date",
+        "type": "DATE"
+      },
+      {
+        "name": "end_date",
+        "type": "DATE"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "roles": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "permissions",
+        "type": "JSONB"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "user_roles": {
+    "columns": [
+      {
+        "name": "user_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "role_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "role_id"
+        ],
+        "referred_table": "roles",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ar_defaults": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_ar_control_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_sales_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_receipt_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_sales_discount_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_bad_debt_gl_account_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_ar_control_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_bad_debt_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_receipt_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_sales_discount_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_sales_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ar_allocation_lines": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "ar_allocation_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "debit_transaction_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "credit_transaction_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "allocated_amount",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "ar_allocation_id"
+        ],
+        "referred_table": "ar_allocations",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "credit_transaction_id"
+        ],
+        "referred_table": "ar_transactions",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "debit_transaction_id"
+        ],
+        "referred_table": "ar_transactions",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "users": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "email",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "hashed_password",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "full_name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "is_superuser",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "user_type",
+        "type": "VARCHAR(14)"
+      },
+      {
+        "name": "default_company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "last_login",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "default_company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "gl_accounts": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "account_code",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "account_name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "account_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "parent_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "current_balance",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "is_control_account",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "parent_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "gl_transaction_types": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "default_debit_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_credit_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_credit_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_debit_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "gl_defaults": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "retained_earnings_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_cash_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_ar_control_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_ap_control_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "forex_gain_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "forex_loss_account_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_ap_control_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_ar_control_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_cash_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "forex_gain_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "forex_loss_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "retained_earnings_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "suppliers": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "supplier_code",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "address",
+        "type": "JSONB"
+      },
+      {
+        "name": "contact_info",
+        "type": "JSONB"
+      },
+      {
+        "name": "payment_terms",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "current_balance",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "default_ap_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "default_currency_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_ap_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_currency_id"
+        ],
+        "referred_table": "currencies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ap_transaction_types": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "base_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "default_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_ap_control_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "affects_balance_direction",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_ap_control_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ap_defaults": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_ap_control_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_expense_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_payment_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_purchase_discount_gl_account_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_ap_control_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_expense_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_payment_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_purchase_discount_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ap_allocation_lines": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "ap_allocation_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "credit_transaction_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "debit_transaction_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "allocated_amount",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "ap_allocation_id"
+        ],
+        "referred_table": "ap_allocations",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "credit_transaction_id"
+        ],
+        "referred_table": "ap_transactions",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "debit_transaction_id"
+        ],
+        "referred_table": "ap_transactions",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "unit_of_measures": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "abbreviation",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "conversion_factor_to_base",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "warehouses": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "location",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "is_default",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "inventory_count_sessions": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "count_date",
+        "type": "DATE"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "notes",
+        "type": "TEXT"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "warehouse_id"
+        ],
+        "referred_table": "warehouses",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "inventory_defaults": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_warehouse_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_inventory_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_cogs_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_sales_revenue_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_inventory_adjustment_gl_account_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_cogs_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_inventory_adjustment_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_inventory_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_sales_revenue_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_warehouse_id"
+        ],
+        "referred_table": "warehouses",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "inventory_transaction_types": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "base_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "affects_quantity_direction",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "default_offsetting_gl_account_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_offsetting_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "inventory_count_lines": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "inventory_count_session_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "item_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "system_quantity",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "counted_quantity",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "variance_quantity",
+        "type": "NUMERIC"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "inventory_count_session_id"
+        ],
+        "referred_table": "inventory_count_sessions",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "item_id"
+        ],
+        "referred_table": "inventory_items",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "inventory_item_locations": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "item_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "quantity_on_hand",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "quantity_committed",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "quantity_on_order",
+        "type": "NUMERIC"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "item_id"
+        ],
+        "referred_table": "inventory_items",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "warehouse_id"
+        ],
+        "referred_table": "warehouses",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "inventory_items": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "item_code",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "item_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "unit_of_measure_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "costing_method",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "standard_cost",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "average_cost",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "selling_price",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "notes",
+        "type": "TEXT"
+      },
+      {
+        "name": "reorder_level",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "reorder_quantity",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "default_inventory_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_cogs_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_sales_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_sales_tax_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_purchase_tax_type_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_cogs_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_inventory_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_purchase_tax_type_id"
+        ],
+        "referred_table": "tax_types",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_sales_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_sales_tax_type_id"
+        ],
+        "referred_table": "tax_types",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "unit_of_measure_id"
+        ],
+        "referred_table": "unit_of_measures",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "inventory_transactions": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "item_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "inventory_transaction_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "linked_gl_journal_entry_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "transaction_date",
+        "type": "DATE"
+      },
+      {
+        "name": "quantity",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "unit_cost",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "total_value",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "reference_document_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "reference_document_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "notes",
+        "type": "TEXT"
+      },
+      {
+        "name": "currency_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "exchange_rate",
+        "type": "NUMERIC(15, 6)"
+      },
+      {
+        "name": "base_currency_unit_cost",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "base_currency_total_value",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "foreign_currency_unit_cost",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "foreign_currency_total_value",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "currency_id"
+        ],
+        "referred_table": "currencies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "inventory_transaction_type_id"
+        ],
+        "referred_table": "inventory_transaction_types",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "item_id"
+        ],
+        "referred_table": "inventory_items",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "linked_gl_journal_entry_id"
+        ],
+        "referred_table": "gl_journal_entries",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "warehouse_id"
+        ],
+        "referred_table": "warehouses",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "item_barcodes": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "item_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "barcode",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "unit_of_measure_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "quantity_in_uom",
+        "type": "NUMERIC"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "item_id"
+        ],
+        "referred_table": "inventory_items",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "unit_of_measure_id"
+        ],
+        "referred_table": "unit_of_measures",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "order_defaults": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_so_status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "default_po_status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "default_grv_status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "next_so_number",
+        "type": "INTEGER"
+      },
+      {
+        "name": "next_po_number",
+        "type": "INTEGER"
+      },
+      {
+        "name": "next_grv_number",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "purchase_order_lines": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "purchase_order_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "item_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "quantity_ordered",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "quantity_received",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "unit_price",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "discount_percentage",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "tax_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "tax_amount",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "line_total",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "base_currency_tax_amount",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "item_id"
+        ],
+        "referred_table": "inventory_items",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "purchase_order_id"
+        ],
+        "referred_table": "purchase_orders",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "tax_type_id"
+        ],
+        "referred_table": "tax_types",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "sales_orders": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "customer_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "order_date",
+        "type": "DATE"
+      },
+      {
+        "name": "reference",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "document_number",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "total_amount",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "notes",
+        "type": "TEXT"
+      },
+      {
+        "name": "shipping_address",
+        "type": "JSONB"
+      },
+      {
+        "name": "billing_address",
+        "type": "JSONB"
+      },
+      {
+        "name": "sales_representative_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "ar_invoice_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "currency_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "exchange_rate",
+        "type": "NUMERIC(15, 6)"
+      },
+      {
+        "name": "base_currency_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "foreign_currency_amount",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "ar_invoice_id"
+        ],
+        "referred_table": "ar_transactions",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "currency_id"
+        ],
+        "referred_table": "currencies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "customer_id"
+        ],
+        "referred_table": "customers",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "sales_representative_id"
+        ],
+        "referred_table": "sales_representatives",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "sales_order_lines": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "sales_order_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "item_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "quantity_ordered",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "quantity_invoiced",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "unit_price",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "discount_percentage",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "tax_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "tax_amount",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "line_total",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "base_currency_tax_amount",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "item_id"
+        ],
+        "referred_table": "inventory_items",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "sales_order_id"
+        ],
+        "referred_table": "sales_orders",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "tax_type_id"
+        ],
+        "referred_table": "tax_types",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "branches": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "address",
+        "type": "JSONB"
+      },
+      {
+        "name": "contact_info",
+        "type": "JSONB"
+      },
+      {
+        "name": "default_gl_segment_code",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "currencies": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "code",
+        "type": "VARCHAR(3)"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "symbol",
+        "type": "VARCHAR(5)"
+      },
+      {
+        "name": "exchange_rate_to_base",
+        "type": "NUMERIC(15, 6)"
+      },
+      {
+        "name": "is_base_currency",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "tax_types": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "rate_percentage",
+        "type": "NUMERIC(5, 2)"
+      },
+      {
+        "name": "tax_authority_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "tax_code",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "tax_nature",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "tax_authority_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "bank_reconciliations": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "bank_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "reconciliation_date",
+        "type": "DATE"
+      },
+      {
+        "name": "statement_balance",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "book_balance",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "created_by_user_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "bank_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "created_by_user_id"
+        ],
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "report_templates": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "report_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "template_data",
+        "type": "JSONB"
+      },
+      {
+        "name": "is_default",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "created_by_user_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "created_by_user_id"
+        ],
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "report_schedules": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "report_template_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "schedule_frequency",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "schedule_parameters",
+        "type": "JSONB"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "last_run_date",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "next_run_date",
+        "type": "TIMESTAMP"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "report_template_id"
+        ],
+        "referred_table": "report_templates",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "goods_received_voucher_lines": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "grv_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "purchase_order_line_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "item_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "quantity_received",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "unit_cost",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "line_total",
+        "type": "NUMERIC"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "grv_id"
+        ],
+        "referred_table": "goods_received_vouchers",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "item_id"
+        ],
+        "referred_table": "inventory_items",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "purchase_order_line_id"
+        ],
+        "referred_table": "purchase_order_lines",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "goods_received_vouchers": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "purchase_order_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "supplier_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "grv_date",
+        "type": "DATE"
+      },
+      {
+        "name": "reference",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "document_number",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "notes",
+        "type": "TEXT"
+      },
+      {
+        "name": "ap_invoice_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "ap_invoice_id"
+        ],
+        "referred_table": "ap_transactions",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "purchase_order_id"
+        ],
+        "referred_table": "purchase_orders",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "supplier_id"
+        ],
+        "referred_table": "suppliers",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ap_transactions": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "supplier_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "ap_transaction_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "linked_gl_journal_entry_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "purchase_order_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "transaction_date",
+        "type": "DATE"
+      },
+      {
+        "name": "due_date",
+        "type": "DATE"
+      },
+      {
+        "name": "reference",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "document_number",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "total_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "open_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "is_posted_to_gl",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "currency_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "exchange_rate",
+        "type": "NUMERIC(15, 6)"
+      },
+      {
+        "name": "base_currency_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "foreign_currency_amount",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "ap_transaction_type_id"
+        ],
+        "referred_table": "ap_transaction_types",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "currency_id"
+        ],
+        "referred_table": "currencies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "linked_gl_journal_entry_id"
+        ],
+        "referred_table": "gl_journal_entries",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "supplier_id"
+        ],
+        "referred_table": "suppliers",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "purchase_orders": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "supplier_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "order_date",
+        "type": "DATE"
+      },
+      {
+        "name": "expected_delivery_date",
+        "type": "DATE"
+      },
+      {
+        "name": "reference",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "document_number",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "total_amount",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "notes",
+        "type": "TEXT"
+      },
+      {
+        "name": "delivery_address_warehouse_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "currency_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "exchange_rate",
+        "type": "NUMERIC(15, 6)"
+      },
+      {
+        "name": "base_currency_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "foreign_currency_amount",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "currency_id"
+        ],
+        "referred_table": "currencies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "delivery_address_warehouse_id"
+        ],
+        "referred_table": "warehouses",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "supplier_id"
+        ],
+        "referred_table": "suppliers",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ar_allocations": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "allocation_date",
+        "type": "DATE"
+      },
+      {
+        "name": "customer_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "customer_id"
+        ],
+        "referred_table": "customers",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ap_allocations": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "allocation_date",
+        "type": "DATE"
+      },
+      {
+        "name": "supplier_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "supplier_id"
+        ],
+        "referred_table": "suppliers",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "bank_reconciliation_items": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "bank_reconciliation_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "gl_journal_entry_line_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "item_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "amount",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "is_reconciled",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "bank_reconciliation_id"
+        ],
+        "referred_table": "bank_reconciliations",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "gl_journal_entry_line_id"
+        ],
+        "referred_table": "gl_journal_entry_lines",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "gl_journal_entry_lines": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "journal_entry_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "debit_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "credit_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "currency_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "exchange_rate",
+        "type": "NUMERIC(15, 6)"
+      },
+      {
+        "name": "foreign_currency_debit_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "foreign_currency_credit_amount",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "currency_id"
+        ],
+        "referred_table": "currencies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "journal_entry_id"
+        ],
+        "referred_table": "gl_journal_entries",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "gl_journal_entries": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "entry_date",
+        "type": "DATE"
+      },
+      {
+        "name": "reference",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "posted_by_user_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "posted_by_user_id"
+        ],
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ar_writeoffs": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "customer_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "original_invoice_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "ar_transaction_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "linked_gl_journal_entry_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "document_number",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "writeoff_date",
+        "type": "DATE"
+      },
+      {
+        "name": "writeoff_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "reason_code",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "reason_description",
+        "type": "TEXT"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "requested_by_user_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "approved_by_user_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "approval_date",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "approval_notes",
+        "type": "TEXT"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "approved_by_user_id"
+        ],
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "ar_transaction_type_id"
+        ],
+        "referred_table": "ar_transaction_types",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "customer_id"
+        ],
+        "referred_table": "customers",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "linked_gl_journal_entry_id"
+        ],
+        "referred_table": "gl_journal_entries",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "original_invoice_id"
+        ],
+        "referred_table": "ar_transactions",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "requested_by_user_id"
+        ],
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "bom_defaults": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_wip_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_material_usage_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_manufacturing_overhead_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_scrap_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "next_mo_number",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_manufacturing_overhead_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_material_usage_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_scrap_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_wip_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "bom_headers": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "parent_item_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "bom_code",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "revision",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "effective_date",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "expiry_date",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "quantity_per_batch",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "unit_of_measure_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "notes",
+        "type": "TEXT"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "parent_item_id"
+        ],
+        "referred_table": "inventory_items",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "unit_of_measure_id"
+        ],
+        "referred_table": "unit_of_measures",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "bom_components": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "bom_header_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "component_item_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "quantity_required",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "unit_of_measure_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "scrap_percentage",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "sequence_number",
+        "type": "INTEGER"
+      },
+      {
+        "name": "is_phantom",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "notes",
+        "type": "TEXT"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "bom_header_id"
+        ],
+        "referred_table": "bom_headers",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "component_item_id"
+        ],
+        "referred_table": "inventory_items",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "unit_of_measure_id"
+        ],
+        "referred_table": "unit_of_measures",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "manufacturing_orders": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "order_number",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "bom_header_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "warehouse_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "quantity_to_manufacture",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "quantity_completed",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "order_date",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "due_date",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "start_date",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "completion_date",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "linked_gl_journal_entry_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "notes",
+        "type": "TEXT"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "bom_header_id"
+        ],
+        "referred_table": "bom_headers",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "linked_gl_journal_entry_id"
+        ],
+        "referred_table": "gl_journal_entries",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "warehouse_id"
+        ],
+        "referred_table": "warehouses",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "pos_defaults": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_customer_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_tax_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "receipt_header",
+        "type": "TEXT"
+      },
+      {
+        "name": "receipt_footer",
+        "type": "TEXT"
+      },
+      {
+        "name": "enable_negative_stock",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "require_customer_for_credit",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "auto_print_receipt",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "default_sale_transaction_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_return_transaction_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "cash_rounding_method",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "next_transaction_number",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_customer_id"
+        ],
+        "referred_table": "customers",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_return_transaction_type_id"
+        ],
+        "referred_table": "pos_transaction_types",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_sale_transaction_type_id"
+        ],
+        "referred_table": "pos_transaction_types",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_tax_type_id"
+        ],
+        "referred_table": "tax_types",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "manufacturing_order_components": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "manufacturing_order_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "component_item_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "quantity_required",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "quantity_issued",
+        "type": "NUMERIC"
+      },
+      {
+        "name": "unit_cost",
+        "type": "NUMERIC"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "component_item_id"
+        ],
+        "referred_table": "inventory_items",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "manufacturing_order_id"
+        ],
+        "referred_table": "manufacturing_orders",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "pos_transaction_types": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "base_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "affects_inventory",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "affects_ar",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "default_payment_method",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "tills": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "till_code",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "till_name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "location",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "default_cashier_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "default_warehouse_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "cash_gl_account_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "cash_gl_account_id"
+        ],
+        "referred_table": "gl_accounts",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_cashier_id"
+        ],
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "default_warehouse_id"
+        ],
+        "referred_table": "warehouses",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "pos_sessions": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "till_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "cashier_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "session_date",
+        "type": "DATE"
+      },
+      {
+        "name": "opening_time",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "closing_time",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "opening_cash",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "closing_cash",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "expected_cash",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "cash_variance",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "cashier_id"
+        ],
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "till_id"
+        ],
+        "referred_table": "tills",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "pos_cash_movements": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "session_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "movement_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "reason",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "reference",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "movement_datetime",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "authorized_by_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "authorized_by_id"
+        ],
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "session_id"
+        ],
+        "referred_table": "pos_sessions",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "pos_transactions": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "session_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "transaction_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "transaction_number",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "transaction_datetime",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "customer_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "payment_method",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "subtotal_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "tax_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "discount_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "total_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "cash_tendered",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "change_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "linked_gl_journal_entry_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "linked_ar_transaction_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "reference_transaction_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "notes",
+        "type": "TEXT"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "customer_id"
+        ],
+        "referred_table": "customers",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "linked_ar_transaction_id"
+        ],
+        "referred_table": "ar_transactions",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "linked_gl_journal_entry_id"
+        ],
+        "referred_table": "gl_journal_entries",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "reference_transaction_id"
+        ],
+        "referred_table": "pos_transactions",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "session_id"
+        ],
+        "referred_table": "pos_sessions",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "transaction_type_id"
+        ],
+        "referred_table": "pos_transaction_types",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ap_transaction_tax_lines": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "ap_transaction_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "tax_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "taxable_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "tax_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "base_currency_tax_amount",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "ap_transaction_id"
+        ],
+        "referred_table": "ap_transactions",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "tax_type_id"
+        ],
+        "referred_table": "tax_types",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "pos_transaction_lines": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "transaction_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "item_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "barcode_used",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "quantity",
+        "type": "NUMERIC(15, 3)"
+      },
+      {
+        "name": "unit_price",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "discount_percentage",
+        "type": "NUMERIC(5, 2)"
+      },
+      {
+        "name": "discount_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "tax_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "tax_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "line_total",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "item_id"
+        ],
+        "referred_table": "inventory_items",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "tax_type_id"
+        ],
+        "referred_table": "tax_types",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "transaction_id"
+        ],
+        "referred_table": "pos_transactions",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "exchange_rate_history": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "currency_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "rate_date",
+        "type": "DATE"
+      },
+      {
+        "name": "exchange_rate",
+        "type": "NUMERIC(15, 6)"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "currency_id"
+        ],
+        "referred_table": "currencies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "forex_gain_loss": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "transaction_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "transaction_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "gain_loss_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "gl_journal_entry_id",
+        "type": "INTEGER"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "gl_journal_entry_id"
+        ],
+        "referred_table": "gl_journal_entries",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "ar_transaction_tax_lines": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "ar_transaction_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "tax_type_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "taxable_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "tax_amount",
+        "type": "NUMERIC(15, 2)"
+      },
+      {
+        "name": "base_currency_tax_amount",
+        "type": "NUMERIC(15, 2)"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "ar_transaction_id"
+        ],
+        "referred_table": "ar_transactions",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "tax_type_id"
+        ],
+        "referred_table": "tax_types",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "companies": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "name",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "address",
+        "type": "JSONB"
+      },
+      {
+        "name": "contact_info",
+        "type": "JSONB"
+      },
+      {
+        "name": "default_currency_code",
+        "type": "VARCHAR(3)"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "code",
+        "type": "VARCHAR(10)"
+      },
+      {
+        "name": "subscription_status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "subscription_plan",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "subscription_expires",
+        "type": "DATE"
+      },
+      {
+        "name": "storage_limit_gb",
+        "type": "INTEGER"
+      },
+      {
+        "name": "user_limit",
+        "type": "INTEGER"
+      },
+      {
+        "name": "primary_contact_email",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "billing_email",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "created_by_user_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "is_deleted",
+        "type": "BOOLEAN"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "created_by_user_id"
+        ],
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "billing_transactions": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "transaction_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "amount",
+        "type": "NUMERIC(10, 2)"
+      },
+      {
+        "name": "currency",
+        "type": "VARCHAR(3)"
+      },
+      {
+        "name": "description",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "billing_period",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "stripe_invoice_id",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "stripe_charge_id",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "platform_audit_logs": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "user_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "action",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "resource_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "resource_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "details",
+        "type": "JSONB"
+      },
+      {
+        "name": "ip_address",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "user_agent",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "timestamp",
+        "type": "TIMESTAMP"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "constrained_columns": [
+          "user_id"
+        ],
+        "referred_table": "users",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "resource_usage": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "resource_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "usage_amount",
+        "type": "NUMERIC(10, 2)"
+      },
+      {
+        "name": "usage_date",
+        "type": "DATE"
+      },
+      {
+        "name": "billing_period",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "metadata",
+        "type": "JSONB"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "billing_configurations": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "base_monthly_fee",
+        "type": "NUMERIC(10, 2)"
+      },
+      {
+        "name": "per_user_fee",
+        "type": "NUMERIC(10, 2)"
+      },
+      {
+        "name": "per_gb_storage_fee",
+        "type": "NUMERIC(10, 2)"
+      },
+      {
+        "name": "per_transaction_fee",
+        "type": "NUMERIC(10, 2)"
+      },
+      {
+        "name": "billing_cycle",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "billing_email",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "payment_method",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "stripe_customer_id",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "stripe_subscription_id",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMP"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  "usage_alerts": {
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "company_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "alert_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "threshold_percentage",
+        "type": "DOUBLE PRECISION"
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "last_triggered",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "alert_recipients",
+        "type": "JSONB"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "constrained_columns": [
+          "company_id"
+        ],
+        "referred_table": "companies",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  }
+}
