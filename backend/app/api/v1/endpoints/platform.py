@@ -1,17 +1,28 @@
 from typing import Any, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_
 
 from app.database.database import get_db
-from app.models.core import User, Company, PlatformAuditLog, UserType, SubscriptionStatus
+from app.models.core import User, Company, PlatformAuditLog, UserType, SubscriptionStatus, Role, UserRole, AccountingPeriod
 from app.models.gl import GLJournalEntry
 from app.models.ar import ARTransaction
 from app.schemas.core import Company as CompanySchema, CompanyCreate, CompanyUpdate, CompanyWithStats
 from app.schemas.core import User as UserSchema
 from app.api.deps import get_current_platform_admin
 from app.core.context_managers import tenant_context
+from app.core.security import get_password_hash
+from app.core.permissions import (
+    ALL_PERMISSIONS_LIST, USER_CREATE, USER_READ, USER_UPDATE, USER_DELETE, USER_MANAGE_ROLES,
+    ROLE_CREATE, ROLE_READ, ROLE_UPDATE, ROLE_DELETE, ROLE_MANAGE_PERMISSIONS,
+    COMPANY_READ, COMPANY_UPDATE, ACCOUNTING_PERIOD_MANAGE,
+    GL_SETUP_MANAGE, GL_JOURNAL_POST, GL_REPORTS_VIEW,
+    AR_SETUP_MANAGE, AR_TRANSACTIONS_POST, AR_REPORTS_VIEW,
+    AP_SETUP_MANAGE, AP_TRANSACTIONS_POST, AP_REPORTS_VIEW,
+    INV_SETUP_MANAGE, INV_TRANSACTIONS_ADJUST, INV_REPORTS_VIEW,
+    OE_SETUP_MANAGE, OE_SALES_ORDERS_MANAGE, OE_PURCHASE_ORDERS_MANAGE, OE_GRV_PROCESS, OE_REPORTS_VIEW
+)
 
 router = APIRouter()
 
@@ -513,10 +524,155 @@ def create_company(
     ))
     db.commit()
     
-    # Initialize company data
-    with tenant_context(db_company.id):
-        # TODO: Set up default GL accounts, roles, etc.
-        pass
+    # Initialize company data - COMPLETE IMPLEMENTATION
+    try:
+        # 1. Create 6 default business roles
+        default_roles = [
+            {
+                "name": "Company Administrator",
+                "description": "Full company management and system administration",
+                "permissions": ALL_PERMISSIONS_LIST
+            },
+            {
+                "name": "Accountant",
+                "description": "Financial management and accounting operations",
+                "permissions": [
+                    GL_SETUP_MANAGE, GL_JOURNAL_POST, GL_REPORTS_VIEW,
+                    AR_SETUP_MANAGE, AR_TRANSACTIONS_POST, AR_REPORTS_VIEW,
+                    AP_SETUP_MANAGE, AP_TRANSACTIONS_POST, AP_REPORTS_VIEW,
+                    ACCOUNTING_PERIOD_MANAGE, COMPANY_READ
+                ]
+            },
+            {
+                "name": "Sales Manager",
+                "description": "Sales and customer relationship management",
+                "permissions": [
+                    AR_SETUP_MANAGE, AR_TRANSACTIONS_POST, AR_REPORTS_VIEW,
+                    OE_SALES_ORDERS_MANAGE, OE_REPORTS_VIEW,
+                    INV_REPORTS_VIEW, COMPANY_READ
+                ]
+            },
+            {
+                "name": "Purchasing Manager",
+                "description": "Procurement and supplier management",
+                "permissions": [
+                    AP_SETUP_MANAGE, AP_TRANSACTIONS_POST, AP_REPORTS_VIEW,
+                    OE_PURCHASE_ORDERS_MANAGE, OE_GRV_PROCESS, OE_REPORTS_VIEW,
+                    INV_SETUP_MANAGE, INV_TRANSACTIONS_ADJUST, INV_REPORTS_VIEW,
+                    COMPANY_READ
+                ]
+            },
+            {
+                "name": "Inventory Manager",
+                "description": "Stock and inventory management",
+                "permissions": [
+                    INV_SETUP_MANAGE, INV_TRANSACTIONS_ADJUST, INV_REPORTS_VIEW,
+                    OE_PURCHASE_ORDERS_MANAGE, OE_GRV_PROCESS,
+                    COMPANY_READ
+                ]
+            },
+            {
+                "name": "Data Entry Clerk",
+                "description": "Basic data entry and limited transaction processing",
+                "permissions": [
+                    GL_JOURNAL_POST, AR_TRANSACTIONS_POST, AP_TRANSACTIONS_POST,
+                    GL_REPORTS_VIEW, AR_REPORTS_VIEW, AP_REPORTS_VIEW,
+                    COMPANY_READ
+                ]
+            }
+        ]
+        
+        created_roles = {}
+        for role_data in default_roles:
+            role = Role(
+                company_id=db_company.id,
+                name=role_data["name"],
+                description=role_data["description"],
+                permissions=role_data["permissions"]
+            )
+            db.add(role)
+            db.flush()  # Get ID without committing
+            created_roles[role_data["name"]] = role
+        
+        # 2. Create default accounting period for current year
+        current_year = datetime.now().year
+        accounting_period = AccountingPeriod(
+            company_id=db_company.id,
+            name=f"FY {current_year}",
+            start_date=date(current_year, 1, 1),
+            end_date=date(current_year, 12, 31),
+            status="Open"
+        )
+        db.add(accounting_period)
+        
+        # 3. Create admin user if primary contact email provided
+        admin_user = None
+        if company_in.primary_contact_email:
+            # Generate temporary password
+            temp_password = f"Welcome{current_year}!"
+            
+            admin_user = User(
+                email=company_in.primary_contact_email,
+                hashed_password=get_password_hash(temp_password),
+                full_name=f"{db_company.name} Administrator",
+                user_type=UserType.COMPANY_ADMIN,
+                company_id=db_company.id,
+                is_active=True,
+                is_superuser=False
+            )
+            db.add(admin_user)
+            db.flush()  # Get ID without committing
+            
+            # 4. Assign Company Administrator role to admin user
+            admin_role = created_roles["Company Administrator"]
+            user_role = UserRole(
+                user_id=admin_user.id,
+                role_id=admin_role.id
+            )
+            db.add(user_role)
+            
+            # Log admin user creation
+            db.add(PlatformAuditLog(
+                user_id=current_user.id,
+                company_id=db_company.id,
+                action="admin_user_created",
+                resource_type="user",
+                resource_id=admin_user.id,
+                details={
+                    "email": admin_user.email,
+                    "temp_password": temp_password,  # For onboarding email
+                    "role": "Company Administrator"
+                }
+            ))
+        
+        # Commit all changes
+        db.commit()
+        
+        # Log successful initialization
+        db.add(PlatformAuditLog(
+            user_id=current_user.id,
+            company_id=db_company.id,
+            action="company_initialized",
+            resource_type="company",
+            resource_id=db_company.id,
+            details={
+                "roles_created": len(default_roles),
+                "accounting_period": f"FY {current_year}",
+                "admin_user_created": admin_user is not None
+            }
+        ))
+        db.commit()
+        
+    except Exception as e:
+        # Rollback changes if initialization fails
+        db.rollback()
+        # Delete the company if it was created
+        db.delete(db_company)
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to initialize company data: {str(e)}"
+        )
     
     return db_company
 

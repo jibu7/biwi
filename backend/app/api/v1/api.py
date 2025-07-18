@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
     auth, users, companies, roles, accounting_periods,
-    gl, ar, ap, inventory, oe, common
+    gl, ar, ap, inventory, oe, common, company_management
 )
 from app.api.v1.endpoints import platform_auth, platform  # Platform endpoints
 
@@ -14,6 +14,9 @@ api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(companies.router, prefix="/companies", tags=["companies"])
 api_router.include_router(roles.router, prefix="/roles", tags=["roles"])
 api_router.include_router(accounting_periods.router, prefix="/accounting-periods", tags=["accounting-periods"])
+
+# Company management endpoints
+api_router.include_router(company_management.router, prefix="/company-management", tags=["company-management"])
 
 # Module endpoints
 api_router.include_router(gl.router, prefix="/gl", tags=["general-ledger"])
