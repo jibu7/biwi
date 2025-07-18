@@ -286,7 +286,7 @@ async def create_purchase_order(
     po_in: schemas.PurchaseOrderCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_PURCHASE_ORDERS_MANAGE])
+        TenantPermissionChecker([permissions.OE_PURCHASE_ORDERS_MANAGE])
     )
 ):
     return crud.oe.create_purchase_order(
@@ -299,7 +299,7 @@ async def list_purchase_orders(
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_PURCHASE_ORDERS_MANAGE])
+        TenantPermissionChecker([permissions.OE_PURCHASE_ORDERS_MANAGE])
     )
 ):
     return crud.oe.get_purchase_orders(
@@ -311,7 +311,7 @@ async def get_purchase_order(
     po_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_PURCHASE_ORDERS_MANAGE])
+        TenantPermissionChecker([permissions.OE_PURCHASE_ORDERS_MANAGE])
     )
 ):
     po = db.query(models.PurchaseOrder).filter(
@@ -328,7 +328,7 @@ async def update_purchase_order(
     po_update: schemas.PurchaseOrderUpdate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_PURCHASE_ORDERS_MANAGE])
+        TenantPermissionChecker([permissions.OE_PURCHASE_ORDERS_MANAGE])
     )
 ):
     po = db.query(models.PurchaseOrder).filter(
@@ -351,7 +351,7 @@ async def create_grv(
     grv_in: schemas.GoodsReceivedVoucherCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_GRV_PROCESS])
+        TenantPermissionChecker([permissions.OE_GRV_PROCESS])
     )
 ):
     return crud.oe.create_grv(
@@ -364,7 +364,7 @@ async def list_grvs(
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_GRV_PROCESS])
+        TenantPermissionChecker([permissions.OE_GRV_PROCESS])
     )
 ):
     grvs = crud.oe.get_grvs(
@@ -391,7 +391,7 @@ async def get_grv(
     grv_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_GRV_PROCESS])
+        TenantPermissionChecker([permissions.OE_GRV_PROCESS])
     )
 ):
     from sqlalchemy.orm import joinedload
@@ -433,7 +433,7 @@ async def convert_grv_to_ap_invoice(
     ap_invoice_details: schemas.APTransactionCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_GRV_PROCESS])
+        TenantPermissionChecker([permissions.OE_GRV_PROCESS])
     )
 ):
     try:
@@ -449,7 +449,7 @@ async def convert_grv_to_ap_invoice(
 async def get_order_defaults(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_SETUP_MANAGE])
+        TenantPermissionChecker([permissions.OE_SETUP_MANAGE])
     )
 ):
     return crud.oe.get_or_create_order_defaults(db, current_user.company_id)
@@ -459,7 +459,7 @@ async def update_order_defaults(
     defaults_update: schemas.OrderDefaultsUpdate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_SETUP_MANAGE])
+        TenantPermissionChecker([permissions.OE_SETUP_MANAGE])
     )
 ):
     defaults = crud.oe.get_or_create_order_defaults(db, current_user.company_id)
@@ -480,7 +480,7 @@ async def sales_orders_report(
     status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_REPORTS_VIEW])
+        TenantPermissionChecker([permissions.OE_REPORTS_VIEW])
     )
 ):
     query = db.query(models.SalesOrder).filter(
@@ -506,7 +506,7 @@ async def purchase_orders_report(
     status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_REPORTS_VIEW])
+        TenantPermissionChecker([permissions.OE_REPORTS_VIEW])
     )
 ):
     # Query with joins to get supplier information
@@ -560,7 +560,7 @@ async def grv_report(
     status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
-        PermissionChecker([OE_REPORTS_VIEW])
+        TenantPermissionChecker([permissions.OE_REPORTS_VIEW])
     )
 ):
     query = db.query(models.GoodsReceivedVoucher).filter(

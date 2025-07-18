@@ -37,75 +37,115 @@ class OrderEntryService {
 
 export const oeService = new OrderEntryService();
 
-// Sales Orders API functions - tenant isolation handled by axiosInstance
+// Sales Orders API functions
 export const salesOrderService = {
   getAll: async (params?: { skip?: number; limit?: number }): Promise<SalesOrder[]> => {
-    const response = await axiosInstance.get('/oe/sales-orders', { params });
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.get('/oe/sales-orders', { 
+      params,
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
   getById: async (id: number): Promise<SalesOrder> => {
-    const response = await axiosInstance.get(`/oe/sales-orders/${id}`);
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.get(`/oe/sales-orders/${id}`, {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
   create: async (data: SalesOrderCreate): Promise<SalesOrder> => {
-    const response = await axiosInstance.post('/oe/sales-orders', data);
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.post('/oe/sales-orders', data, {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
   update: async (id: number, data: Partial<SalesOrder>): Promise<SalesOrder> => {
-    const response = await axiosInstance.put(`/oe/sales-orders/${id}`, data);
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.put(`/oe/sales-orders/${id}`, data, {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
   convertToInvoice: async (id: number): Promise<ARTransaction> => {
-    const response = await axiosInstance.post(`/oe/sales-orders/${id}/convert-to-invoice`, {});
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.post(`/oe/sales-orders/${id}/convert-to-invoice`, {}, {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 };
 
-// Purchase Orders API functions - tenant isolation handled by axiosInstance
+// Purchase Orders API functions
 export const purchaseOrderService = {
   getAll: async (params?: { skip?: number; limit?: number }): Promise<PurchaseOrder[]> => {
-    const response = await axiosInstance.get('/oe/purchase-orders', { params });
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.get('/oe/purchase-orders', { 
+      params,
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
   getById: async (id: number): Promise<PurchaseOrder> => {
-    const response = await axiosInstance.get(`/oe/purchase-orders/${id}`);
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.get(`/oe/purchase-orders/${id}`, {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
   create: async (data: PurchaseOrderCreate): Promise<PurchaseOrder> => {
-    const response = await axiosInstance.post('/oe/purchase-orders', data);
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.post('/oe/purchase-orders', data, {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     // ensure order_number is returned
     return response.data;
   },
 
   update: async (id: number, data: Partial<PurchaseOrder>): Promise<PurchaseOrder> => {
-    const response = await axiosInstance.put(`/oe/purchase-orders/${id}`, data);
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.put(`/oe/purchase-orders/${id}`, data, {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`/oe/purchase-orders/${id}`);
+    const { selectedCompanyId } = useAuthStore.getState();
+    await axiosInstance.delete(`/oe/purchase-orders/${id}`, {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
   },
 };
 
-// GRVs API functions - tenant isolation handled by axiosInstance
+// GRVs API functions
 export const grvService = {
   getAll: async (params?: { skip?: number; limit?: number }): Promise<GoodsReceivedVoucher[]> => {
-    const response = await axiosInstance.get('/oe/grvs', { params });
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.get('/oe/grvs', { 
+      params,
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
   getById: async (id: number): Promise<GoodsReceivedVoucher> => {
-    const response = await axiosInstance.get(`/oe/grvs/${id}`);
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.get(`/oe/grvs/${id}`, {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
   create: async (data: GoodsReceivedVoucherCreate): Promise<GoodsReceivedVoucher> => {
+    const { selectedCompanyId } = useAuthStore.getState();
     // Format the data to match backend expectations
     const formattedData = {
       supplier_id: data.supplier_id,
@@ -124,30 +164,41 @@ export const grvService = {
     };
     
     console.log('Sending GRV data:', formattedData);
-    const response = await axiosInstance.post('/oe/grvs', formattedData);
+    const response = await axiosInstance.post('/oe/grvs', formattedData, {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
   convertToAPInvoice: async (id: number, invoiceDetails: APTransactionCreate): Promise<APTransaction> => {
-    const response = await axiosInstance.post(`/oe/grvs/${id}/convert-to-ap-invoice`, invoiceDetails);
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.post(`/oe/grvs/${id}/convert-to-ap-invoice`, invoiceDetails, {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 };
 
-// Order Defaults API functions - tenant isolation handled by axiosInstance
+// Order Defaults API functions
 export const oeDefaultsService = {
   get: async (): Promise<OrderDefaults> => {
-    const response = await axiosInstance.get('/oe/defaults');
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.get('/oe/defaults', {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
   update: async (data: OrderDefaultsUpdate): Promise<OrderDefaults> => {
-    const response = await axiosInstance.put('/oe/defaults', data);
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.put('/oe/defaults', data, {
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 };
 
-// OE Reports API functions - tenant isolation handled by axiosInstance
+// OE Reports API functions
 export const oeReportsService = {
   getSalesOrdersReport: async (params: { 
     start_date?: string; 
@@ -155,7 +206,11 @@ export const oeReportsService = {
     customer_id?: number; 
     status?: string;
   }): Promise<SalesOrder[]> => {
-    const response = await axiosInstance.get('/oe/reports/sales-orders-listing', { params });
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.get('/oe/reports/sales-orders-listing', { 
+      params,
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
@@ -165,7 +220,11 @@ export const oeReportsService = {
     supplier_id?: number; 
     status?: string;
   }): Promise<PurchaseOrder[]> => {
-    const response = await axiosInstance.get('/oe/reports/purchase-orders-listing', { params });
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.get('/oe/reports/purchase-orders-listing', { 
+      params,
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 
@@ -175,7 +234,11 @@ export const oeReportsService = {
     supplier_id?: number; 
     status?: string;
   }): Promise<GoodsReceivedVoucher[]> => {
-    const response = await axiosInstance.get('/oe/reports/grv-listing', { params });
+    const { selectedCompanyId } = useAuthStore.getState();
+    const response = await axiosInstance.get('/oe/reports/grv-listing', { 
+      params,
+      headers: { 'X-Tenant-ID': selectedCompanyId?.toString() || '' }
+    });
     return response.data;
   },
 };

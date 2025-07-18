@@ -36,7 +36,7 @@ async def list_units_of_measure(
 async def get_unit_of_measure(
     uom_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE, permissions.INV_REPORTS_VIEW]))
 ):
     uom = crud.get_unit_of_measure(db, uom_id, current_user.company_id)
     if not uom:
@@ -48,7 +48,7 @@ async def update_unit_of_measure(
     uom_id: int,
     uom_in: schemas.UnitOfMeasureUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
     uom = crud.get_unit_of_measure(db, uom_id, current_user.company_id)
     if not uom:
@@ -59,7 +59,7 @@ async def update_unit_of_measure(
 async def delete_unit_of_measure(
     uom_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
     uom = crud.delete_unit_of_measure(db, uom_id, current_user.company_id)
     if not uom:
@@ -92,7 +92,7 @@ async def list_warehouses(
 async def get_warehouse(
     warehouse_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE, permissions.INV_REPORTS_VIEW]))
 ):
     warehouse = crud.get_warehouse(db, warehouse_id, current_user.company_id)
     if not warehouse:
@@ -104,7 +104,7 @@ async def update_warehouse(
     warehouse_id: int,
     warehouse_in: schemas.WarehouseUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
     warehouse = crud.get_warehouse(db, warehouse_id, current_user.company_id)
     if not warehouse:
@@ -115,7 +115,7 @@ async def update_warehouse(
 async def delete_warehouse(
     warehouse_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
     warehouse = crud.delete_warehouse(db, warehouse_id, current_user.company_id)
     if not warehouse:
@@ -149,7 +149,7 @@ async def list_inventory_items(
 async def get_inventory_item(
     item_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE, permissions.INV_REPORTS_VIEW]))
 ):
     item = crud.get_inventory_item(db, item_id, current_user.company_id)
     if not item:
@@ -161,7 +161,7 @@ async def update_inventory_item(
     item_id: int,
     item_in: schemas.InventoryItemUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
     item = crud.get_inventory_item(db, item_id, current_user.company_id)
     if not item:
@@ -172,7 +172,7 @@ async def update_inventory_item(
 async def delete_inventory_item(
     item_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
     item = crud.delete_inventory_item(db, item_id, current_user.company_id)
     if not item:
@@ -185,7 +185,7 @@ async def create_item_barcode(
     item_id: int,
     barcode: schemas.ItemBarcodeCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
     # Verify item exists
     item = crud.get_inventory_item(db, item_id, current_user.company_id)
@@ -202,7 +202,7 @@ async def create_item_barcode(
 async def list_item_barcodes(
     item_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE, permissions.INV_REPORTS_VIEW]))
 ):
     # Verify item exists
     item = crud.get_inventory_item(db, item_id, current_user.company_id)
@@ -215,7 +215,7 @@ async def list_item_barcodes(
 async def delete_item_barcode(
     barcode_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
     barcode = crud.delete_item_barcode(db, barcode_id, current_user.company_id)
     if not barcode:
@@ -227,7 +227,7 @@ async def delete_item_barcode(
 async def create_inventory_transaction_type(
     trans_type: schemas.InventoryTransactionTypeCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
     return crud.create_inventory_transaction_type(db, trans_type, current_user.company_id)
 
@@ -236,7 +236,7 @@ async def list_inventory_transaction_types(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE, permissions.INV_REPORTS_VIEW]))
 ):
     return crud.get_inventory_transaction_types(db, current_user.company_id, skip, limit)
 
@@ -244,7 +244,7 @@ async def list_inventory_transaction_types(
 async def get_inventory_transaction_type(
     type_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE, permissions.INV_REPORTS_VIEW]))
 ):
     trans_type = crud.get_inventory_transaction_type(db, type_id, current_user.company_id)
     if not trans_type:
@@ -256,7 +256,7 @@ async def update_inventory_transaction_type(
     type_id: int,
     type_in: schemas.InventoryTransactionTypeUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
     trans_type = crud.get_inventory_transaction_type(db, type_id, current_user.company_id)
     if not trans_type:
@@ -267,7 +267,7 @@ async def update_inventory_transaction_type(
 async def delete_inventory_transaction_type(
     type_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
     trans_type = crud.delete_inventory_transaction_type(db, type_id, current_user.company_id)
     if not trans_type:
@@ -278,7 +278,7 @@ async def delete_inventory_transaction_type(
 @router.get("/defaults", response_model=schemas.InventoryDefaults)
 async def get_inventory_defaults(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE, permissions.INV_REPORTS_VIEW]))
 ):
     defaults = crud.get_inventory_defaults(db, current_user.company_id)
     if not defaults:
@@ -289,7 +289,7 @@ async def get_inventory_defaults(
 async def update_inventory_defaults(
     defaults_in: schemas.InventoryDefaultsUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
     return crud.create_or_update_inventory_defaults(db, defaults_in, current_user.company_id)
 
@@ -309,7 +309,7 @@ async def process_inventory_adjustment(
 async def process_warehouse_transfer(
     transfer: schemas.WarehouseTransferCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_TRANSACTIONS_ADJUST]))
 ):
     return crud.process_warehouse_transfer(db, transfer, current_user.company_id, current_user.id)
 
@@ -320,7 +320,7 @@ async def list_inventory_count_sessions(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_TRANSACTIONS_ADJUST, permissions.INV_REPORTS_VIEW]))
 ):
     return crud.get_inventory_count_sessions(db, current_user.company_id, warehouse_id, skip, limit)
 
@@ -328,7 +328,7 @@ async def list_inventory_count_sessions(
 async def start_inventory_count(
     count_in: schemas.InventoryCountSessionCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_TRANSACTIONS_ADJUST]))
 ):
     return crud.start_inventory_count(db, count_in, current_user.company_id, count_in.warehouse_id)
 
@@ -336,7 +336,7 @@ async def start_inventory_count(
 async def get_inventory_count_session(
     session_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_TRANSACTIONS_ADJUST, permissions.INV_REPORTS_VIEW]))
 ):
     from sqlalchemy.orm import joinedload
     
@@ -354,7 +354,7 @@ async def get_inventory_count_session(
 async def get_inventory_count_lines(
     session_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_TRANSACTIONS_ADJUST, permissions.INV_REPORTS_VIEW]))
 ):
     from sqlalchemy.orm import joinedload
     
@@ -377,7 +377,7 @@ async def record_counted_quantities(
     session_id: int,
     counts: List[schemas.InventoryCountLineUpdate],
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_TRANSACTIONS_ADJUST]))
 ):
     crud.record_counted_quantities(db, session_id, counts, current_user.company_id)
     return {"detail": "Counted quantities recorded"}
@@ -386,7 +386,7 @@ async def record_counted_quantities(
 async def process_count_variances(
     session_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_TRANSACTIONS_ADJUST]))
 ):
     crud.process_inventory_count_variances(db, session_id, current_user.company_id, current_user.id)
     return {"detail": "Count variances processed"}
@@ -397,7 +397,7 @@ async def list_inventory_count_sessions(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_TRANSACTIONS_ADJUST, permissions.INV_REPORTS_VIEW]))
 ):
     return crud.get_inventory_count_sessions(db, current_user.company_id, warehouse_id, skip, limit)
 
@@ -411,7 +411,7 @@ async def list_inventory_transactions(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_REPORTS_VIEW]))
 ):
     from sqlalchemy.orm import joinedload
     
@@ -438,7 +438,7 @@ async def list_inventory_transactions(
 async def get_inventory_transaction(
     transaction_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_REPORTS_VIEW]))
 ):
     from sqlalchemy.orm import joinedload
     
@@ -474,7 +474,7 @@ async def get_inventory_movement_report(
     start_date: date = Query(...),
     end_date: date = Query(...),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_REPORTS_VIEW]))
 ):
     return crud.get_inventory_movement(db, current_user.company_id, item_id, warehouse_id, start_date, end_date)
 
@@ -482,7 +482,7 @@ async def get_inventory_movement_report(
 async def get_stock_quantity_report(
     warehouse_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_REPORTS_VIEW]))
 ):
     return crud.get_stock_quantities(db, current_user.company_id, warehouse_id)
 
@@ -490,7 +490,7 @@ async def get_stock_quantity_report(
 async def get_item_listing_report(
     active_only: bool = True,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_REPORTS_VIEW]))
 ):
     query = db.query(models.InventoryItem).filter(
         models.InventoryItem.company_id == current_user.company_id
@@ -519,7 +519,7 @@ async def get_item_listing_report(
 async def get_slow_movers_report(
     days: int = 90,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_REPORTS_VIEW]))
 ):
     # Placeholder - complex analysis required
     return {"message": "Slow movers report - to be implemented"}
@@ -529,7 +529,7 @@ async def get_sales_analysis_report(
     start_date: date = Query(...),
     end_date: date = Query(...),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_REPORTS_VIEW]))
 ):
     # Placeholder - requires sales data from OE module
     return {"message": "Sales analysis report - to be implemented after OE module"}
