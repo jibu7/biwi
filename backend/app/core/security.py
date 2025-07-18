@@ -28,7 +28,7 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(
     subject: Union[str, Any], 
-    user_type: UserType,
+    user_type: Union[UserType, str],
     company_id: Optional[int] = None,
     expires_delta: Optional[timedelta] = None,
     additional_claims: Optional[Dict[str, Any]] = None,
@@ -40,11 +40,14 @@ def create_access_token(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     
+    # Handle both enum and string user_type
+    user_type_value = user_type.value if hasattr(user_type, 'value') else user_type
+    
     # Base JWT claims
     to_encode = {
         "exp": expire, 
         "sub": str(subject),
-        "user_type": user_type.value,
+        "user_type": user_type_value,
     }
     
     # Add company_id for tenant users

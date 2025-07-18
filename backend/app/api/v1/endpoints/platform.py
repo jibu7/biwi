@@ -15,6 +15,71 @@ from app.core.context_managers import tenant_context
 
 router = APIRouter()
 
+@router.get("/stats")
+def get_platform_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """
+    Get platform-wide statistics for dashboard.
+    """
+    try:
+        # Count users by type - use string values to avoid enum issues
+        total_users = db.query(func.count(User.id)).scalar() or 0
+        platform_admins = db.query(func.count(User.id)).filter(
+            or_(
+                User.user_type == 'platform_admin',
+                User.user_type == 'PLATFORM_ADMIN'
+            )
+        ).scalar() or 0
+        company_admins = db.query(func.count(User.id)).filter(
+            or_(
+                User.user_type == 'company_admin',
+                User.user_type == 'COMPANY_ADMIN'
+            )
+        ).scalar() or 0
+        company_users = db.query(func.count(User.id)).filter(
+            or_(
+                User.user_type == 'company_user',
+                User.user_type == 'COMPANY_USER'
+            )
+        ).scalar() or 0
+        
+        # Active today (users who logged in today)
+        today = datetime.now().date()
+        active_today = db.query(func.count(User.id)).filter(
+            User.last_login >= today
+        ).scalar() or 0
+        
+        # Company stats - use string values to avoid enum issues
+        total_companies = db.query(func.count(Company.id)).filter(
+            Company.is_deleted == False
+        ).scalar() or 0
+        active_companies = db.query(func.count(Company.id)).filter(
+            Company.is_active == True,
+            Company.is_deleted == False,
+            or_(
+                Company.subscription_status == 'active',
+                Company.subscription_status == 'ACTIVE'
+            )
+        ).scalar() or 0
+        
+        return {
+            "total_users": total_users,
+            "platform_admins": platform_admins,
+            "company_admins": company_admins,
+            "company_users": company_users,
+            "active_today": active_today,
+            "total_companies": total_companies,
+            "active_companies": active_companies,
+        }
+    except Exception as e:
+        print(f"Error in get_platform_stats: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get platform stats: {str(e)}"
+        )
+
 @router.get("/dashboard/stats", response_model=dict)
 def get_dashboard_stats(
     db: Session = Depends(get_db),
@@ -22,35 +87,66 @@ def get_dashboard_stats(
 ) -> Any:
     """Get platform dashboard statistics."""
     try:
+        # Rollback any pending transaction to start fresh
+        db.rollback()
+        
         # Get counts
         total_companies = db.query(Company).count()
+        
+        # Count companies by subscription status - use string values to avoid enum issues
         active_companies = db.query(Company).filter(
-            Company.subscription_status == SubscriptionStatus.ACTIVE
+            or_(
+                Company.subscription_status == 'active',
+                Company.subscription_status == 'ACTIVE'
+            )
         ).count()
+        
+        suspended_companies = db.query(Company).filter(
+            or_(
+                Company.subscription_status == 'suspended',
+                Company.subscription_status == 'SUSPENDED'
+            )
+        ).count()
+        
+        trial_companies = db.query(Company).filter(
+            or_(
+                Company.subscription_status == 'trial',
+                Company.subscription_status == 'TRIAL'
+            )
+        ).count()
+        
+        # Count users by type - use string values to avoid enum issues
         total_users = db.query(User).filter(
-            User.user_type != UserType.PLATFORM_ADMIN
+            and_(
+                User.user_type != 'platform_admin',
+                User.user_type != 'PLATFORM_ADMIN'
+            )
+        ).count()
+        
+        platform_admins = db.query(User).filter(
+            or_(
+                User.user_type == 'platform_admin',
+                User.user_type == 'PLATFORM_ADMIN'
+            )
         ).count()
         
         # Get transaction counts (last 30 days)
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        total_transactions = db.query(GLJournalEntry).filter(
-            GLJournalEntry.created_at >= thirty_days_ago
-        ).count()
-        
+        try:
+            total_transactions = db.query(GLJournalEntry).filter(
+                GLJournalEntry.created_at >= thirty_days_ago
+            ).count()
+        except Exception:
+            total_transactions = 0
+            
         return {
             "total_companies": total_companies,
             "active_companies": active_companies,
-            "suspended_companies": db.query(Company).filter(
-                Company.subscription_status == SubscriptionStatus.SUSPENDED
-            ).count(),
-            "trial_companies": db.query(Company).filter(
-                Company.subscription_status == SubscriptionStatus.TRIAL
-            ).count(),
+            "suspended_companies": suspended_companies,
+            "trial_companies": trial_companies,
             "total_users": total_users,
             "total_transactions": total_transactions,
-            "platform_admins": db.query(User).filter(
-                User.user_type == UserType.PLATFORM_ADMIN
-            ).count(),
+            "platform_admins": platform_admins,
         }
     except Exception as e:
         raise HTTPException(
@@ -69,6 +165,9 @@ def get_all_companies(
 ) -> Any:
     """Get all companies with statistics."""
     try:
+        # Rollback any pending transaction to start fresh
+        db.rollback()
+        
         query = db.query(Company)
         
         # Apply filters
@@ -81,32 +180,49 @@ def get_all_companies(
             )
         
         if company_status:
-            query = query.filter(Company.subscription_status == company_status)
+            # Use string comparison to avoid enum issues
+            query = query.filter(
+                or_(
+                    Company.subscription_status == company_status,
+                    Company.subscription_status == company_status.upper(),
+                    Company.subscription_status == company_status.lower()
+                )
+            )
         
         companies = query.offset(skip).limit(limit).all()
         
         # Build response with stats
         result = []
         for company in companies:
-            # Get user count
-            user_count = db.query(User).filter(
-                User.company_id == company.id,
-                User.is_active == True
-            ).count()
+            try:
+                # Get user count
+                user_count = db.query(User).filter(
+                    User.company_id == company.id,
+                    User.is_active == True
+                ).count()
+            except Exception:
+                user_count = 0
             
-            # Get active users in last 30 days
-            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-            active_users_30d = db.query(User).filter(
-                User.company_id == company.id,
-                User.is_active == True,
-                User.last_login >= thirty_days_ago
-            ).count()
+            try:
+                # Get active users in last 30 days
+                thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+                active_users_30d = db.query(User).filter(
+                    User.company_id == company.id,
+                    User.is_active == True,
+                    User.last_login >= thirty_days_ago
+                ).count()
+            except Exception:
+                active_users_30d = 0
             
-            # Get transaction count (last 30 days)
-            transaction_count = db.query(GLJournalEntry).filter(
-                GLJournalEntry.company_id == company.id,
-                GLJournalEntry.created_at >= thirty_days_ago
-            ).count()
+            # Get transaction count (last 30 days) - handle missing columns gracefully
+            try:
+                transaction_count = db.query(GLJournalEntry).filter(
+                    GLJournalEntry.company_id == company.id,
+                    GLJournalEntry.created_at >= thirty_days_ago
+                ).count()
+            except Exception as e:
+                # If there's an issue with the GL table (missing columns, etc), default to 0
+                transaction_count = 0
             
             result.append({
                 "company": {
@@ -114,13 +230,13 @@ def get_all_companies(
                     "name": company.name,
                     "code": company.code,
                     "primary_contact_email": company.primary_contact_email,
-                    "subscription_status": company.subscription_status.value,
+                    "subscription_status": str(company.subscription_status),  # Convert to string safely
                     "subscription_plan": company.subscription_plan,
                     "subscription_expires": company.subscription_expires.isoformat() if company.subscription_expires else None,
                     "storage_limit_gb": company.storage_limit_gb,
                     "user_limit": company.user_limit,
                     "is_active": company.is_active,
-                    "created_at": company.created_at.isoformat()
+                    "created_at": company.created_at.isoformat() if company.created_at else None
                 },
                 "user_count": user_count,
                 "active_users_30d": active_users_30d,
@@ -131,6 +247,7 @@ def get_all_companies(
         return result
         
     except Exception as e:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching companies: {str(e)}"
@@ -224,37 +341,55 @@ def get_all_users(
     skip: int = 0,
     limit: int = 100,
     company_id: Optional[int] = None,
+    search: Optional[str] = None,
+    user_type: Optional[str] = None,
     current_user: User = Depends(get_current_platform_admin),
 ) -> Any:
     """Get all users across companies."""
     try:
-        query = db.query(User).filter(User.user_type != UserType.PLATFORM_ADMIN)
+        # By default, include both platform and non-platform users
+        query = db.query(User)
         
+        # Apply user type filter
+        if user_type:
+            if user_type == "platform_admin":
+                query = query.filter(User.user_type == UserType.PLATFORM_ADMIN)
+            else:
+                query = query.filter(User.user_type == user_type)
+                
+        # Filter by company if specified
         if company_id:
             query = query.filter(User.company_id == company_id)
+            
+        # Apply search filter if provided
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    User.email.ilike(search_term),
+                    User.full_name.ilike(search_term)
+                )
+            )
         
         users = query.offset(skip).limit(limit).all()
         
         result = []
         for user in users:
-            company_info = None
+            company_name = None
             if user.company_id:
                 company = db.query(Company).filter(Company.id == user.company_id).first()
                 if company:
-                    company_info = {
-                        "id": company.id,
-                        "name": company.name,
-                        "code": company.code
-                    }
+                    company_name = company.name
             
+            # Format to match what frontend expects
             result.append({
                 "id": user.id,
                 "email": user.email,
                 "full_name": user.full_name,
                 "is_active": user.is_active,
-                "is_superuser": user.is_superuser,
-                "user_type": user.user_type.value,
-                "company": company_info,
+                "user_type": user.user_type.value if hasattr(user.user_type, 'value') else user.user_type,
+                "company_id": user.company_id,
+                "company_name": company_name,
                 "last_login": user.last_login.isoformat() if user.last_login else None,
                 "created_at": user.created_at.isoformat()
             })
@@ -479,3 +614,53 @@ def suspend_company(
     db.commit()
     
     return company
+
+@router.delete("/companies/{company_id}")
+def delete_company(
+    company_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """
+    Soft delete a company (platform admin only).
+    """
+    try:
+        company = db.query(Company).filter(
+            Company.id == company_id,
+            Company.is_deleted == False
+        ).first()
+        
+        if not company:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Company not found",
+            )
+        
+        # Soft delete
+        company.is_deleted = True
+        company.deleted_at = datetime.utcnow()
+        company.is_active = False
+        db.commit()
+        
+        # Log company deletion
+        db.add(PlatformAuditLog(
+            user_id=current_user.id,
+            company_id=company.id,
+            action="company_deleted",
+            resource_type="company",
+            resource_id=company.id,
+            details={"name": company.name}
+        ))
+        db.commit()
+        
+        return {"message": "Company deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in delete_company: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete company: {str(e)}"
+        )

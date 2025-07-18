@@ -216,7 +216,6 @@ export default function PlatformUsersPage() {
                       {user.company_name ? (
                         <div>
                           <div className="font-medium">{user.company_name}</div>
-                          <div className="text-sm text-gray-500">{user.company_code}</div>
                         </div>
                       ) : (
                         <span className="text-gray-400">No Company</span>
