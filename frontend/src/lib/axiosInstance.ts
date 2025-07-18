@@ -39,12 +39,6 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 403) {
       // Handle permission errors
       console.error('Permission denied:', error.response.data.detail);
-      
-      // If it's a company access violation, we could emit an event or show a toast
-      if (error.response.data.detail?.includes('company') || 
-          error.response.data.detail?.includes('tenant')) {
-        console.warn('Company access violation detected');
-      }
     }
     
     return Promise.reject(error);

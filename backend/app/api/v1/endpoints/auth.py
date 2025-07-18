@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
-from app.models.core import User, UserType
+from app.models.core import User, UserType, Company
 from app.core.security import create_access_token, verify_password, get_current_active_user
 from app.config import settings
 from app.schemas.token import Token
@@ -59,14 +59,46 @@ def login_access_token(
 
 @router.get("/me", response_model=dict)
 def read_current_user(
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
 ) -> Any:
     """Get current user information"""
+    # Get user's company information
+    company = None
+    if current_user.company_id:
+        company = db.query(Company).filter(Company.id == current_user.company_id).first()
+    
     return {
         "id": current_user.id,
         "email": current_user.email,
         "full_name": current_user.full_name,
         "user_type": current_user.user_type,
         "company_id": current_user.company_id,
-        "is_active": current_user.is_active
+        "is_active": current_user.is_active,
+        "is_superuser": current_user.is_superuser,
+        "company": {
+            "id": company.id if company else None,
+            "name": company.name if company else None,
+            "is_active": company.is_active if company else None
+        } if company else None
     }
+
+@router.get("/me/roles", response_model=list)
+def read_current_user_roles(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+) -> Any:
+    """Get current user's roles"""
+    from app.crud.core import get_user_roles
+    
+    roles = get_user_roles(db, current_user.id)
+    return [
+        {
+            "id": role.id,
+            "name": role.name,
+            "description": role.description,
+            "permissions": role.permissions,
+            "company_id": role.company_id
+        }
+        for role in roles
+    ]

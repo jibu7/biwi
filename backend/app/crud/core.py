@@ -69,7 +69,8 @@ def delete_user(db: Session, user_id: int) -> Optional[models.User]:
 def get_user_roles(db: Session, user_id: int) -> List[models.Role]:
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if user:
-        return user.roles
+        # Get the actual Role objects through the UserRole association
+        return [user_role.role for user_role in user.roles]
     return []
 
 # Role CRUD
