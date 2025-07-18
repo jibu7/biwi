@@ -1,27 +1,31 @@
 from typing import Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from datetime import date
 from app import crud, models, schemas
 from app.core.permissions import PermissionChecker, AP_SETUP_MANAGE, AP_TRANSACTIONS_POST, AP_REPORTS_VIEW
 from app.core.security import get_current_active_user
 from app.database.database import get_db
+from app.middleware.tenant import get_current_tenant_id
 
 router = APIRouter()
 
 # Supplier endpoints
 @router.post("/suppliers", response_model=schemas.Supplier, dependencies=[Depends(PermissionChecker([AP_SETUP_MANAGE]))])
-def create_supplier(
+async def create_supplier(
     *,
+    request: Request,
     db: Session = Depends(get_db),
     supplier_in: schemas.SupplierCreate,
     current_user: models.User = Depends(get_current_active_user),
 ) -> Any:
     """Create new supplier"""
-    return crud.ap.create_supplier(db, supplier=supplier_in, company_id=current_user.company_id)
+    company_id = get_current_tenant_id(request)
+    return crud.ap.create_supplier(db, supplier=supplier_in, company_id=company_id)
 
 @router.get("/suppliers", response_model=List[schemas.Supplier])
-def read_suppliers(
+async def read_suppliers(
+    request: Request,
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
@@ -29,32 +33,37 @@ def read_suppliers(
     current_user: models.User = Depends(PermissionChecker([AP_SETUP_MANAGE, AP_TRANSACTIONS_POST, AP_REPORTS_VIEW])),
 ) -> Any:
     """Retrieve suppliers"""
+    company_id = get_current_tenant_id(request)
     return crud.ap.get_suppliers_by_company(
-        db, company_id=current_user.company_id, skip=skip, limit=limit, include_inactive=include_inactive
+        db, company_id=company_id, skip=skip, limit=limit, include_inactive=include_inactive
     )
 
 @router.get("/suppliers/{supplier_id}", response_model=schemas.Supplier)
-def read_supplier(
+async def read_supplier(
     supplier_id: int,
+    request: Request,
     current_user: models.User = Depends(PermissionChecker([AP_SETUP_MANAGE, AP_TRANSACTIONS_POST, AP_REPORTS_VIEW])),
     db: Session = Depends(get_db),
 ) -> Any:
     """Get supplier by ID"""
-    supplier = crud.ap.get_supplier(db, supplier_id=supplier_id, company_id=current_user.company_id)
+    company_id = get_current_tenant_id(request)
+    supplier = crud.ap.get_supplier(db, supplier_id=supplier_id, company_id=company_id)
     if not supplier:
         raise HTTPException(status_code=404, detail="Supplier not found")
     return supplier
 
 @router.put("/suppliers/{supplier_id}", response_model=schemas.Supplier, dependencies=[Depends(PermissionChecker([AP_SETUP_MANAGE]))])
-def update_supplier(
+async def update_supplier(
     *,
+    request: Request,
     db: Session = Depends(get_db),
     supplier_id: int,
     supplier_in: schemas.SupplierUpdate,
     current_user: models.User = Depends(get_current_active_user),
 ) -> Any:
     """Update supplier"""
-    supplier = crud.ap.get_supplier(db, supplier_id=supplier_id, company_id=current_user.company_id)
+    company_id = get_current_tenant_id(request)
+    supplier = crud.ap.get_supplier(db, supplier_id=supplier_id, company_id=company_id)
     if not supplier:
         raise HTTPException(status_code=404, detail="Supplier not found")
     return crud.ap.update_supplier(db, supplier_db_obj=supplier, supplier_in=supplier_in)
@@ -158,19 +167,22 @@ def update_ap_defaults(
 
 # AP Transaction endpoints
 @router.post("/transactions", response_model=schemas.APTransaction, dependencies=[Depends(PermissionChecker([AP_TRANSACTIONS_POST]))])
-def create_ap_transaction(
+async def create_ap_transaction(
     *,
+    request: Request,
     db: Session = Depends(get_db),
     transaction_in: schemas.APTransactionCreate,
     current_user: models.User = Depends(get_current_active_user),
 ) -> Any:
     """Create AP transaction (Supplier Invoice, Payment, Debit Note)"""
+    company_id = get_current_tenant_id(request)
     return crud.ap.create_ap_transaction(
-        db, ap_transaction_in=transaction_in, company_id=current_user.company_id, user_id=current_user.id
+        db, ap_transaction_in=transaction_in, company_id=company_id, user_id=current_user.id
     )
 
 @router.get("/transactions", response_model=List[schemas.APTransaction], dependencies=[Depends(PermissionChecker([AP_REPORTS_VIEW]))])
-def read_ap_transactions(
+async def read_ap_transactions(
+    request: Request,
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
@@ -181,8 +193,9 @@ def read_ap_transactions(
     current_user: models.User = Depends(get_current_active_user),
 ) -> Any:
     """Retrieve AP transactions"""
+    company_id = get_current_tenant_id(request)
     return crud.ap.get_ap_transactions(
-        db, company_id=current_user.company_id, skip=skip, limit=limit,
+        db, company_id=company_id, skip=skip, limit=limit,
         supplier_id=supplier_id
     )
 
