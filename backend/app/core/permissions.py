@@ -321,3 +321,61 @@ def require_permission(required_permission: str):
 
 def get_all_permissions() -> List[str]:
     return ALL_PERMISSIONS_LIST
+
+# Create a permissions object for dot notation access
+class PermissionsNamespace:
+    # Company management
+    COMPANY_CREATE = "company:create"
+    COMPANY_READ = "company:read" 
+    COMPANY_UPDATE = "company:update"
+    COMPANY_DELETE = "company:delete"
+    
+    # User management
+    USER_CREATE = "user:create"
+    USER_READ = "user:read"
+    USER_UPDATE = "user:update"
+    USER_DELETE = "user:delete"
+    USER_MANAGE_ROLES = "user:manage_roles"
+    
+    # Role management
+    ROLE_CREATE = "role:create"
+    ROLE_READ = "role:read"
+    ROLE_UPDATE = "role:update"
+    ROLE_DELETE = "role:delete"
+    ROLE_MANAGE_PERMISSIONS = "role:manage_permissions"
+    
+    # GL permissions
+    GL_SETUP_MANAGE = "gl:setup_manage"
+    GL_JOURNAL_POST = "gl:journal_post"
+    GL_REPORTS_VIEW = "gl:reports_view"
+    
+    # AR permissions
+    AR_SETUP_MANAGE = "ar:setup_manage"
+    AR_TRANSACTIONS_POST = "ar:transactions_post" 
+    AR_REPORTS_VIEW = "ar:reports_view"
+    AR_WRITEOFF_APPROVE = "ar:writeoff_approve"
+    
+    # AP permissions
+    AP_SETUP_MANAGE = "ap:setup_manage"
+    AP_TRANSACTIONS_POST = "ap:transactions_post"
+    AP_REPORTS_VIEW = "ap:reports_view"
+    
+    # Inventory permissions
+    INV_SETUP_MANAGE = "inv:setup_manage"
+    INV_TRANSACTIONS_ADJUST = "inv:transactions_adjust"
+    INV_REPORTS_VIEW = "inv:reports_view"
+    
+    # OE permissions
+    OE_SETUP_MANAGE = "oe:setup_manage"
+    OE_SALES_ORDERS_MANAGE = "oe:sales_orders_manage"
+    OE_PURCHASE_ORDERS_MANAGE = "oe:purchase_orders_manage"
+    OE_GRV_PROCESS = "oe:grv_process"
+    OE_REPORTS_VIEW = "oe:reports_view"
+    
+    # Common permissions
+    COMMON_SETUP_CURRENCIES = "common:setup_currencies"
+    COMMON_SETUP_TAXES = "common:setup_taxes"
+    COMMON_SETUP_BRANCHES = "common:setup_branches"
+
+# Create a module-level permissions object for dot notation access
+permissions = PermissionsNamespace()

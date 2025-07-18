@@ -179,3 +179,54 @@ async def get_current_active_superuser(
             detail="The user doesn't have enough privileges",
         )
     return current_user
+
+class TenantPermissionChecker:
+    """
+    Permission checker that uses tenant context from request middleware.
+    """
+    def __init__(self, required_permissions: list[str], require_all: bool = False):
+        """
+        Initialize tenant permission checker.
+        
+        Args:
+            required_permissions: List of permissions to check
+            require_all: If True, user must have ALL permissions (AND logic).
+                        If False, user must have AT LEAST ONE permission (OR logic).
+                        Default is False for backward compatibility.
+        """
+        self.required_permissions = required_permissions
+        self.require_all = require_all
+    
+    async def __call__(
+        self,
+        user: User = Depends(get_current_active_user),
+        db: Session = Depends(get_db)
+    ):
+        # Platform admins and superusers have all permissions
+        if user.is_superuser or user.user_type == UserType.PLATFORM_ADMIN:
+            return user
+        
+        # Get user's permissions from all roles
+        user_permissions = []
+        for user_role in user.roles:
+            role = user_role.role
+            if role and role.permissions:
+                user_permissions.extend(role.permissions)
+        
+        if self.require_all:
+            # Check if user has ALL required permissions (AND logic)
+            for permission in self.required_permissions:
+                if permission not in user_permissions:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Not enough permissions"
+                    )
+        else:
+            # Check if user has AT LEAST ONE required permission (OR logic)
+            if not any(permission in user_permissions for permission in self.required_permissions):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Not enough permissions"
+                )
+        
+        return user

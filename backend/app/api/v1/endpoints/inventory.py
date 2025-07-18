@@ -1,31 +1,36 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
 from app import models, schemas, crud
 from app.database.database import get_db
-from app.core.security import get_current_active_user
-from app.core.permissions import PermissionChecker, INV_SETUP_MANAGE, INV_TRANSACTIONS_ADJUST, INV_REPORTS_VIEW
+from app.core.security import get_current_active_user, TenantPermissionChecker
+from app.middleware.tenant import get_current_tenant_id
+from app.core import permissions
 
 router = APIRouter()
 
 # Unit of Measure endpoints
 @router.post("/units-of-measure", response_model=schemas.UnitOfMeasure)
 async def create_unit_of_measure(
+    request: Request,
     uom: schemas.UnitOfMeasureCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
-    return crud.create_unit_of_measure(db, uom, current_user.company_id)
+    company_id = get_current_tenant_id(request)
+    return crud.create_unit_of_measure(db, uom, company_id)
 
 @router.get("/units-of-measure", response_model=List[schemas.UnitOfMeasure])
 async def list_units_of_measure(
+    request: Request,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE, permissions.INV_REPORTS_VIEW]))
 ):
-    return crud.get_units_of_measure(db, current_user.company_id, skip, limit)
+    company_id = get_current_tenant_id(request)
+    return crud.get_units_of_measure(db, company_id, skip, limit)
 
 @router.get("/units-of-measure/{uom_id}", response_model=schemas.UnitOfMeasure)
 async def get_unit_of_measure(
@@ -64,20 +69,24 @@ async def delete_unit_of_measure(
 # Warehouse endpoints
 @router.post("/warehouses", response_model=schemas.Warehouse)
 async def create_warehouse(
+    request: Request,
     warehouse: schemas.WarehouseCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
-    return crud.create_warehouse(db, warehouse, current_user.company_id)
+    company_id = get_current_tenant_id(request)
+    return crud.create_warehouse(db, warehouse, company_id)
 
 @router.get("/warehouses", response_model=List[schemas.Warehouse])
 async def list_warehouses(
+    request: Request,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE, permissions.INV_REPORTS_VIEW]))
 ):
-    return crud.get_warehouses(db, current_user.company_id, skip, limit)
+    company_id = get_current_tenant_id(request)
+    return crud.get_warehouses(db, company_id, skip, limit)
 
 @router.get("/warehouses/{warehouse_id}", response_model=schemas.Warehouse)
 async def get_warehouse(
@@ -116,20 +125,25 @@ async def delete_warehouse(
 # Inventory Item endpoints
 @router.post("/items", response_model=schemas.InventoryItem)
 async def create_inventory_item(
+    request: Request,
     item: schemas.InventoryItemCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_SETUP_MANAGE]))
 ):
-    return crud.create_inventory_item(db, item, current_user.company_id)
+    company_id = get_current_tenant_id(request)
+    return crud.inventory.create_inventory_item(db, item, company_id)
 
 @router.get("/items", response_model=List[schemas.InventoryItem])
 async def list_inventory_items(
+    request: Request,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_SETUP_MANAGE, INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(get_current_active_user)
 ):
-    return crud.get_inventory_items(db, current_user.company_id, skip, limit)
+    company_id = get_current_tenant_id(request)
+    items = crud.inventory.get_inventory_items_by_company(db, company_id, skip, limit)
+    return items
 
 @router.get("/items/{item_id}", response_model=schemas.InventoryItem)
 async def get_inventory_item(
@@ -282,11 +296,13 @@ async def update_inventory_defaults(
 # Inventory Adjustment endpoints
 @router.post("/adjustments", response_model=schemas.InventoryTransaction)
 async def process_inventory_adjustment(
+    request: Request,
     adjustment: schemas.InventoryAdjustmentCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_TRANSACTIONS_ADJUST]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_TRANSACTIONS_ADJUST]))
 ):
-    return crud.process_inventory_adjustment(db, adjustment, current_user.company_id, current_user.id)
+    company_id = get_current_tenant_id(request)
+    return crud.inventory.process_inventory_adjustment(db, adjustment, company_id, current_user.id)
 
 # Warehouse Transfer endpoints
 @router.post("/warehouse-transfers", response_model=List[schemas.InventoryTransaction])
@@ -440,14 +456,16 @@ async def get_inventory_transaction(
     return transaction
 
 # Inventory Reports endpoints
-@router.get("/reports/valuation", response_model=List[schemas.InventoryValuationItem])
-async def get_inventory_valuation_report(
+@router.get("/reports/valuation")
+async def get_inventory_valuation(
+    request: Request,
     warehouse_id: Optional[int] = None,
-    as_of_date: date = Query(default=date.today()),
+    as_of_date: Optional[date] = None,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([INV_REPORTS_VIEW]))
+    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_REPORTS_VIEW]))
 ):
-    return crud.get_inventory_valuation(db, current_user.company_id, warehouse_id, as_of_date)
+    company_id = get_current_tenant_id(request)
+    return crud.inventory.get_inventory_valuation(db, company_id, warehouse_id, as_of_date)
 
 @router.get("/reports/movement", response_model=List[schemas.InventoryTransaction])
 async def get_inventory_movement_report(
