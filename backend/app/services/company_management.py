@@ -205,8 +205,8 @@ class CompanyManagementService:
         """
         default_roles = [
             {
-                "name": "Administrator",
-                "description": "Full access to all company features",
+                "name": "Company Administrator",
+                "description": "Full access to all company features and settings",
                 "permissions": ALL_PERMISSIONS_LIST
             },
             {
@@ -216,7 +216,7 @@ class CompanyManagementService:
                     "gl:setup_manage", "gl:journal_post", "gl:reports_view",
                     "ar:setup_manage", "ar:transactions_post", "ar:reports_view",
                     "ap:setup_manage", "ap:transactions_post", "ap:reports_view",
-                    "accounting_periods:manage"
+                    "accounting_periods:manage", "company:read", "users:read"
                 ]
             },
             {
@@ -229,20 +229,30 @@ class CompanyManagementService:
                 ]
             },
             {
+                "name": "Purchasing Manager",
+                "description": "Access to purchasing and vendor management",
+                "permissions": [
+                    "ap:setup_manage", "ap:transactions_post", "ap:reports_view",
+                    "oe:purchase_orders_manage", "oe:grv_process", "oe:reports_view",
+                    "inv:reports_view", "company:read", "users:read"
+                ]
+            },
+            {
                 "name": "Inventory Manager",
                 "description": "Access to inventory management features",
                 "permissions": [
                     "inv:setup_manage", "inv:transactions_adjust", "inv:reports_view",
                     "oe:purchase_orders_manage", "oe:grv_process", "oe:reports_view",
-                    "company:read"
+                    "company:read", "users:read"
                 ]
             },
             {
-                "name": "Read Only",
-                "description": "View-only access to reports and data",
+                "name": "Data Entry Clerk",
+                "description": "Basic data entry permissions for daily transactions",
                 "permissions": [
-                    "gl:reports_view", "ar:reports_view", "ap:reports_view",
-                    "inv:reports_view", "oe:reports_view", "company:read"
+                    "gl:journal_post", "ar:transactions_post", "ap:transactions_post",
+                    "inv:transactions_adjust", "oe:sales_orders_manage", "oe:purchase_orders_manage",
+                    "company:read", "users:read", "gl:reports_view", "ar:reports_view", "ap:reports_view"
                 ]
             }
         ]
