@@ -4,7 +4,7 @@ from typing import List, Optional
 from datetime import date
 from app import crud, models, schemas
 from app.api import deps
-from app.core.permissions import PermissionChecker, Permission
+from app.core.permissions import PermissionChecker, GL_SETUP_MANAGE, GL_JOURNAL_POST, GL_REPORTS_VIEW
 
 router = APIRouter()
 
@@ -14,7 +14,8 @@ def get_company_id(
 ) -> int:
     """Get the effective company ID for the request"""
     if current_user.is_superuser and x_company_id:
-        # Verify the company exists - this would need a company validation check
+        # Verify the company exists
+        # This would need a company validation check
         return x_company_id
     return current_user.company_id
 
@@ -24,12 +25,11 @@ async def create_gl_account(
     *,
     db: Session = Depends(deps.get_db),
     account_in: schemas.GLAccountCreate,
-    current_user: models.User = Depends(deps.get_current_active_user),
-    company_id: int = Depends(get_company_id),
-    _: bool = Depends(PermissionChecker([Permission.GL_ACCOUNT_CREATE]))
+    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE])),
+    company_id: int = Depends(get_company_id)
 ):
     """Create new GL account with company isolation"""
-    return crud.gl.gl_account.create_with_company(
+    return crud.gl_account.create_with_company(
         db=db, obj_in=account_in, company_id=company_id
     )
 
@@ -40,12 +40,11 @@ async def list_gl_accounts(
     limit: int = Query(100, ge=1, le=1000),
     account_type: Optional[str] = Query(None),
     is_active: Optional[bool] = Query(True),
-    current_user: models.User = Depends(deps.get_current_active_user),
-    company_id: int = Depends(get_company_id),
-    _: bool = Depends(PermissionChecker([Permission.GL_ACCOUNT_READ]))
+    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE, GL_REPORTS_VIEW])),
+    company_id: int = Depends(get_company_id)
 ):
     """List GL accounts for the company"""
-    return crud.gl.gl_account.get_by_company(
+    return crud.gl_account.get_by_company(
         db=db, 
         company_id=company_id,
         skip=skip,
@@ -59,12 +58,11 @@ async def get_gl_account(
     *,
     db: Session = Depends(deps.get_db),
     account_id: int,
-    current_user: models.User = Depends(deps.get_current_active_user),
-    company_id: int = Depends(get_company_id),
-    _: bool = Depends(PermissionChecker([Permission.GL_ACCOUNT_READ]))
+    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE, GL_REPORTS_VIEW])),
+    company_id: int = Depends(get_company_id)
 ):
     """Get specific GL account with company check"""
-    account = crud.gl.gl_account.get_with_company_check(
+    account = crud.gl_account.get_with_company_check(
         db=db, id=account_id, company_id=company_id
     )
     if not account:
@@ -80,12 +78,11 @@ async def update_gl_account(
     db: Session = Depends(deps.get_db),
     account_id: int,
     account_in: schemas.GLAccountUpdate,
-    current_user: models.User = Depends(deps.get_current_active_user),
-    company_id: int = Depends(get_company_id),
-    _: bool = Depends(PermissionChecker([Permission.GL_ACCOUNT_UPDATE]))
+    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE])),
+    company_id: int = Depends(get_company_id)
 ):
     """Update GL account with company validation"""
-    account = crud.gl.gl_account.get_with_company_check(
+    account = crud.gl_account.get_with_company_check(
         db=db, id=account_id, company_id=company_id
     )
     if not account:
@@ -94,7 +91,7 @@ async def update_gl_account(
             detail="GL Account not found"
         )
     
-    return crud.gl.gl_account.update_with_company_check(
+    return crud.gl_account.update_with_company_check(
         db=db, db_obj=account, obj_in=account_in, company_id=company_id
     )
 
@@ -103,12 +100,11 @@ async def delete_gl_account(
     *,
     db: Session = Depends(deps.get_db),
     account_id: int,
-    current_user: models.User = Depends(deps.get_current_active_user),
-    company_id: int = Depends(get_company_id),
-    _: bool = Depends(PermissionChecker([Permission.GL_ACCOUNT_DELETE]))
+    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE])),
+    company_id: int = Depends(get_company_id)
 ):
     """Delete GL account with company validation"""
-    account = crud.gl.gl_account.delete_with_company_check(
+    account = crud.gl_account.delete_with_company_check(
         db=db, id=account_id, company_id=company_id
     )
     return {"success": True, "deleted_id": account_id}
@@ -119,12 +115,11 @@ async def create_journal_entry(
     *,
     db: Session = Depends(deps.get_db),
     journal_in: schemas.GLJournalEntryCreate,
-    current_user: models.User = Depends(deps.get_current_active_user),
-    company_id: int = Depends(get_company_id),
-    _: bool = Depends(PermissionChecker([Permission.GL_JOURNAL_POST]))
+    current_user: models.User = Depends(PermissionChecker([GL_JOURNAL_POST])),
+    company_id: int = Depends(get_company_id)
 ):
     """Create and optionally post journal entry"""
-    return crud.gl.create_journal_entry(
+    return crud.create_journal_entry(
         db=db,
         entry_in=journal_in,
         company_id=company_id,
@@ -139,12 +134,11 @@ async def list_journal_entries(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     status: Optional[str] = Query(None),
-    current_user: models.User = Depends(deps.get_current_active_user),
-    company_id: int = Depends(get_company_id),
-    _: bool = Depends(PermissionChecker([Permission.GL_REPORTS_VIEW]))
+    current_user: models.User = Depends(PermissionChecker([GL_REPORTS_VIEW])),
+    company_id: int = Depends(get_company_id)
 ):
     """List journal entries for the company"""
-    return crud.gl.get_journal_entries_by_company(
+    return crud.get_journal_entries_by_company(
         db=db,
         company_id=company_id,
         skip=skip,
@@ -160,12 +154,11 @@ async def get_trial_balance(
     db: Session = Depends(deps.get_db),
     end_date: date = Query(..., description="As of date for trial balance"),
     only_active: bool = Query(True, description="Include only active accounts"),
-    current_user: models.User = Depends(deps.get_current_active_user),
-    company_id: int = Depends(get_company_id),
-    _: bool = Depends(PermissionChecker([Permission.GL_REPORTS_VIEW]))
+    current_user: models.User = Depends(PermissionChecker([GL_REPORTS_VIEW])),
+    company_id: int = Depends(get_company_id)
 ):
     """Get trial balance for the company"""
-    trial_balance = crud.gl.calculate_trial_balance(
+    trial_balance = crud.calculate_trial_balance(
         db=db,
         company_id=company_id,
         end_date=end_date,
