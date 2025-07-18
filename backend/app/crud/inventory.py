@@ -6,6 +6,15 @@ from decimal import Decimal
 from fastapi import HTTPException
 from app import models, schemas
 from app.crud import gl as crud_gl
+from app.core.tenant_db import TenantAwareRepository
+from app.middleware.tenant import get_current_tenant_id
+
+# Tenant-aware repositories
+class InventoryItemRepository(TenantAwareRepository):
+    model = models.InventoryItem
+
+class WarehouseRepository(TenantAwareRepository):
+    model = models.Warehouse
 
 # Unit of Measure CRUD
 def create_unit_of_measure(db: Session, uom: schemas.UnitOfMeasureCreate, company_id: int) -> models.UnitOfMeasure:
@@ -103,8 +112,15 @@ def delete_warehouse(db: Session, warehouse_id: int, company_id: int) -> Optiona
         db.commit()
     return warehouse
 
-# Inventory Item CRUD
 def create_inventory_item(db: Session, item: schemas.InventoryItemCreate, company_id: int) -> models.InventoryItem:
+    # Validate UOM belongs to same company
+    uom = db.query(models.UnitOfMeasure).filter(
+        models.UnitOfMeasure.id == item.unit_of_measure_id,
+        models.UnitOfMeasure.company_id == company_id
+    ).first()
+    if not uom:
+        raise HTTPException(status_code=400, detail="Unit of Measure not found in this company")
+    
     # Check for duplicate item code
     existing_item = db.query(models.InventoryItem).filter(
         models.InventoryItem.item_code == item.item_code,
@@ -114,12 +130,15 @@ def create_inventory_item(db: Session, item: schemas.InventoryItemCreate, compan
     if existing_item:
         raise HTTPException(status_code=400, detail="Item code already exists")
     
-    db_item = models.InventoryItem(**item.model_dump(), company_id=company_id)
+    db_item = models.InventoryItem(
+        **item.model_dump(),
+        company_id=company_id
+    )
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
     
-    # Create inventory locations for all warehouses
+    # Create initial location records for all warehouses in company
     warehouses = get_warehouses(db, company_id)
     for warehouse in warehouses:
         location = models.InventoryItemLocation(
@@ -144,6 +163,12 @@ def get_inventory_item(db: Session, item_id: int, company_id: int) -> Optional[m
 def get_inventory_items(db: Session, company_id: int, skip: int = 0, limit: int = 100) -> List[models.InventoryItem]:
     return db.query(models.InventoryItem).filter(
         models.InventoryItem.company_id == company_id
+    ).offset(skip).limit(limit).all()
+
+def get_inventory_items_by_company(db: Session, company_id: int, skip: int = 0, limit: int = 100) -> List[models.InventoryItem]:
+    return db.query(models.InventoryItem).filter(
+        models.InventoryItem.company_id == company_id,
+        models.InventoryItem.is_active == True
     ).offset(skip).limit(limit).all()
 
 def update_inventory_item(db: Session, item_db_obj: models.InventoryItem, item_in: schemas.InventoryItemUpdate) -> models.InventoryItem:
@@ -276,11 +301,22 @@ def process_inventory_adjustment(
 ) -> models.InventoryTransaction:
     """Process an inventory adjustment with GL posting"""
     
-    # Get item and location
-    item = get_inventory_item(db, adjustment_in.item_id, company_id)
+    # Validate item and warehouse belong to same company
+    item = db.query(models.InventoryItem).filter(
+        models.InventoryItem.id == adjustment_in.item_id,
+        models.InventoryItem.company_id == company_id
+    ).first()
     if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise HTTPException(status_code=400, detail="Item not found in this company")
     
+    warehouse = db.query(models.Warehouse).filter(
+        models.Warehouse.id == adjustment_in.warehouse_id,
+        models.Warehouse.company_id == company_id
+    ).first()
+    if not warehouse:
+        raise HTTPException(status_code=400, detail="Warehouse not found in this company")
+    
+    # Get or create item location
     location = db.query(models.InventoryItemLocation).filter(
         models.InventoryItemLocation.item_id == adjustment_in.item_id,
         models.InventoryItemLocation.warehouse_id == adjustment_in.warehouse_id,
@@ -288,7 +324,16 @@ def process_inventory_adjustment(
     ).first()
     
     if not location:
-        raise HTTPException(status_code=404, detail="Item not found in warehouse")
+        location = models.InventoryItemLocation(
+            company_id=company_id,
+            item_id=adjustment_in.item_id,
+            warehouse_id=adjustment_in.warehouse_id,
+            quantity_on_hand=Decimal("0.00"),
+            quantity_committed=Decimal("0.00"),
+            quantity_on_order=Decimal("0.00")
+        )
+        db.add(location)
+        db.flush()
     
     # Get transaction type
     trans_type = get_inventory_transaction_type(db, adjustment_in.inventory_transaction_type_id, company_id)
@@ -307,11 +352,12 @@ def process_inventory_adjustment(
     
     if trans_type.affects_quantity_direction == "Increase":
         location.quantity_on_hand += adjustment_in.quantity
-        # Update weighted average cost
-        new_total_value = old_total_value + total_value
-        new_total_quantity = old_quantity + adjustment_in.quantity
-        if new_total_quantity > 0:
-            item.average_cost = new_total_value / new_total_quantity
+        # Update weighted average cost for stock items
+        if item.item_type == "Stock" and adjustment_in.quantity > 0:
+            new_total_value = old_total_value + total_value
+            new_total_quantity = old_quantity + adjustment_in.quantity
+            if new_total_quantity > 0:
+                item.average_cost = new_total_value / new_total_quantity
     elif trans_type.affects_quantity_direction == "Decrease":
         if location.quantity_on_hand < adjustment_in.quantity:
             raise HTTPException(status_code=400, detail="Insufficient stock")
@@ -332,7 +378,7 @@ def process_inventory_adjustment(
         notes=adjustment_in.reason
     )
     
-    # GL Posting
+    # GL Posting - ensure GL accounts belong to same company
     gl_entries = []
     
     # Get GL accounts
@@ -684,49 +730,49 @@ def process_inventory_count_variances(
 def get_inventory_valuation(
     db: Session,
     company_id: int,
-    warehouse_id: Optional[int],
-    as_of_date: date
+    warehouse_id: Optional[int] = None,
+    as_of_date: date = None
 ) -> List[dict]:
-    """Get inventory valuation report"""
-    from sqlalchemy import func, text
+    """Get inventory valuation for specific company"""
+    from sqlalchemy import text
     
-    # Raw SQL approach to properly aggregate across all items with same item_code
-    sql = text("""
+    query = """
         SELECT 
-            ii.item_code,
-            ii.description,
+            i.item_code,
+            i.description,
             w.name as warehouse_name,
-            SUM(iil.quantity_on_hand) as quantity_on_hand,
-            AVG(ii.average_cost) as average_cost,
-            SUM(iil.quantity_on_hand * ii.average_cost) as total_value
-        FROM inventory_items ii
-        JOIN inventory_item_locations iil ON ii.id = iil.item_id
-        JOIN warehouses w ON iil.warehouse_id = w.id
-        WHERE ii.company_id = :company_id 
-        AND iil.quantity_on_hand > 0
-        {warehouse_filter}
-        GROUP BY ii.item_code, ii.description, w.name
-        ORDER BY ii.item_code, w.name
-    """.format(
-        warehouse_filter="AND iil.warehouse_id = :warehouse_id" if warehouse_id else ""
-    ))
+            il.quantity_on_hand,
+            i.average_cost,
+            (il.quantity_on_hand * i.average_cost) as total_value
+        FROM inventory_items i
+        JOIN inventory_item_locations il ON i.id = il.item_id
+        JOIN warehouses w ON il.warehouse_id = w.id
+        WHERE i.company_id = :company_id 
+        AND il.company_id = :company_id 
+        AND w.company_id = :company_id
+        AND i.is_active = true
+        AND il.quantity_on_hand > 0
+    """
     
     params = {"company_id": company_id}
-    if warehouse_id:
-        params["warehouse_id"] = warehouse_id
-        
-    results = db.execute(sql, params).fetchall()
     
+    if warehouse_id:
+        query += " AND w.id = :warehouse_id"
+        params["warehouse_id"] = warehouse_id
+    
+    query += " ORDER BY i.item_code, w.name"
+    
+    result = db.execute(text(query), params)
     return [
         {
-            "item_code": r.item_code,
-            "description": r.description,
-            "warehouse_name": r.warehouse_name,
-            "quantity_on_hand": r.quantity_on_hand,
-            "average_cost": r.average_cost,
-            "total_value": r.total_value
+            "item_code": row.item_code,
+            "description": row.description,
+            "warehouse_name": row.warehouse_name,
+            "quantity_on_hand": float(row.quantity_on_hand),
+            "average_cost": float(row.average_cost),
+            "total_value": float(row.total_value)
         }
-        for r in results
+        for row in result.fetchall()
     ]
 
 def get_inventory_movement(

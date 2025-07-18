@@ -1,25 +1,26 @@
 import React, { forwardRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { arService } from '@/services/arService';
+import { apService } from '@/services/apService';
 import { useAuthStore } from '@/store/authStore';
-import { Customer } from '@/types/ar';
+import { Supplier } from '@/types/ap';
 
-interface CustomerSelectProps {
+interface SupplierSelectProps {
   value?: string;
   onChange?: (value: string) => void;
   onBlur?: () => void;
   name?: string;
   className?: string;
   disabled?: boolean;
+  includeInactive?: boolean;
 }
 
-export const CustomerSelect = forwardRef<HTMLSelectElement, CustomerSelectProps>(
-  ({ value, onChange, onBlur, name, className = '', disabled = false }, ref) => {
+export const SupplierSelect = forwardRef<HTMLSelectElement, SupplierSelectProps>(
+  ({ value, onChange, onBlur, name, className = '', disabled = false, includeInactive = false }, ref) => {
     const { selectedCompanyId } = useAuthStore();
     
-    const { data: customers = [], isLoading } = useQuery({
-      queryKey: ['customers', selectedCompanyId],
-      queryFn: () => arService.getCustomers(),
+    const { data: suppliers = [], isLoading } = useQuery({
+      queryKey: ['suppliers', selectedCompanyId, includeInactive],
+      queryFn: () => apService.getSuppliers(includeInactive),
       enabled: !!selectedCompanyId
     });
 
@@ -34,11 +35,11 @@ export const CustomerSelect = forwardRef<HTMLSelectElement, CustomerSelectProps>
         disabled={disabled || isLoading || !selectedCompanyId}
       >
         <option value="">
-          {!selectedCompanyId ? 'Select Company First' : 'Select Customer'}
+          {!selectedCompanyId ? 'Select Company First' : 'Select Supplier'}
         </option>
-        {customers.map((customer: Customer) => (
-          <option key={customer.id} value={customer.id}>
-            {customer.name} ({customer.customer_code})
+        {suppliers.map((supplier: Supplier) => (
+          <option key={supplier.id} value={supplier.id}>
+            {supplier.name} ({supplier.supplier_code})
           </option>
         ))}
       </select>
@@ -46,4 +47,4 @@ export const CustomerSelect = forwardRef<HTMLSelectElement, CustomerSelectProps>
   }
 );
 
-CustomerSelect.displayName = 'CustomerSelect';
+SupplierSelect.displayName = 'SupplierSelect';
