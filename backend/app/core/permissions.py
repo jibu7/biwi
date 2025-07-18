@@ -1,66 +1,104 @@
-from typing import List
+from enum import Enum
+from typing import List, Optional, Callable
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database.database import get_db
-from app import models
-from app.core.security import get_current_active_user
+from app.models.core import User, Role, UserRole, UserType
+from app.core.tenant_context import get_current_tenant_id
+from app.api.deps import get_current_active_user
+from app.core.platform_context import is_in_platform_admin_context
 
-# User Permissions
+class Permission(str, Enum):
+    # Company management
+    COMPANY_CREATE = "company:create"
+    COMPANY_READ = "company:read"
+    COMPANY_UPDATE = "company:update"
+    COMPANY_DELETE = "company:delete"
+    
+    # User management
+    USER_CREATE = "user:create"
+    USER_READ = "user:read"
+    USER_UPDATE = "user:update"
+    USER_DELETE = "user:delete"
+    USER_MANAGE_ROLES = "user:manage_roles"
+    
+    # Role management
+    ROLE_CREATE = "role:create"
+    ROLE_READ = "role:read"
+    ROLE_UPDATE = "role:update"
+    ROLE_DELETE = "role:delete"
+    ROLE_MANAGE_PERMISSIONS = "role:manage_permissions"
+    
+    # GL permissions
+    GL_ACCOUNT_CREATE = "gl_account:create"
+    GL_ACCOUNT_READ = "gl_account:read"
+    GL_ACCOUNT_UPDATE = "gl_account:update"
+    GL_ACCOUNT_DELETE = "gl_account:delete"
+    GL_JOURNAL_POST = "gl_journal:post"
+    GL_REPORTS_VIEW = "gl_reports:view"
+    
+    # AR permissions
+    AR_CUSTOMER_MANAGE = "ar_customer:manage"
+    AR_TRANSACTIONS_POST = "ar_transactions:post"
+    AR_REPORTS_VIEW = "ar_reports:view"
+    
+    # AP permissions
+    AP_SUPPLIER_MANAGE = "ap_supplier:manage"
+    AP_TRANSACTIONS_POST = "ap_transactions:post"
+    AP_REPORTS_VIEW = "ap_reports:view"
+    
+    # Platform permissions
+    PLATFORM_ADMIN = "platform:admin"
+    PLATFORM_COMPANY_MANAGE = "platform:company_manage"
+    PLATFORM_USER_MANAGE = "platform:user_manage"
+    PLATFORM_AUDIT_VIEW = "platform:audit_view"
+
+# Legacy permission constants for backward compatibility
 USER_CREATE = "users:create"
 USER_READ = "users:read"
 USER_UPDATE = "users:update"
 USER_DELETE = "users:delete"
 USER_MANAGE_ROLES = "users:manage_roles"
 
-# Role Permissions
 ROLE_CREATE = "roles:create"
 ROLE_READ = "roles:read"
 ROLE_UPDATE = "roles:update"
 ROLE_DELETE = "roles:delete"
 ROLE_MANAGE_PERMISSIONS = "roles:manage_permissions"
 
-# Company Permissions
 COMPANY_CREATE = "company:create"
 COMPANY_READ = "company:read"
 COMPANY_UPDATE = "company:update"
 
-# Accounting Period Permissions
 ACCOUNTING_PERIOD_MANAGE = "accounting_periods:manage"
 
-# GL Permissions (for future phases)
 GL_SETUP_MANAGE = "gl:setup_manage"
 GL_JOURNAL_POST = "gl:journal_post"
 GL_REPORTS_VIEW = "gl:reports_view"
 
-# AR Permissions (for future phases)
 AR_SETUP_MANAGE = "ar:setup_manage"
 AR_TRANSACTIONS_POST = "ar:transactions_post"
 AR_REPORTS_VIEW = "ar:reports_view"
 AR_WRITEOFF_APPROVE = "ar:writeoff_approve"
 
-# AP Permissions (for future phases)
 AP_SETUP_MANAGE = "ap:setup_manage"
 AP_TRANSACTIONS_POST = "ap:transactions_post"
 AP_REPORTS_VIEW = "ap:reports_view"
 
-# Inventory Permissions (for future phases)
 INV_SETUP_MANAGE = "inv:setup_manage"
 INV_TRANSACTIONS_ADJUST = "inv:transactions_adjust"
 INV_REPORTS_VIEW = "inv:reports_view"
 
-# OE Permissions
 OE_SETUP_MANAGE = "oe:setup_manage"
 OE_SALES_ORDERS_MANAGE = "oe:sales_orders_manage"
 OE_PURCHASE_ORDERS_MANAGE = "oe:purchase_orders_manage"
 OE_GRV_PROCESS = "oe:grv_process"
 OE_REPORTS_VIEW = "oe:reports_view"
 
-# Common Setup Permissions (for future phases)
 COMMON_SETUP_CURRENCIES = "common:setup_currencies"
 COMMON_SETUP_TAXES = "common:setup_taxes"
 COMMON_SETUP_BRANCHES = "common:setup_branches"
 
-# Reporting Permissions
 REPORTING_FINANCIAL_STATEMENTS_VIEW = "reporting:financial_statements_view"
 REPORTING_FINANCIAL_STATEMENTS_GENERATE = "reporting:financial_statements_generate"
 REPORTING_TEMPLATES_MANAGE = "reporting:templates_manage"
@@ -72,12 +110,10 @@ REPORTING_GL_ADVANCED_VIEW = "reporting:gl_advanced_view"
 REPORTING_COMPARATIVE_ANALYSIS = "reporting:comparative_analysis"
 REPORTING_CASH_FLOW_VIEW = "reporting:cash_flow_view"
 
-# BOM Permissions
 BOM_SETUP_MANAGE = "bom:setup_manage"
 BOM_MANUFACTURING_PROCESS = "bom:manufacturing_process"
 BOM_REPORTS_VIEW = "bom:reports_view"
 
-# POS Permissions
 POS_SETUP_MANAGE = "pos:setup_manage"
 POS_TILL_MANAGE = "pos:till_manage"
 POS_SESSION_OPEN = "pos:session_open"
@@ -108,6 +144,99 @@ ALL_PERMISSIONS_LIST = [
     POS_SALES_PROCESS, POS_RETURNS_PROCESS, POS_CASH_MANAGE, POS_REPORTS_VIEW,
 ]
 
+def check_permissions(required_permissions: List[Permission]) -> Callable:
+    """
+    Dependency to check if the current user has the required permissions.
+    Platform admins automatically have all permissions.
+    """
+    def _check_permissions(
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_active_user),
+    ) -> bool:
+        # Platform admins have all permissions
+        if is_in_platform_admin_context() or current_user.is_superuser:
+            return True
+        
+        # Get tenant ID from context
+        tenant_id = get_current_tenant_id()
+        if not tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tenant context available",
+            )
+        
+        # Get user's roles for the current tenant
+        user_roles = db.query(UserRole).filter(
+            UserRole.user_id == current_user.id
+        ).all()
+        
+        if not user_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User has no roles assigned",
+            )
+        
+        role_ids = [ur.role_id for ur in user_roles]
+        
+        # Get the roles to check permissions
+        roles = db.query(Role).filter(
+            Role.id.in_(role_ids),
+            Role.company_id == tenant_id,
+        ).all()
+        
+        # Check if any of the roles have the required permissions
+        user_permissions = set()
+        for role in roles:
+            if role.permissions:
+                user_permissions.update(role.permissions)
+        
+        # Check if user has all required permissions
+        missing_permissions = [
+            p for p in required_permissions if p.value not in user_permissions
+        ]
+        
+        if missing_permissions:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Missing required permissions: {', '.join([p.value for p in missing_permissions])}",
+            )
+        
+        return True
+    
+    return _check_permissions
+
+def has_permission(user: User, permission: Permission, db: Session, tenant_id: Optional[int] = None) -> bool:
+    """Check if a user has a specific permission."""
+    # Platform admins have all permissions
+    if user.user_type == UserType.PLATFORM_ADMIN or user.is_superuser:
+        return True
+    
+    # Use provided tenant_id or get from context
+    if tenant_id is None:
+        tenant_id = get_current_tenant_id()
+        if not tenant_id:
+            return False
+    
+    # Get user's roles for the tenant
+    user_roles = db.query(UserRole).filter(
+        UserRole.user_id == user.id
+    ).all()
+    
+    role_ids = [ur.role_id for ur in user_roles]
+    
+    # Get the roles and check permissions
+    roles = db.query(Role).filter(
+        Role.id.in_(role_ids),
+        Role.company_id == tenant_id,
+    ).all()
+    
+    # Check if any role has the required permission
+    for role in roles:
+        if role.permissions and permission.value in role.permissions:
+            return True
+    
+    return False
+
 class PermissionChecker:
     def __init__(self, required_permissions: List[str], require_all: bool = False):
         """
@@ -124,18 +253,16 @@ class PermissionChecker:
     
     async def __call__(
         self,
-        user: models.User = Depends(get_current_active_user),
+        user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
     ):
-        if user.is_superuser:
+        if user.is_superuser or user.user_type == UserType.PLATFORM_ADMIN:
             return user
         
         # Get user's permissions from all roles
         user_permissions = []
         for user_role in user.roles:
-            role = db.query(models.Role).filter(
-                models.Role.id == user_role.role_id
-            ).first()
+            role = user_role.role
             if role and role.permissions:
                 user_permissions.extend(role.permissions)
         
@@ -157,33 +284,98 @@ class PermissionChecker:
         
         return user
 
-def get_all_permissions() -> List[str]:
-    return ALL_PERMISSIONS_LIST
-
-def require_permission(user: models.User, required_permission: str) -> None:
+def require_permission(required_permission: str):
     """
-    Check if a user has a specific permission. Raises HTTPException if not.
+    Dependency to require a specific permission.
     
     Args:
-        user: The user to check permissions for
         required_permission: The permission string to check
-        
+    
     Raises:
         HTTPException: If user doesn't have the required permission
     """
-    if user.is_superuser:
-        return
+    def check_permission(
+        user: User = Depends(get_current_active_user),
+        db: Session = Depends(get_db)
+    ):
+        if user.is_superuser or user.user_type == UserType.PLATFORM_ADMIN:
+            return user
+        
+        # Get user's permissions from all roles
+        user_permissions = []
+        for user_role in user.roles:
+            role = user_role.role
+            if role and role.permissions:
+                user_permissions.extend(role.permissions)
+        
+        # Check if user has the required permission
+        if required_permission not in user_permissions:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Permission '{required_permission}' required"
+            )
+        
+        return user
     
-    # Get user's permissions from all roles
-    user_permissions = []
-    for user_role in user.roles:
-        role = user_role.role
-        if role and role.permissions:
-            user_permissions.extend(role.permissions)
+    return check_permission
+
+def get_all_permissions() -> List[str]:
+    return ALL_PERMISSIONS_LIST
+
+# Create a permissions object for dot notation access
+class PermissionsNamespace:
+    # Company management
+    COMPANY_CREATE = "company:create"
+    COMPANY_READ = "company:read" 
+    COMPANY_UPDATE = "company:update"
+    COMPANY_DELETE = "company:delete"
     
-    # Check if user has the required permission
-    if required_permission not in user_permissions:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Permission '{required_permission}' required"
-        )
+    # User management
+    USER_CREATE = "user:create"
+    USER_READ = "user:read"
+    USER_UPDATE = "user:update"
+    USER_DELETE = "user:delete"
+    USER_MANAGE_ROLES = "user:manage_roles"
+    
+    # Role management
+    ROLE_CREATE = "role:create"
+    ROLE_READ = "role:read"
+    ROLE_UPDATE = "role:update"
+    ROLE_DELETE = "role:delete"
+    ROLE_MANAGE_PERMISSIONS = "role:manage_permissions"
+    
+    # GL permissions
+    GL_SETUP_MANAGE = "gl:setup_manage"
+    GL_JOURNAL_POST = "gl:journal_post"
+    GL_REPORTS_VIEW = "gl:reports_view"
+    
+    # AR permissions
+    AR_SETUP_MANAGE = "ar:setup_manage"
+    AR_TRANSACTIONS_POST = "ar:transactions_post" 
+    AR_REPORTS_VIEW = "ar:reports_view"
+    AR_WRITEOFF_APPROVE = "ar:writeoff_approve"
+    
+    # AP permissions
+    AP_SETUP_MANAGE = "ap:setup_manage"
+    AP_TRANSACTIONS_POST = "ap:transactions_post"
+    AP_REPORTS_VIEW = "ap:reports_view"
+    
+    # Inventory permissions
+    INV_SETUP_MANAGE = "inv:setup_manage"
+    INV_TRANSACTIONS_ADJUST = "inv:transactions_adjust"
+    INV_REPORTS_VIEW = "inv:reports_view"
+    
+    # OE permissions
+    OE_SETUP_MANAGE = "oe:setup_manage"
+    OE_SALES_ORDERS_MANAGE = "oe:sales_orders_manage"
+    OE_PURCHASE_ORDERS_MANAGE = "oe:purchase_orders_manage"
+    OE_GRV_PROCESS = "oe:grv_process"
+    OE_REPORTS_VIEW = "oe:reports_view"
+    
+    # Common permissions
+    COMMON_SETUP_CURRENCIES = "common:setup_currencies"
+    COMMON_SETUP_TAXES = "common:setup_taxes"
+    COMMON_SETUP_BRANCHES = "common:setup_branches"
+
+# Create a module-level permissions object for dot notation access
+permissions = PermissionsNamespace()

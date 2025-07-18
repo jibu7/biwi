@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 from decimal import Decimal
 from datetime import date, timedelta
+from fastapi import HTTPException
 from app import models, schemas
 from app.crud import ar as crud_ar
 from app.crud import ap as crud_ap
@@ -15,72 +16,82 @@ def create_sales_order(
     company_id: int, 
     user_id: int
 ) -> models.SalesOrder:
-    # Get next SO number
-    defaults = get_or_create_order_defaults(db, company_id)
-    document_number = f"SO{defaults.next_so_number:06d}"
+    # Validate customer belongs to same company
+    customer = db.query(models.Customer).filter(
+        models.Customer.id == so_in.customer_id,
+        models.Customer.company_id == company_id
+    ).first()
+    if not customer:
+        raise HTTPException(status_code=400, detail="Customer not found in this company")
     
-    # Create SO header
+    # Generate document number
+    order_defaults = get_order_defaults(db, company_id)
+    document_number = f"SO{order_defaults.next_so_number:06d}"
+    
+    # Create sales order
     db_so = models.SalesOrder(
         company_id=company_id,
         customer_id=so_in.customer_id,
         order_date=so_in.order_date,
         reference=so_in.reference,
         document_number=document_number,
-        status=defaults.default_so_status,
+        status=order_defaults.default_so_status,
+        notes=so_in.notes,
         shipping_address=so_in.shipping_address,
         billing_address=so_in.billing_address,
-        sales_representative_id=so_in.sales_representative_id,
-        notes=so_in.notes,
-        total_amount=0  # Will calculate
+        sales_representative_id=so_in.sales_representative_id
     )
     db.add(db_so)
     db.flush()
     
-    # Create SO lines and calculate total
-    total_amount = Decimal(0)
-    for line_in in so_in.lines:
+    # Create sales order lines and update committed quantities
+    total_amount = 0
+    for line_data in so_in.lines:
+        # Validate item belongs to same company
+        item = db.query(models.InventoryItem).filter(
+            models.InventoryItem.id == line_data.item_id,
+            models.InventoryItem.company_id == company_id
+        ).first()
+        if not item:
+            raise HTTPException(status_code=400, detail=f"Item {line_data.item_id} not found in this company")
+        
         # Handle optional fields safely
-        discount_percentage = line_in.discount_percentage or Decimal(0)
-        tax_amount = getattr(line_in, 'tax_amount', None) or Decimal(0)
+        discount_percentage = line_data.discount_percentage or Decimal(0)
+        tax_amount = getattr(line_data, 'tax_amount', None) or Decimal(0)
         
         line_total = (
-            line_in.quantity_ordered * 
-            line_in.unit_price * 
+            line_data.quantity_ordered * 
+            line_data.unit_price * 
             (1 - discount_percentage / 100) + 
             tax_amount
         )
         
-        db_line = models.SalesOrderLine(
+        line = models.SalesOrderLine(
             sales_order_id=db_so.id,
-            item_id=line_in.item_id,
-            description=line_in.description,
-            quantity_ordered=line_in.quantity_ordered,
-            unit_price=line_in.unit_price,
+            item_id=line_data.item_id,
+            description=line_data.description,
+            quantity_ordered=line_data.quantity_ordered,
+            unit_price=line_data.unit_price,
             discount_percentage=discount_percentage,
-            tax_type_id=line_in.tax_type_id,
+            tax_type_id=line_data.tax_type_id,
             tax_amount=tax_amount,
             line_total=line_total
         )
-        db.add(db_line)
+        db.add(line)
         total_amount += line_total
         
         # Update committed quantity for stock items
-        item = db.query(models.InventoryItem).filter(
-            models.InventoryItem.id == line_in.item_id
-        ).first()
-        if item and item.item_type == "Stock":
-            item_location = db.query(models.InventoryItemLocation).filter(
-                models.InventoryItemLocation.item_id == item.id,
-                models.InventoryItemLocation.company_id == company_id
-            ).first()
-            if item_location:
-                item_location.quantity_committed += line_in.quantity_ordered
+        if item.item_type == "Stock":
+            # Use default warehouse or first warehouse for company
+            warehouse = get_default_warehouse(db, company_id)
+            if warehouse:
+                item_location = get_or_create_item_location(db, line_data.item_id, warehouse.id, company_id)
+                item_location.quantity_committed += line_data.quantity_ordered
     
-    # Update SO total
     db_so.total_amount = total_amount
     
-    # Increment SO number
-    defaults.next_so_number += 1
+    # Update next SO number
+    order_defaults.next_so_number += 1
     
     db.commit()
     db.refresh(db_so)
@@ -92,202 +103,66 @@ def convert_so_to_ar_invoice(
     company_id: int, 
     user_id: int
 ) -> models.ARTransaction:
-    # Get SO with lines
-    so = db.query(models.SalesOrder).options(
-        joinedload(models.SalesOrder.lines).joinedload(models.SalesOrderLine.item),
-        joinedload(models.SalesOrder.customer)
-    ).filter(
+    # Validate SO belongs to company
+    so = db.query(models.SalesOrder).filter(
         models.SalesOrder.id == so_id,
         models.SalesOrder.company_id == company_id
     ).first()
-    
     if not so:
-        raise ValueError("Sales Order not found")
+        raise HTTPException(status_code=400, detail="Sales Order not found in this company")
     
-    if so.status == "Invoiced":
-        raise ValueError("Sales Order already invoiced")
+    # Create AR Invoice using AR service
+    from app.crud import ar as crud_ar
     
-    # Get AR transaction type for Invoice
-    ar_trans_type = db.query(models.ARTransactionType).filter(
-        models.ARTransactionType.company_id == company_id,
-        models.ARTransactionType.base_type == "Invoice",
-        models.ARTransactionType.is_active == True
-    ).first()
-    
-    if not ar_trans_type:
-        raise ValueError("No active Invoice transaction type found")
-
-    # Create AR Invoice
-    ar_transaction_data = schemas.ARTransactionCreate(
+    ar_invoice_data = schemas.ARTransactionCreate(
         customer_id=so.customer_id,
-        ar_transaction_type_id=ar_trans_type.id,
+        ar_transaction_type_id=get_default_ar_invoice_type_id(db, company_id),
         transaction_date=date.today(),
-        due_date=date.today() + timedelta(days=30),  # Based on payment terms
-        reference=so.reference,
-        document_number=f"INV-{so.document_number}",
+        reference=f"SO#{so.document_number}",
         total_amount=so.total_amount
     )
     
-    ar_invoice = crud_ar.create_ar_transaction(
-        db, ar_transaction_data, company_id
-    )
+    ar_invoice = crud_ar.create_ar_transaction(db, ar_invoice_data, company_id, user_id)
     
-    # Get AR defaults for GL accounts
-    ar_defaults = db.query(models.ARDefaults).filter(
-        models.ARDefaults.company_id == company_id
-    ).first()
+    # Process inventory for stock items
+    so_lines = db.query(models.SalesOrderLine).filter(
+        models.SalesOrderLine.sales_order_id == so_id
+    ).all()
     
-    if not ar_defaults:
-        raise ValueError("AR defaults not configured")
-    
-    # Get inventory defaults
-    inv_defaults = db.query(models.InventoryDefaults).filter(
-        models.InventoryDefaults.company_id == company_id
-    ).first()
-    
-    if not inv_defaults:
-        raise ValueError("Inventory defaults not configured")
-    
-    # Get the inventory transaction type for sales
-    sale_trans_type = db.query(models.InventoryTransactionType).filter(
-        models.InventoryTransactionType.company_id == company_id,
-        models.InventoryTransactionType.base_type == "SaleToCustomer"
-    ).first()
-    
-    if not sale_trans_type:
-        raise ValueError("Sales inventory transaction type not found")
-    
-    # Collect GL entries for invoice and COGS
-    gl_lines = []
-    total_cogs = Decimal('0.00')
-    
-    # Process inventory and calculate COGS for each line
-    for line in so.lines:
+    for line in so_lines:
         item = db.query(models.InventoryItem).filter(
             models.InventoryItem.id == line.item_id
         ).first()
         
         if item and item.item_type == "Stock":
-            # Calculate COGS using current average cost
-            line_cogs = line.quantity_ordered * (item.average_cost or Decimal('0.00'))
-            total_cogs += line_cogs
-            
-            # Get default warehouse from inventory defaults
-            default_warehouse_id = inv_defaults.default_warehouse_id or 1
-            
-            # Update inventory quantities and calculate COGS
-            item_location = db.query(models.InventoryItemLocation).filter(
-                models.InventoryItemLocation.item_id == line.item_id,
-                models.InventoryItemLocation.warehouse_id == default_warehouse_id,
-                models.InventoryItemLocation.company_id == company_id
-            ).first()
-            
-            if not item_location:
-                raise ValueError(f"Item {item.item_code} not found in default warehouse")
-            
-            # Check if we have enough stock
-            if item_location.quantity_on_hand < line.quantity_ordered:
-                raise ValueError(f"Insufficient stock for item {item.item_code}")
-            
-            # Calculate COGS using current average cost
-            line_cogs = line.quantity_ordered * (item.average_cost or Decimal('0.00'))
-            total_cogs += line_cogs
-            
-            # Update inventory quantities
-            item_location.quantity_on_hand -= line.quantity_ordered
-            item_location.quantity_committed -= line.quantity_ordered
-            
-            # Create inventory transaction record
-            inv_transaction = models.InventoryTransaction(
-                company_id=company_id,
-                item_id=line.item_id,
-                warehouse_id=default_warehouse_id,
-                inventory_transaction_type_id=sale_trans_type.id,
-                transaction_date=date.today(),
-                quantity=-line.quantity_ordered,  # Negative for reduction
-                unit_cost=item.average_cost or Decimal('0.00'),
-                total_value=-line_cogs,  # Negative for reduction
-                reference_document_type="SO_Invoice",
-                reference_document_id=so.id,
-                notes=f"Sale to Customer - SO Invoice {so.document_number}"
-            )
-            db.add(inv_transaction)
-        
-        # Update line invoiced quantity
-        line.quantity_invoiced = line.quantity_ordered
+            # Create sale inventory transaction
+            warehouse = get_default_warehouse(db, company_id)
+            if warehouse:
+                sale_transaction = models.InventoryTransaction(
+                    company_id=company_id,
+                    item_id=line.item_id,
+                    warehouse_id=warehouse.id,
+                    inventory_transaction_type_id=get_sale_transaction_type_id(db, company_id),
+                    transaction_date=date.today(),
+                    quantity=-line.quantity_ordered,  # Negative for sale
+                    unit_cost=item.average_cost,
+                    total_value=-(line.quantity_ordered * item.average_cost),
+                    reference_document_type="SalesOrder",
+                    reference_document_id=so_id
+                )
+                db.add(sale_transaction)
+                
+                # Update inventory location
+                item_location = get_or_create_item_location(db, line.item_id, warehouse.id, company_id)
+                item_location.quantity_on_hand -= line.quantity_ordered
+                item_location.quantity_committed -= line.quantity_ordered
     
-    # Create GL Journal Entry for the invoice
-    # 1. Debit AR Control, Credit Sales
-    gl_lines.append(schemas.GLJournalEntryLineCreate(
-        gl_account_id=ar_defaults.default_ar_control_gl_account_id,
-        description=f"AR Invoice {ar_invoice.document_number} - {so.customer.name}",
-        debit_amount=so.total_amount,
-        credit_amount=Decimal('0.00')
-    ))
-    
-    gl_lines.append(schemas.GLJournalEntryLineCreate(
-        gl_account_id=ar_defaults.default_sales_gl_account_id,
-        description=f"Sales - {so.customer.name}",
-        debit_amount=Decimal('0.00'),
-        credit_amount=so.total_amount
-    ))
-    
-    # 2. If there are stock items, create COGS entry
-    if total_cogs > 0:
-        # Get inventory GL account from defaults
-        inv_defaults = db.query(models.InventoryDefaults).filter(
-            models.InventoryDefaults.company_id == company_id
-        ).first()
-        
-        if not inv_defaults:
-            raise ValueError("Inventory defaults not configured")
-        
-        # COGS entry (debit)
-        if inv_defaults.default_cogs_gl_account_id:
-            gl_lines.append(schemas.GLJournalEntryLineCreate(
-                gl_account_id=inv_defaults.default_cogs_gl_account_id,
-                description=f"COGS - Invoice {ar_invoice.document_number}",
-                debit_amount=total_cogs,
-                credit_amount=Decimal('0.00')
-            ))
-        
-        # Inventory reduction entry (credit)
-        if inv_defaults.default_inventory_gl_account_id:
-            gl_lines.append(schemas.GLJournalEntryLineCreate(
-                gl_account_id=inv_defaults.default_inventory_gl_account_id,
-                description=f"Inventory reduction - Invoice {ar_invoice.document_number}",
-                debit_amount=Decimal('0.00'),
-                credit_amount=total_cogs
-            ))
-    
-    # Create the GL journal entry
-    if gl_lines:
-        gl_entry_data = schemas.GLJournalEntryCreate(
-            entry_date=date.today(),
-            reference=f"AR-INV-{ar_invoice.document_number}",
-            description=f"Sales Invoice {ar_invoice.document_number} - {so.customer.name}",
-            lines=gl_lines
-        )
-        
-        gl_entry = crud_gl.create_gl_journal_entry(
-            db, gl_entry_data, company_id, user_id
-        )
-        
-        # Post the journal entry immediately
-        crud_gl.post_gl_journal_entry(db, gl_entry.id, company_id)
-        
-        # Link GL entry to AR transaction
-        ar_invoice.linked_gl_journal_entry_id = gl_entry.id
-    
-    # Post the AR transaction to update its status from Draft to Posted
-    posted_ar_invoice = crud_ar.post_ar_transaction(db, ar_invoice.id, company_id, user_id)
-    
-    # Update SO status
+    # Update SO status and link to AR invoice
     so.status = "Invoiced"
     so.ar_invoice_id = ar_invoice.id
     
     db.commit()
-    return posted_ar_invoice if posted_ar_invoice else ar_invoice
+    return ar_invoice
 
 # Purchase Order Processing
 def create_purchase_order(
@@ -296,6 +171,14 @@ def create_purchase_order(
     company_id: int,
     user_id: int
 ) -> models.PurchaseOrder:
+    # Validate supplier belongs to same company
+    supplier = db.query(models.Supplier).filter(
+        models.Supplier.id == po_in.supplier_id,
+        models.Supplier.company_id == company_id
+    ).first()
+    if not supplier:
+        raise HTTPException(status_code=400, detail="Supplier not found in this company")
+    
     # Get next PO number
     defaults = get_or_create_order_defaults(db, company_id)
     document_number = f"PO{defaults.next_po_number:06d}"
@@ -319,6 +202,14 @@ def create_purchase_order(
     # Create PO lines
     total_amount = Decimal(0)
     for line_in in po_in.lines:
+        # Validate item belongs to same company
+        item = db.query(models.InventoryItem).filter(
+            models.InventoryItem.id == line_in.item_id,
+            models.InventoryItem.company_id == company_id
+        ).first()
+        if not item:
+            raise HTTPException(status_code=400, detail=f"Item {line_in.item_id} not found in this company")
+        
         line_total = (
             line_in.quantity_ordered * 
             line_in.unit_price * 
@@ -341,16 +232,17 @@ def create_purchase_order(
         total_amount += line_total
         
         # Update on-order quantity for stock items
-        item = db.query(models.InventoryItem).filter(
-            models.InventoryItem.id == line_in.item_id
-        ).first()
-        if item and item.item_type == "Stock":
-            item_location = db.query(models.InventoryItemLocation).filter(
-                models.InventoryItemLocation.item_id == item.id,
-                models.InventoryItemLocation.warehouse_id == po_in.delivery_address_warehouse_id,
-                models.InventoryItemLocation.company_id == company_id
-            ).first()
-            if item_location:
+        if item.item_type == "Stock":
+            # Validate delivery warehouse belongs to company
+            if po_in.delivery_address_warehouse_id:
+                warehouse = db.query(models.Warehouse).filter(
+                    models.Warehouse.id == po_in.delivery_address_warehouse_id,
+                    models.Warehouse.company_id == company_id
+                ).first()
+                if not warehouse:
+                    raise HTTPException(status_code=400, detail="Delivery warehouse not found in this company")
+                
+                item_location = get_or_create_item_location(db, item.id, warehouse.id, company_id)
                 item_location.quantity_on_order += line_in.quantity_ordered
     
     # Update PO total
@@ -370,6 +262,23 @@ def create_grv(
     company_id: int,
     user_id: int
 ) -> models.GoodsReceivedVoucher:
+    # Validate supplier belongs to same company
+    supplier = db.query(models.Supplier).filter(
+        models.Supplier.id == grv_in.supplier_id,
+        models.Supplier.company_id == company_id
+    ).first()
+    if not supplier:
+        raise HTTPException(status_code=400, detail="Supplier not found in this company")
+    
+    # Validate purchase order belongs to same company if provided
+    if grv_in.purchase_order_id:
+        po = db.query(models.PurchaseOrder).filter(
+            models.PurchaseOrder.id == grv_in.purchase_order_id,
+            models.PurchaseOrder.company_id == company_id
+        ).first()
+        if not po:
+            raise HTTPException(status_code=400, detail="Purchase Order not found in this company")
+    
     # Get next GRV number
     defaults = get_or_create_order_defaults(db, company_id)
     document_number = f"GRV{defaults.next_grv_number:06d}"
@@ -389,61 +298,35 @@ def create_grv(
     db.flush()
     
     # Determine warehouse
+    warehouse = get_default_warehouse(db, company_id)
+    if not warehouse:
+        raise HTTPException(status_code=400, detail="No warehouse found for this company")
+    
+    warehouse_id = warehouse.id
+    
     if grv_in.purchase_order_id:
         po = db.query(models.PurchaseOrder).filter(
             models.PurchaseOrder.id == grv_in.purchase_order_id
         ).first()
-        if po:
-            warehouse_id = po.delivery_address_warehouse_id
-        else:
-            # Get default warehouse from inventory defaults
-            inv_defaults = db.query(models.InventoryDefaults).filter(
-                models.InventoryDefaults.company_id == company_id
+        if po and po.delivery_address_warehouse_id:
+            # Validate the PO warehouse belongs to the company
+            po_warehouse = db.query(models.Warehouse).filter(
+                models.Warehouse.id == po.delivery_address_warehouse_id,
+                models.Warehouse.company_id == company_id
             ).first()
-            warehouse_id = inv_defaults.default_warehouse_id if inv_defaults and inv_defaults.default_warehouse_id else None
-            
-            if not warehouse_id:
-                # Find any warehouse for this company
-                default_warehouse = db.query(models.Warehouse).filter(
-                    models.Warehouse.company_id == company_id,
-                    models.Warehouse.is_default == True
-                ).first()
-                
-                if not default_warehouse:
-                    default_warehouse = db.query(models.Warehouse).filter(
-                        models.Warehouse.company_id == company_id
-                    ).first()
-                
-                if not default_warehouse:
-                    raise ValueError("No warehouse found for this company")
-                
-                warehouse_id = default_warehouse.id
-    else:
-        # For standalone GRV, get default warehouse from inventory defaults
-        inv_defaults = db.query(models.InventoryDefaults).filter(
-            models.InventoryDefaults.company_id == company_id
-        ).first()
-        warehouse_id = inv_defaults.default_warehouse_id if inv_defaults and inv_defaults.default_warehouse_id else None
-        
-        if not warehouse_id:
-            # Find default warehouse for this company
-            default_warehouse = db.query(models.Warehouse).filter(
-                models.Warehouse.company_id == company_id,
-                models.Warehouse.is_default == True
-            ).first()
-            
-            if not default_warehouse:
-                default_warehouse = db.query(models.Warehouse).filter(
-                    models.Warehouse.company_id == company_id
-                ).first()
-            
-            if not default_warehouse:
-                raise ValueError("No warehouse found for this company")
-            
-            warehouse_id = default_warehouse.id
+            if po_warehouse:
+                warehouse_id = po.delivery_address_warehouse_id
     
     # Process GRV lines
     for line_in in grv_in.lines:
+        # Validate item belongs to same company
+        item = db.query(models.InventoryItem).filter(
+            models.InventoryItem.id == line_in.item_id,
+            models.InventoryItem.company_id == company_id
+        ).first()
+        if not item:
+            raise HTTPException(status_code=400, detail=f"Item {line_in.item_id} not found in this company")
+        
         line_total = line_in.quantity_received * line_in.unit_cost
         
         db_line = models.GoodsReceivedVoucherLine(
@@ -457,31 +340,10 @@ def create_grv(
         )
         db.add(db_line)
         
-        # Process inventory receipt
-        item = db.query(models.InventoryItem).filter(
-            models.InventoryItem.id == line_in.item_id
-        ).first()
-        
-        if item and item.item_type == "Stock":
+        # Process inventory receipt for stock items
+        if item.item_type == "Stock":
             # Ensure inventory item location exists for this warehouse
-            item_location = db.query(models.InventoryItemLocation).filter(
-                models.InventoryItemLocation.item_id == item.id,
-                models.InventoryItemLocation.warehouse_id == warehouse_id,
-                models.InventoryItemLocation.company_id == company_id
-            ).first()
-            
-            if not item_location:
-                # Create inventory location if it doesn't exist
-                item_location = models.InventoryItemLocation(
-                    company_id=company_id,
-                    item_id=item.id,
-                    warehouse_id=warehouse_id,
-                    quantity_on_hand=Decimal("0.00"),
-                    quantity_committed=Decimal("0.00"),
-                    quantity_on_order=Decimal("0.00")
-                )
-                db.add(item_location)
-                db.flush()  # Ensure the location is created before processing adjustment
+            item_location = get_or_create_item_location(db, item.id, warehouse_id, company_id)
             
             # Get the correct transaction type for receipt from supplier
             receipt_trans_type = db.query(models.InventoryTransactionType).filter(
@@ -523,13 +385,7 @@ def create_grv(
                     po_line.quantity_received += line_in.quantity_received
                     
                     # Update on-order quantity
-                    item_location = db.query(models.InventoryItemLocation).filter(
-                        models.InventoryItemLocation.item_id == item.id,
-                        models.InventoryItemLocation.warehouse_id == warehouse_id,
-                        models.InventoryItemLocation.company_id == company_id
-                    ).first()
-                    if item_location:
-                        item_location.quantity_on_order -= line_in.quantity_received
+                    item_location.quantity_on_order -= line_in.quantity_received
     
     # Update PO status if linked
     if grv_in.purchase_order_id:
@@ -822,3 +678,89 @@ def get_uninvoiced_grvs(
         models.GoodsReceivedVoucher.company_id == company_id,
         models.GoodsReceivedVoucher.status == "Open"
     ).all()
+
+# Helper functions for tenant-aware operations
+def get_order_defaults(db: Session, company_id: int) -> models.OrderDefaults:
+    """Get order defaults for a company, raise exception if not found"""
+    defaults = db.query(models.OrderDefaults).filter(
+        models.OrderDefaults.company_id == company_id
+    ).first()
+    if not defaults:
+        raise HTTPException(status_code=400, detail="Order defaults not configured for this company")
+    return defaults
+
+def get_default_warehouse(db: Session, company_id: int) -> Optional[models.Warehouse]:
+    """Get the default warehouse for a company"""
+    # Try to get from inventory defaults first
+    inv_defaults = db.query(models.InventoryDefaults).filter(
+        models.InventoryDefaults.company_id == company_id
+    ).first()
+    
+    if inv_defaults and inv_defaults.default_warehouse_id:
+        warehouse = db.query(models.Warehouse).filter(
+            models.Warehouse.id == inv_defaults.default_warehouse_id,
+            models.Warehouse.company_id == company_id
+        ).first()
+        if warehouse:
+            return warehouse
+    
+    # Fallback to finding a default warehouse
+    warehouse = db.query(models.Warehouse).filter(
+        models.Warehouse.company_id == company_id,
+        models.Warehouse.is_default == True
+    ).first()
+    
+    if not warehouse:
+        # Get any warehouse for the company
+        warehouse = db.query(models.Warehouse).filter(
+            models.Warehouse.company_id == company_id
+        ).first()
+    
+    return warehouse
+
+def get_or_create_item_location(db: Session, item_id: int, warehouse_id: int, company_id: int) -> models.InventoryItemLocation:
+    """Get or create inventory item location"""
+    item_location = db.query(models.InventoryItemLocation).filter(
+        models.InventoryItemLocation.item_id == item_id,
+        models.InventoryItemLocation.warehouse_id == warehouse_id,
+        models.InventoryItemLocation.company_id == company_id
+    ).first()
+    
+    if not item_location:
+        item_location = models.InventoryItemLocation(
+            company_id=company_id,
+            item_id=item_id,
+            warehouse_id=warehouse_id,
+            quantity_on_hand=Decimal("0.00"),
+            quantity_committed=Decimal("0.00"),
+            quantity_on_order=Decimal("0.00")
+        )
+        db.add(item_location)
+        db.flush()
+    
+    return item_location
+
+def get_default_ar_invoice_type_id(db: Session, company_id: int) -> int:
+    """Get the default AR invoice transaction type ID"""
+    ar_trans_type = db.query(models.ARTransactionType).filter(
+        models.ARTransactionType.company_id == company_id,
+        models.ARTransactionType.base_type == "Invoice",
+        models.ARTransactionType.is_active == True
+    ).first()
+    
+    if not ar_trans_type:
+        raise HTTPException(status_code=400, detail="No active Invoice transaction type found for this company")
+    
+    return ar_trans_type.id
+
+def get_sale_transaction_type_id(db: Session, company_id: int) -> int:
+    """Get the sale inventory transaction type ID"""
+    sale_trans_type = db.query(models.InventoryTransactionType).filter(
+        models.InventoryTransactionType.company_id == company_id,
+        models.InventoryTransactionType.base_type == "SaleToCustomer"
+    ).first()
+    
+    if not sale_trans_type:
+        raise HTTPException(status_code=400, detail="Sales inventory transaction type not found for this company")
+    
+    return sale_trans_type.id

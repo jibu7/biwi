@@ -1,33 +1,39 @@
-from .core import User, Role, UserRole, Company, AccountingPeriod, UserType, PlatformAuditLog
-from .billing import ResourceUsage, BillingConfiguration, UsageAlert, BillingTransaction
+# Core models
+from .core import User, Role, UserRole, Company, AccountingPeriod, PlatformAuditLog, UserType, SubscriptionStatus
+
+# GL models
 from .gl import GLAccount, GLJournalEntry, GLJournalEntryLine, GLTransactionType, GLDefaults
-from .ar import (
-    Customer, SalesRepresentative, ARTransactionType, ARTransaction, 
-    ARAllocation, ARAllocationLine, ARDefaults, ARWriteOff, ARTransactionTaxLine
-)
-from .ap import (
-    Supplier, APTransactionType, APTransaction, APAllocation, 
-    APAllocationLine, APDefaults, APTransactionTaxLine
-)
+
+# AR models
+from .ar import Customer, SalesRepresentative, ARTransactionType, ARTransaction, ARAllocation, ARAllocationLine, ARDefaults, ARWriteOff, ARTransactionTaxLine
+
+# AP models
+from .ap import Supplier, APTransactionType, APTransaction, APAllocation, APAllocationLine, APDefaults, APTransactionTaxLine
+
+# Inventory models
 from .inventory import (
-    UnitOfMeasure, Warehouse, InventoryItem, ItemBarcode,
+    UnitOfMeasure, Warehouse, InventoryItem, ItemBarcode, 
     InventoryItemLocation, InventoryTransactionType, InventoryTransaction,
     InventoryDefaults, InventoryCountSession, InventoryCountLine
 )
-from .oe import (
-    SalesOrder, SalesOrderLine, PurchaseOrder, PurchaseOrderLine,
-    GoodsReceivedVoucher, GoodsReceivedVoucherLine, OrderDefaults
-)
+
+# Forex models
+from .forex import ForexGainLoss, ExchangeRateHistory
+
+# OE models
+from .oe import SalesOrder, SalesOrderLine, PurchaseOrder, PurchaseOrderLine, GoodsReceivedVoucher, GoodsReceivedVoucherLine, OrderDefaults
+
+# Common models
 from .common import Currency, TaxType, Branch
-from .forex import ExchangeRateHistory, ForexGainLoss
-from .reporting import (
-    ReportTemplate, ReportSchedule, BankReconciliation, BankReconciliationItem
-)
-from .bom import (
-    BOMHeader, BOMComponent, ManufacturingOrder, ManufacturingOrderComponent, 
-    BOMDefaults
-)
-from .pos import (
-    Till, POSTransactionType, POSSession, POSTransaction, POSTransactionLine,
-    POSCashMovement, POSDefaults
-)
+
+# BOM models
+from .bom import BOMHeader, BOMComponent, ManufacturingOrder, ManufacturingOrderComponent, BOMDefaults
+
+# POS models
+from .pos import Till, POSTransactionType, POSSession, POSTransaction, POSTransactionLine, POSCashMovement, POSDefaults
+
+# Billing models (NEW)
+from .billing import ResourceUsage, BillingConfiguration, UsageAlert, BillingTransaction
+
+# Reporting models
+from .reporting import ReportTemplate, ReportSchedule, BankReconciliation, BankReconciliationItem

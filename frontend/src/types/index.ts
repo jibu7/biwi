@@ -3,9 +3,10 @@ export interface User {
   id: number;
   email: string;
   full_name?: string;
+  user_type: 'platform_admin' | 'company_admin' | 'company_user';
+  company_id?: number;
   is_active: boolean;
-  is_superuser: boolean;
-  company_id: number;
+  is_superuser?: boolean;
 }
 
 export interface UserCreate {
@@ -38,6 +39,8 @@ export interface Token {
 export interface Company {
   id: number;
   name: string;
+  code: string;
+  subscription_status: string;
   address?: any;
   contact_info?: any;
   default_currency_code?: string;

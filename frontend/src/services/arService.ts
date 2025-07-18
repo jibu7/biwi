@@ -1,4 +1,5 @@
-import axiosInstance from '@/lib/axiosInstance';
+import { axiosInstance } from '@/lib/axiosInstance';
+import { useAuthStore } from '@/store/authStore';
 import {
   Customer,
   CustomerCreate,
@@ -70,373 +71,139 @@ interface ARInvoiceCreateSchema extends ARTransactionCreate {
   taxLines?: ARTaxLine[];
 }
 
-// Add interfaces for tax and currency
-interface ARTransactionWithTax {
-  id: number;
-  company_id: number;
-  customer_id: number;
-  ar_transaction_type_id: number;
-  linked_gl_journal_entry_id?: number;
-  sales_order_id?: number;
-  transaction_date: string;
-  due_date?: string;
-  reference?: string;
-  document_number: string;
-  total_amount: number;
-  open_amount: number;
-  is_posted_to_gl: boolean;
-  status: 'Draft' | 'Posted' | 'Paid' | 'PartiallyPaid';
-  customer_name?: string;
-  ar_transaction_type_name?: string;
-  currencyId?: string;
-  exchangeRate?: number;
-  foreignCurrencyAmount?: number;
-  baseCurrencyAmount?: number;
-  taxLines?: ARTaxLine[];
-}
-
-interface ARTaxLine {
-  taxTypeId: string;
-  taxableAmount: number;
-  taxAmount: number;
-}
-
-// Extend ARTransactionCreate to include tax and currency fields
-interface ARInvoiceCreateSchema extends ARTransactionCreate {
-  currencyId?: string;
-  exchangeRate?: number;
-  foreignCurrencyAmount?: number;
-  baseCurrencyAmount?: number;
-  taxLines?: ARTaxLine[];
-}
-
-// Customer API functions
-export const customerService = {
-  getAll: async (): Promise<Customer[]> => {
-    try {
-      const response = await axiosInstance.get('/ar/customers');
-      console.log('Customer API Response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-      throw error;
+class ARService {
+  private getCompanyId(): number {
+    const { selectedCompanyId } = useAuthStore.getState();
+    if (!selectedCompanyId) {
+      throw new Error('No company selected');
     }
-  },
+    return selectedCompanyId;
+  }
 
-  getById: async (id: number): Promise<Customer> => {
-    try {
-      const response = await axiosInstance.get(`/ar/customers/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching customer:', error);
-      throw error;
-    }
-  },
-
-  create: async (data: CustomerCreate): Promise<Customer> => {
-    try {
-      console.log('Creating customer with data:', data);
-      const response = await axiosInstance.post('/ar/customers', data);
-      console.log('Customer created successfully:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating customer:', error);
-      throw error;
-    }
-  },
-
-  update: async (id: number, data: CustomerUpdate): Promise<Customer> => {
-    try {
-      const response = await axiosInstance.put(`/ar/customers/${id}`, data);
-      return response.data;
-    } catch (error) {
-      console.error('Error updating customer:', error);
-      throw error;
-    }
-  },
-
-  delete: async (id: number): Promise<void> => {
-    try {
-      await axiosInstance.delete(`/ar/customers/${id}`);
-    } catch (error) {
-      console.error('Error deleting customer:', error);
-      throw error;
-    }
-  },
-
-  // Customer Analytics
-  getCustomerAnalytics: async (customerId: number): Promise<CustomerWithAnalytics> => {
-    const response = await axiosInstance.get(`/ar/customers/${customerId}/analytics`);
-    return response.data;
-  },
-
-  getCustomerWriteOffSummary: async (customerId: number): Promise<CustomerWriteOffSummary> => {
-    const response = await axiosInstance.get(`/ar/customers/${customerId}/writeoff-summary`);
-    return response.data;
-  },
-
-  getCustomerCreditAnalysis: async (customerId: number): Promise<CustomerCreditAnalysis> => {
-    const response = await axiosInstance.get(`/ar/customers/${customerId}/credit-analysis`);
-    return response.data;
-  },
-};
-
-// Sales Representative API functions
-export const salesRepService = {
-  getAll: async (): Promise<SalesRepresentative[]> => {
-    const response = await axiosInstance.get('/ar/sales-representatives');
-    return response.data;
-  },
-
-  getById: async (id: number): Promise<SalesRepresentative> => {
-    const response = await axiosInstance.get(`/ar/sales-representatives/${id}`);
-    return response.data;
-  },
-
-  create: async (data: SalesRepresentativeCreate): Promise<SalesRepresentative> => {
-    const response = await axiosInstance.post('/ar/sales-representatives', data);
-    return response.data;
-  },
-
-  update: async (id: number, data: SalesRepresentativeUpdate): Promise<SalesRepresentative> => {
-    const response = await axiosInstance.put(`/ar/sales-representatives/${id}`, data);
-    return response.data;
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`/ar/sales-representatives/${id}`);
-  },
-};
-
-// AR Transaction Type API functions
-export const arTransactionTypeService = {
-  getAll: async (): Promise<ARTransactionType[]> => {
-    const response = await axiosInstance.get('/ar/transaction-types');
-    return response.data;
-  },
-
-  getById: async (id: number): Promise<ARTransactionType> => {
-    const response = await axiosInstance.get(`/ar/transaction-types/${id}`);
-    return response.data;
-  },
-
-  create: async (data: ARTransactionTypeCreate): Promise<ARTransactionType> => {
-    const response = await axiosInstance.post('/ar/transaction-types', data);
-    return response.data;
-  },
-
-  update: async (id: number, data: ARTransactionTypeUpdate): Promise<ARTransactionType> => {
-    const response = await axiosInstance.put(`/ar/transaction-types/${id}`, data);
-    return response.data;
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`/ar/transaction-types/${id}`);
-  },
-};
-
-// AR Transaction API functions
-export const arTransactionService = {
-  getAll: async (params?: {
-    customer_id?: number;
-    from_date?: string;
-    to_date?: string;
-    skip?: number;
-    limit?: number;
-  }): Promise<ARTransaction[]> => {
-    const response = await axiosInstance.get('/ar/transactions', { params });
-    return response.data;
-  },
-
-  getByType: async (baseType: string, params?: {
-    customer_id?: number;
-    from_date?: string;
-    to_date?: string;
-    skip?: number;
-    limit?: number;
-  }): Promise<ARTransaction[]> => {
-    const response = await axiosInstance.get('/ar/transactions', { 
-      params: { ...params, base_type: baseType } 
+  async getCustomers(skip = 0, limit = 100) {
+    const response = await axiosInstance.get('/ar/customers', {
+      params: { skip, limit },
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
     });
     return response.data;
-  },
+  }
 
-  getById: async (id: number): Promise<ARTransaction> => {
-    const response = await axiosInstance.get(`/ar/transactions/${id}`);
+  async createCustomer(customerData: CustomerCreate) {
+    const response = await axiosInstance.post('/ar/customers', customerData, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
     return response.data;
-  },
+  }
 
-  create: async (data: ARTransactionCreate): Promise<ARTransaction> => {
-    const response = await axiosInstance.post('/ar/transactions', data);
+  async createARTransaction(transactionData: ARTransactionCreate) {
+    const response = await axiosInstance.post('/ar/transactions', transactionData, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
     return response.data;
-  },
+  }
 
-  update: async (id: number, data: ARTransactionUpdate): Promise<ARTransaction> => {
-    const response = await axiosInstance.put(`/ar/transactions/${id}`, data);
-    return response.data;
-  },
-
-  post: async (id: number): Promise<ARTransaction> => {
-    const response = await axiosInstance.post(`/ar/transactions/${id}/post`);
-    return response.data;
-  },
-
-  // Invoice creation with tax and currency
-  createInvoice: async (data: ARInvoiceCreateSchema): Promise<ARTransaction> => {
-    const response = await axiosInstance.post('/ar/transactions/invoice', data);
-    return response.data;
-  },
-};
-
-// Update create functions to handle tax/currency
-export const createARInvoice = async (data: ARInvoiceCreateSchema): Promise<ARTransactionWithTax> => {
-  const response = await axiosInstance.post<ARTransactionWithTax>('/ar/transactions', data);
-  return response.data;
-};
-
-// AR Allocation API functions
-export const arAllocationService = {
-  getAll: async (params?: {
-    customer_id?: number;
-    skip?: number;
-    limit?: number;
-  }): Promise<ARAllocation[]> => {
-    const response = await axiosInstance.get('/ar/allocations', { params });
-    return response.data;
-  },
-
-  create: async (data: ARAllocationCreate): Promise<ARAllocation> => {
-    const response = await axiosInstance.post('/ar/allocations', data);
-    return response.data;
-  },
-};
-
-// AR Defaults API functions
-export const arDefaultsService = {
-  get: async (): Promise<ARDefaults> => {
-    const response = await axiosInstance.get('/ar/defaults');
-    return response.data;
-  },
-
-  update: async (data: ARDefaultsUpdate): Promise<ARDefaults> => {
-    const response = await axiosInstance.put('/ar/defaults', data);
-    return response.data;
-  },
-};
-
-// AR Reports API functions
-export const arReportsService = {
-  getCustomerAging: async (asOfDate: string): Promise<CustomerAgingReportItem[]> => {
-    const response = await axiosInstance.get('/ar/reports/customer-aging', {
+  async getCustomerAgeing(asOfDate: string) {
+    const response = await axiosInstance.get('/ar/reports/ageing', {
       params: { as_of_date: asOfDate },
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
     });
     return response.data;
-  },
+  }
 
-  getCustomerStatement: async (
-    customerId: number,
-    fromDate: string,
-    toDate: string
-  ): Promise<CustomerStatementItem[]> => {
-    const response = await axiosInstance.get(`/ar/reports/customer-statement/${customerId}`, {
-      params: { from_date: fromDate, to_date: toDate },
+  // Additional methods with tenant awareness
+  async getCustomer(id: number): Promise<Customer> {
+    const response = await axiosInstance.get(`/ar/customers/${id}`, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
     });
     return response.data;
-  },
+  }
 
-  // Financial Reporting
-  getBadDebtExpenseReport: async (startDate: string, endDate: string): Promise<BadDebtExpenseReport> => {
-    const response = await axiosInstance.get('/ar/reports/bad-debt-expense', {
-      params: { start_date: startDate, end_date: endDate }
+  async updateCustomer(id: number, data: CustomerUpdate): Promise<Customer> {
+    const response = await axiosInstance.put(`/ar/customers/${id}`, data, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
     });
     return response.data;
-  },
+  }
 
-  getARAgingWithWriteoffs: async (asOfDate: string): Promise<ARAgingWithWriteoffs[]> => {
-    const response = await axiosInstance.get('/ar/reports/aging-with-writeoffs', {
-      params: { as_of_date: asOfDate }
+  async deleteCustomer(id: number): Promise<void> {
+    await axiosInstance.delete(`/ar/customers/${id}`, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
     });
-    return response.data;
-  },
+  }
 
-  getWriteOffRecoveries: async (startDate: string, endDate: string): Promise<WriteOffRecovery[]> => {
-    const response = await axiosInstance.get('/ar/reports/writeoff-recoveries', {
-      params: { start_date: startDate, end_date: endDate }
+  async getARTransactions(params?: {
+    customer_id?: number;
+    from_date?: string;
+    to_date?: string;
+    skip?: number;
+    limit?: number;
+  }): Promise<ARTransaction[]> {
+    const response = await axiosInstance.get('/ar/transactions', { 
+      params,
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
     });
     return response.data;
-  },
+  }
+
+  async getARTransaction(id: number): Promise<ARTransaction> {
+    const response = await axiosInstance.get(`/ar/transactions/${id}`, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async updateARTransaction(id: number, data: ARTransactionUpdate): Promise<ARTransaction> {
+    const response = await axiosInstance.put(`/ar/transactions/${id}`, data, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async postARTransaction(id: number): Promise<ARTransaction> {
+    const response = await axiosInstance.post(`/ar/transactions/${id}/post`, {}, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+}
+
+export const arService = new ARService();
+
+// Legacy exports for backward compatibility
+export const customerService = {
+  getAll: () => arService.getCustomers(),
+  getById: (id: number) => arService.getCustomer(id),
+  create: (data: CustomerCreate) => arService.createCustomer(data),
+  update: (id: number, data: CustomerUpdate) => arService.updateCustomer(id, data),
+  delete: (id: number) => arService.deleteCustomer(id),
 };
 
-// Write-off service functions
-export const writeOffService = {
-  getAll: async (): Promise<ARWriteOff[]> => {
-    try {
-      const response = await axiosInstance.get('/ar/writeoffs');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching write-offs:', error);
-      throw error;
-    }
-  },
-
-  getById: async (id: number): Promise<ARWriteOff> => {
-    try {
-      const response = await axiosInstance.get(`/ar/writeoffs/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching write-off:', error);
-      throw error;
-    }
-  },
-
-  create: async (data: ARWriteOffCreate): Promise<ARWriteOff> => {
-    try {
-      console.log('Creating write-off with data:', data);
-      const response = await axiosInstance.post('/ar/writeoffs', data);
-      console.log('Write-off created successfully:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating write-off:', error);
-      throw error;
-    }
-  },
-
-  update: async (id: number, data: ARWriteOffUpdate): Promise<ARWriteOff> => {
-    try {
-      const response = await axiosInstance.put(`/ar/writeoffs/${id}`, data);
-      return response.data;
-    } catch (error) {
-      console.error('Error updating write-off:', error);
-      throw error;
-    }
-  },
-
-  approve: async (id: number, approval: ARWriteOffApproval): Promise<ARWriteOff> => {
-    try {
-      const response = await axiosInstance.post(`/ar/writeoffs/${id}/approve`, approval);
-      return response.data;
-    } catch (error) {
-      console.error('Error approving write-off:', error);
-      throw error;
-    }
-  },
-
-  reject: async (id: number, approval: ARWriteOffApproval): Promise<ARWriteOff> => {
-    try {
-      const response = await axiosInstance.post(`/ar/writeoffs/${id}/reject`, approval);
-      return response.data;
-    } catch (error) {
-      console.error('Error rejecting write-off:', error);
-      throw error;
-    }
-  },
-
-  delete: async (id: number): Promise<void> => {
-    try {
-      await axiosInstance.delete(`/ar/writeoffs/${id}`);
-    } catch (error) {
-      console.error('Error deleting write-off:', error);
-      throw error;
-    }
-  },
+export const arTransactionService = {
+  getAll: (params?: any) => arService.getARTransactions(params),
+  getById: (id: number) => arService.getARTransaction(id),
+  create: (data: ARTransactionCreate) => arService.createARTransaction(data),
+  update: (id: number, data: ARTransactionUpdate) => arService.updateARTransaction(id, data),
+  post: (id: number) => arService.postARTransaction(id),
 };

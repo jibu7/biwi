@@ -76,7 +76,10 @@ export default function PlatformSettingsPage() {
   // Update local state when settings are loaded
   useEffect(() => {
     if (currentSettings) {
-      setSettings(currentSettings);
+      setSettings(prev => ({
+        ...prev,
+        ...currentSettings
+      }));
     }
   }, [currentSettings]);
 
@@ -125,7 +128,7 @@ export default function PlatformSettingsPage() {
               <Label htmlFor="platformName">Platform Name</Label>
               <Input
                 id="platformName"
-                value={settings.platform_name}
+                value={settings.platform_name || ''}
                 onChange={(e) => handleInputChange('platform_name', e.target.value)}
               />
             </div>
@@ -134,7 +137,7 @@ export default function PlatformSettingsPage() {
               <Input
                 id="supportEmail"
                 type="email"
-                value={settings.support_email}
+                value={settings.support_email || ''}
                 onChange={(e) => handleInputChange('support_email', e.target.value)}
               />
             </div>
@@ -144,7 +147,7 @@ export default function PlatformSettingsPage() {
             <Label htmlFor="platformDescription">Platform Description</Label>
             <Textarea
               id="platformDescription"
-              value={settings.platform_description}
+              value={settings.platform_description || ''}
               onChange={(e) => handleInputChange('platform_description', e.target.value)}
               rows={3}
             />
@@ -167,7 +170,7 @@ export default function PlatformSettingsPage() {
               <Input
                 id="defaultStorageLimit"
                 type="number"
-                value={settings.default_storage_limit}
+                value={settings.default_storage_limit || 0}
                 onChange={(e) => handleInputChange('default_storage_limit', parseInt(e.target.value) || 0)}
               />
             </div>
@@ -176,7 +179,7 @@ export default function PlatformSettingsPage() {
               <Input
                 id="defaultUserLimit"
                 type="number"
-                value={settings.default_user_limit}
+                value={settings.default_user_limit || 0}
                 onChange={(e) => handleInputChange('default_user_limit', parseInt(e.target.value) || 0)}
               />
             </div>
@@ -185,7 +188,7 @@ export default function PlatformSettingsPage() {
               <Input
                 id="defaultTrialPeriod"
                 type="number"
-                value={settings.default_trial_period}
+                value={settings.default_trial_period || 0}
                 onChange={(e) => handleInputChange('default_trial_period', parseInt(e.target.value) || 0)}
               />
             </div>
@@ -207,7 +210,7 @@ export default function PlatformSettingsPage() {
               <Label htmlFor="defaultCurrency">Default Currency</Label>
               <select
                 id="defaultCurrency"
-                value={settings.default_currency}
+                value={settings.default_currency || 'USD'}
                 onChange={(e) => handleInputChange('default_currency', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
@@ -226,7 +229,7 @@ export default function PlatformSettingsPage() {
                 id="basicPlanPrice"
                 type="number"
                 step="0.01"
-                value={settings.basic_plan_price}
+                value={settings.basic_plan_price || 0}
                 onChange={(e) => handleInputChange('basic_plan_price', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -236,7 +239,7 @@ export default function PlatformSettingsPage() {
                 id="proPlanPrice"
                 type="number"
                 step="0.01"
-                value={settings.pro_plan_price}
+                value={settings.pro_plan_price || 0}
                 onChange={(e) => handleInputChange('pro_plan_price', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -246,7 +249,7 @@ export default function PlatformSettingsPage() {
                 id="enterprisePlanPrice"
                 type="number"
                 step="0.01"
-                value={settings.enterprise_plan_price}
+                value={settings.enterprise_plan_price || 0}
                 onChange={(e) => handleInputChange('enterprise_plan_price', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -268,7 +271,7 @@ export default function PlatformSettingsPage() {
               <Label htmlFor="smtpHost">SMTP Host</Label>
               <Input
                 id="smtpHost"
-                value={settings.smtp_host}
+                value={settings.smtp_host || ''}
                 onChange={(e) => handleInputChange('smtp_host', e.target.value)}
               />
             </div>
@@ -277,7 +280,7 @@ export default function PlatformSettingsPage() {
               <Input
                 id="smtpPort"
                 type="number"
-                value={settings.smtp_port}
+                value={settings.smtp_port || 0}
                 onChange={(e) => handleInputChange('smtp_port', parseInt(e.target.value) || 0)}
               />
             </div>
@@ -288,7 +291,7 @@ export default function PlatformSettingsPage() {
               <Label htmlFor="smtpUsername">SMTP Username</Label>
               <Input
                 id="smtpUsername"
-                value={settings.smtp_username}
+                value={settings.smtp_username || ''}
                 onChange={(e) => handleInputChange('smtp_username', e.target.value)}
               />
             </div>
@@ -319,7 +322,7 @@ export default function PlatformSettingsPage() {
               <Label htmlFor="backupFrequency">Backup Frequency</Label>
               <select
                 id="backupFrequency"
-                value={settings.backup_frequency}
+                value={settings.backup_frequency || 'daily'}
                 onChange={(e) => handleInputChange('backup_frequency', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
@@ -333,7 +336,7 @@ export default function PlatformSettingsPage() {
               <Input
                 id="backupRetention"
                 type="number"
-                value={settings.backup_retention}
+                value={settings.backup_retention || 0}
                 onChange={(e) => handleInputChange('backup_retention', parseInt(e.target.value) || 0)}
               />
             </div>
@@ -341,7 +344,7 @@ export default function PlatformSettingsPage() {
               <Label htmlFor="backupLocation">Backup Location</Label>
               <Input
                 id="backupLocation"
-                value={settings.backup_location}
+                value={settings.backup_location || ''}
                 onChange={(e) => handleInputChange('backup_location', e.target.value)}
               />
             </div>

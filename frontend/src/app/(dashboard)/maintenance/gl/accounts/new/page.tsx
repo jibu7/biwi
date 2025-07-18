@@ -9,6 +9,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { glService } from '@/services/glService';
 import { usePermissions } from '@/hooks/usePermissions';
 import * as permissions from '@/lib/permissions';
+import { useEffect } from 'react';
 
 const accountSchema = z.object({
   account_code: z.string().min(1, 'Account code is required'),
@@ -27,7 +28,7 @@ export default function NewGLAccountPage() {
   
   const { data: accounts = [] } = useQuery({
     queryKey: ['glAccounts'],
-    queryFn: () => glService.getGLAccounts(true), // Include inactive for full list
+    queryFn: () => glService.getAccounts({ isActive: false }), // Include inactive for full list
   });
 
   const {
@@ -47,7 +48,7 @@ export default function NewGLAccountPage() {
   const selectedAccountType = watch('account_type');
 
   const createMutation = useMutation({
-    mutationFn: glService.createGLAccount,
+    mutationFn: glService.createAccount,
     onSuccess: () => {
       router.push('/maintenance/gl/accounts');
     },
@@ -57,9 +58,15 @@ export default function NewGLAccountPage() {
     },
   });
 
-  // Check permissions after hooks
+  // Check permissions in useEffect to avoid calling router.push during render
+  useEffect(() => {
+    if (!hasPermission(permissions.GL_SETUP_MANAGE)) {
+      router.push('/maintenance/gl/accounts');
+    }
+  }, [hasPermission, router]);
+
+  // Don't render anything if no permission
   if (!hasPermission(permissions.GL_SETUP_MANAGE)) {
-    router.push('/maintenance/gl/accounts');
     return null;
   }
 
@@ -72,7 +79,7 @@ export default function NewGLAccountPage() {
   };
 
   // Filter parent accounts by type - only show accounts of the same type
-  const eligibleParentAccounts = accounts.filter(account => 
+  const eligibleParentAccounts = accounts.filter((account: any) => 
     account.account_type === selectedAccountType && account.is_active
   );
 
@@ -155,7 +162,7 @@ export default function NewGLAccountPage() {
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             >
               <option value="">No Parent (Top Level Account)</option>
-              {eligibleParentAccounts.map((account) => (
+              {eligibleParentAccounts.map((account: any) => (
                 <option key={account.id} value={account.id}>
                   {account.account_code} - {account.account_name}
                 </option>

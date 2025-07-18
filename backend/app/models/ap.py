@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from app.database.database import Base
@@ -8,7 +8,7 @@ class Supplier(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    supplier_code = Column(String, unique=True, index=True, nullable=False)
+    supplier_code = Column(String, nullable=False, index=True)
     name = Column(String, nullable=False)
     address = Column(JSONB, nullable=True)
     contact_info = Column(JSONB, nullable=True)
@@ -26,6 +26,7 @@ class Supplier(Base):
     
     __table_args__ = (
         UniqueConstraint('supplier_code', 'company_id', name='uq_supplier_code_company'),
+        Index('idx_supplier_company_active', 'company_id', 'is_active'),
     )
 
 class APTransactionType(Base):
@@ -85,6 +86,9 @@ class APTransaction(Base):
     __table_args__ = (
         UniqueConstraint('document_number', 'company_id', 'ap_transaction_type_id', 
                         name='uq_ap_doc_number_company_type'),
+        Index('idx_ap_trans_company_supplier', 'company_id', 'supplier_id'),
+        Index('idx_ap_trans_company_date', 'company_id', 'transaction_date'),
+        Index('idx_ap_trans_company_open', 'company_id', 'open_amount'),
     )
 
 class APAllocation(Base):

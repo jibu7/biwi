@@ -1,98 +1,246 @@
 import { create } from 'zustand';
-import { User, Company, UserLogin } from '@/types';
-import { authService } from '@/services/authService';
-import { companyService } from '@/services/companyService';
-import Cookies from 'js-cookie';
+import { persist } from 'zustand/middleware';
+import { User, Company } from '@/types';
 
 interface AuthState {
   user: User | null;
+  company: Company | null;
+  selectedCompanyId: number | null;
   token: string | null;
+  isPlatformAdmin: boolean;
   isAuthenticated: boolean;
   isLoading: boolean;
-  company: Company | null;
-  selectedCompanyId: string | null;
   
-  login: (credentials: UserLogin) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  platformLogin: (email: string, password: string, otpCode?: string) => Promise<void>;
   logout: () => void;
-  setUser: (user: User | null) => void;
-  setToken: (token: string | null) => void;
-  loadAuthData: () => Promise<void>;
-  setSelectedCompanyId: (companyId: string) => void;
+  setTargetCompany: (companyId: number | null) => void;
+  setSelectedCompanyId: (companyId: number | null) => void;
+  refreshUser: () => Promise<void>;
+  setLoading: (loading: boolean) => void;
+  initAuth: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  isLoading: true,
-  company: null,
-  selectedCompanyId: null,
-
-  login: async (credentials) => {
-    try {
-      const tokenData = await authService.login(credentials);
-      const user = await authService.getMe();
-      const company = await companyService.getCurrentCompany();
-      
-      set({
-        token: tokenData.access_token,
-        user,
-        company,
-        isAuthenticated: true,
-        selectedCompanyId: user.company_id.toString(),
-      });
-      
-      localStorage.setItem('selectedCompanyId', user.company_id.toString());
-    } catch (error) {
-      set({ isAuthenticated: false, user: null, token: null });
-      throw error;
-    }
-  },
-
-  logout: () => {
-    authService.logout();
-    localStorage.removeItem('selectedCompanyId');
-    set({
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
       user: null,
-      token: null,
       company: null,
-      isAuthenticated: false,
       selectedCompanyId: null,
-    });
-  },
-
-  setUser: (user) => set({ user }),
-  setToken: (token) => set({ token }),
-
-  loadAuthData: async () => {
-    set({ isLoading: true });
-    try {
-      const token = Cookies.get('access_token');
-      if (token) {
-        const user = await authService.getMe();
-        const company = await companyService.getCurrentCompany();
-        const savedCompanyId = localStorage.getItem('selectedCompanyId');
-        
+      token: null,
+      isPlatformAdmin: false,
+      isAuthenticated: false,
+      isLoading: true,
+      
+      login: async (email: string, password: string) => {
+        set({ isLoading: true });
+        try {
+          const formData = new FormData();
+          formData.append('username', email);
+          formData.append('password', password);
+          
+          const response = await fetch('/api/v1/auth/login', {
+            method: 'POST',
+            body: formData,
+          });
+          
+          if (!response.ok) {
+            throw new Error('Login failed');
+          }
+          
+          const data = await response.json();
+          
+          // Get user details
+          const userResponse = await fetch('/api/v1/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${data.access_token}`,
+            },
+          });
+          
+          if (!userResponse.ok) {
+            throw new Error('Failed to get user details');
+          }
+          
+          const user = await userResponse.json();
+          
+          set({
+            token: data.access_token,
+            user,
+            company: user.company,
+            isPlatformAdmin: data.is_platform_admin || false,
+            isAuthenticated: true,
+            selectedCompanyId: user.company_id,
+            isLoading: false,
+          });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+      
+      platformLogin: async (email: string, password: string, otpCode?: string) => {
+        set({ isLoading: true });
+        try {
+          let payload: FormData | string;
+          let headers: Record<string, string> = {};
+          
+          if (otpCode) {
+            payload = JSON.stringify({ username: email, password, otp_code: otpCode });
+            headers['Content-Type'] = 'application/json';
+          } else {
+            payload = new FormData();
+            (payload as FormData).append('username', email);
+            (payload as FormData).append('password', password);
+          }
+          
+          const response = await fetch(
+            otpCode ? '/api/v1/platform/auth/login-mfa' : '/api/v1/platform/auth/login',
+            {
+              method: 'POST',
+              headers,
+              body: payload,
+            }
+          );
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Platform login failed');
+          }
+          
+          const data = await response.json();
+          
+          // Get user details
+          const userResponse = await fetch('/api/v1/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${data.access_token}`,
+            },
+          });
+          
+          if (!userResponse.ok) {
+            throw new Error('Failed to get user details');
+          }
+          
+          const user = await userResponse.json();
+          
+          set({
+            token: data.access_token,
+            user,
+            isPlatformAdmin: true,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+      
+      logout: () => {
         set({
-          token,
-          user,
-          company,
-          isAuthenticated: true,
-          selectedCompanyId: savedCompanyId || user.company_id.toString(),
+          user: null,
+          company: null,
+          selectedCompanyId: null,
+          token: null,
+          isPlatformAdmin: false,
+          isAuthenticated: false,
           isLoading: false,
         });
-      } else {
-        set({ isLoading: false });
-      }
-    } catch (error) {
-      set({ isLoading: false, isAuthenticated: false });
+      },
+      
+      setTargetCompany: (companyId: number | null) => {
+        set({ selectedCompanyId: companyId });
+      },
+      
+      setSelectedCompanyId: (companyId: number | null) => {
+        set({ selectedCompanyId: companyId });
+      },
+      
+      refreshUser: async () => {
+        const { token } = get();
+        if (!token) return;
+        
+        try {
+          const response = await fetch('/api/v1/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          
+          if (response.ok) {
+            const user = await response.json();
+            set({ user, company: user.company });
+          }
+        } catch (error) {
+          console.error('Failed to refresh user:', error);
+        }
+      },
+      
+      setLoading: (loading: boolean) => {
+        set({ isLoading: loading });
+      },
+      
+      initAuth: async () => {
+        const { token } = get();
+        if (!token) {
+          set({ isAuthenticated: false, isLoading: false });
+          return;
+        }
+
+        set({ isLoading: true });
+        try {
+          // Validate token by calling /me endpoint
+          const response = await fetch('/api/v1/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            const user = await response.json();
+            set({
+              user,
+              company: user.company,
+              selectedCompanyId: user.company_id,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          } else {
+            // Token is invalid, clear auth state
+            set({
+              user: null,
+              company: null,
+              selectedCompanyId: null,
+              token: null,
+              isPlatformAdmin: false,
+              isAuthenticated: false,
+              isLoading: false,
+            });
+          }
+        } catch (error) {
+          console.error('Auth validation failed:', error);
+          // Token is invalid, clear auth state
+          set({
+            user: null,
+            company: null,
+            selectedCompanyId: null,
+            token: null,
+            isPlatformAdmin: false,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+        }
+      },
+    }),
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        company: state.company,
+        selectedCompanyId: state.selectedCompanyId,
+        isPlatformAdmin: state.isPlatformAdmin,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
-  },
-
-  setSelectedCompanyId: (companyId) => {
-    localStorage.setItem('selectedCompanyId', companyId);
-    set({ selectedCompanyId: companyId });
-  },
-}));
-
-export const useAuth = () => useAuthStore();
+  )
+);

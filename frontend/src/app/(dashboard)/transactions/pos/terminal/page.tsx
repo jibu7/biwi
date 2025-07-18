@@ -8,11 +8,11 @@ import { inventoryService } from '@/services/inventoryService';
 import { customerService } from '@/services/arService';
 import { POSTerminal } from '@/components/modules/pos/POSTerminal';
 import { SessionSelector } from '@/components/modules/pos/SessionSelector';
-import { useAuth } from '@/store/authStore';
+import { useAuthStore } from '@/store/authStore';
 import { POSSession, POSTransactionCreate, Till } from '@/types/pos';
 
 export default function POSTerminalPage() {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [activeSession, setActiveSession] = useState<POSSession | null>(null);
   const [selectedTill, setSelectedTill] = useState<Till | null>(null);
 

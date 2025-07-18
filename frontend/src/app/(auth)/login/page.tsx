@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '@/store/authStore';
+import { useAuthStore } from '@/store/authStore';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -17,7 +17,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isLoading } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -31,7 +31,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setError(null);
-      await login(data);
+      await login(data.email, data.password);
       router.push('/dashboard');
     } catch (err: unknown) {
       if (typeof err === 'object' && err !== null && 'response' in err) {

@@ -65,7 +65,8 @@ class GLJournalEntryLine(GLJournalEntryLineBase):
 class GLJournalEntryBase(BaseModel):
     entry_date: date
     reference: Optional[str] = None
-    description: Optional[str] = None
+    description: str
+    status: Optional[str] = "Draft"
 
 class GLJournalEntryCreate(GLJournalEntryBase):
     lines: List[GLJournalEntryLineCreate]
@@ -74,7 +75,7 @@ class GLJournalEntryCreate(GLJournalEntryBase):
     def validate_balanced(cls, lines):
         total_debit = sum(line.debit_amount for line in lines)
         total_credit = sum(line.credit_amount for line in lines)
-        if total_debit != total_credit:
+        if abs(total_debit - total_credit) > 0.01:  # Allow for rounding
             raise ValueError(f'Journal entry not balanced. Debit: {total_debit}, Credit: {total_credit}')
         if total_debit == 0:
             raise ValueError('Journal entry cannot have zero value')
@@ -96,6 +97,9 @@ class GLJournalEntry(GLJournalEntryBase):
     status: str
     created_at: datetime
     updated_at: datetime
+    posting_date: Optional[datetime] = None
+    approved_by_user_id: Optional[int] = None
+    approval_date: Optional[datetime] = None
     lines: List[GLJournalEntryLine] = []
     
     class Config:

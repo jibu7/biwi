@@ -1,13 +1,13 @@
 'use client';
 
 
-import { useAuth } from '@/store/authStore';
+import { useAuthStore } from '@/store/authStore';
 import { useQuery } from '@tanstack/react-query';
 import { userService } from '@/services/userService';
 import { roleService } from '@/services/roleService';
 
 export default function DebugUserPermissions() {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
 
   const { data: userRoles, error: userRolesError, isLoading: userRolesLoading } = useQuery({
     queryKey: ['debugUserRoles', user?.id],

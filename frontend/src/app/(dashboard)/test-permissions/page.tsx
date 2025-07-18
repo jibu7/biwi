@@ -2,10 +2,10 @@
 
 
 import { usePermissions } from '@/hooks/usePermissions';
-import { useAuth } from '@/store/authStore';
+import { useAuthStore } from '@/store/authStore';
 
 export default function TestPermissionsPage() {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const { permissions, roles, hasPermission, hasAnyPermission } = usePermissions();
 
   return (

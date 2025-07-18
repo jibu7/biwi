@@ -1,5 +1,11 @@
 from . import core, gl, ar, ap, inventory, oe, common, reporting, bom, pos
 
+# GL imports
+from .gl import (
+    gl_account, create_journal_entry, post_journal_entry_to_gl,
+    get_journal_entries_by_company, calculate_trial_balance
+)
+
 # Inventory imports
 from .inventory import (
     create_unit_of_measure, get_unit_of_measure, get_units_of_measure, 

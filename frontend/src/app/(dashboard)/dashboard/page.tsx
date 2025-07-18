@@ -2,11 +2,11 @@
 
 
 import Link from 'next/link';
-import { useAuth } from '@/store/authStore';
+import { useAuthStore } from '@/store/authStore';
 import { Cog, FileText, BarChart3 } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { user, company } = useAuth();
+  const { user, company } = useAuthStore();
 
   const quickLinks = [
     {

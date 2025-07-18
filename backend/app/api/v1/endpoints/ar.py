@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
@@ -7,16 +7,18 @@ from app.database.database import get_db
 from app.core.security import get_current_active_user
 from app.core.permissions import (
     AR_SETUP_MANAGE, AR_TRANSACTIONS_POST, AR_REPORTS_VIEW, AR_WRITEOFF_APPROVE,
-    require_permission
+    require_permission, PermissionChecker
 )
 from app import crud, schemas, models
 from app.crud import ar_new
+from app.middleware.tenant import get_current_tenant_id
 
 router = APIRouter()
 
 # Customer endpoints
 @router.get("/customers", response_model=List[schemas.Customer])
-def get_customers(
+async def list_customers(
+    request: Request,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -24,7 +26,8 @@ def get_customers(
 ):
     """Get all customers for the company"""
     require_permission(current_user, AR_SETUP_MANAGE)
-    customers = crud.ar.get_customers(db, current_user.company_id, skip=skip, limit=limit)
+    company_id = get_current_tenant_id(request)
+    customers = crud.ar.get_customers(db, company_id, skip=skip, limit=limit)
     
     # Add related data to response
     for customer in customers:
@@ -36,33 +39,36 @@ def get_customers(
     return customers
 
 @router.post("/customers", response_model=schemas.Customer)
-def create_customer(
+async def create_customer(
+    request: Request,
     customer: schemas.CustomerCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Create a new customer"""
-    require_permission(current_user, AR_SETUP_MANAGE)
+    company_id = get_current_tenant_id(request)
     
     # Check if customer code already exists
-    existing_customer = crud.ar.get_customer_by_code(db, customer.customer_code, current_user.company_id)
+    existing_customer = crud.ar.get_customer_by_code(db, customer.customer_code, company_id)
     if existing_customer:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Customer code already exists"
         )
     
-    return crud.ar.create_customer(db, customer, current_user.company_id)
+    return crud.ar.create_customer(db, customer, company_id)
 
 @router.get("/customers/{customer_id}", response_model=schemas.Customer)
-def get_customer(
+async def get_customer(
     customer_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
     """Get a specific customer"""
     require_permission(current_user, AR_SETUP_MANAGE)
-    customer = crud.ar.get_customer(db, customer_id, current_user.company_id)
+    company_id = get_current_tenant_id(request)
+    customer = crud.ar.get_customer(db, customer_id, company_id)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     
@@ -75,25 +81,27 @@ def get_customer(
     return customer
 
 @router.put("/customers/{customer_id}", response_model=schemas.Customer)
-def update_customer(
+async def update_customer(
     customer_id: int,
     customer_update: schemas.CustomerUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
     """Update a customer"""
     require_permission(current_user, AR_SETUP_MANAGE)
+    company_id = get_current_tenant_id(request)
     
     # Check if customer code already exists (if being updated)
     if customer_update.customer_code:
-        existing_customer = crud.ar.get_customer_by_code(db, customer_update.customer_code, current_user.company_id)
+        existing_customer = crud.ar.get_customer_by_code(db, customer_update.customer_code, company_id)
         if existing_customer and existing_customer.id != customer_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Customer code already exists"
             )
     
-    customer = crud.ar.update_customer(db, customer_id, current_user.company_id, customer_update)
+    customer = crud.ar.update_customer(db, customer_id, company_id, customer_update)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     return customer
@@ -301,7 +309,8 @@ def delete_ar_transaction_type(
 
 # AR Transaction endpoints
 @router.get("/transactions", response_model=List[schemas.ARTransaction])
-def get_ar_transactions(
+async def get_ar_transactions(
+    request: Request,
     customer_id: Optional[int] = None,
     from_date: Optional[date] = None,
     to_date: Optional[date] = None,
@@ -313,8 +322,9 @@ def get_ar_transactions(
 ):
     """Get AR transactions with optional filtering"""
     require_permission(current_user, AR_TRANSACTIONS_POST)
+    company_id = get_current_tenant_id(request)
     transactions = crud.ar.get_ar_transactions(
-        db, current_user.company_id, customer_id, from_date, to_date, base_type, skip, limit
+        db, company_id, customer_id, from_date, to_date, base_type, skip, limit
     )
     
     # Add related data to response
@@ -327,14 +337,15 @@ def get_ar_transactions(
     return transactions
 
 @router.post("/transactions", response_model=schemas.ARTransaction)
-def create_ar_transaction(
+async def create_ar_transaction(
+    request: Request,
     transaction: schemas.ARTransactionCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_TRANSACTIONS_POST]))
 ):
     """Create a new AR transaction"""
-    require_permission(current_user, AR_TRANSACTIONS_POST)
-    return crud.ar.create_ar_transaction(db, transaction, current_user.company_id)
+    company_id = get_current_tenant_id(request)
+    return crud.ar.create_ar_transaction(db, transaction, company_id, current_user.id)
 
 @router.get("/transactions/{transaction_id}", response_model=schemas.ARTransaction)
 def get_ar_transaction(

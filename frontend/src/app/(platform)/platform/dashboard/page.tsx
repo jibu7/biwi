@@ -1,240 +1,200 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { platformService } from '@/services/platformService';
+import { Card } from '@/components/ui/card';
+import { Building2, Users, FileText, TrendingUp } from 'lucide-react';
 
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { platformService, PlatformMetrics } from '@/services/platformService';
-import { Building, Users, Activity, DollarSign, AlertTriangle, TrendingUp } from 'lucide-react';
-import Link from 'next/link';
-
-interface MetricCardProps {
-  title: string;
-  value: string | number;
-  description?: string;
-  icon: React.ReactNode;
-  trend?: 'up' | 'down' | 'neutral';
-}
-
-function MetricCard({ title, value, description, icon, trend }: MetricCardProps) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {description && (
-          <p className="text-xs text-muted-foreground">{description}</p>
-        )}
-      </CardContent>
-    </Card>
-  );
+interface DashboardStats {
+  total_companies: number;
+  active_companies: number;
+  suspended_companies: number;
+  trial_companies: number;
+  total_users: number;
+  total_transactions: number;
+  platform_admins: number;
 }
 
 export default function PlatformDashboard() {
-  const { data: metrics, isLoading, error } = useQuery({
-    queryKey: ['platform-metrics'],
-    queryFn: platformService.getMetrics,
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
+  const router = useRouter();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (isLoading) {
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Load stats and companies in parallel
+      const [statsData, companiesData] = await Promise.all([
+        platformService.getDashboardStats(),
+        platformService.getCompanies({ limit: 5 }) // Recent 5 companies
+      ]);
+      
+      setStats(statsData);
+      setCompanies(companiesData);
+    } catch (err) {
+      console.error('Dashboard load error:', err);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImpersonate = async (companyId: number) => {
+    try {
+      await platformService.impersonateCompany(companyId);
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Impersonation error:', err);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Error Loading Platform Data</h2>
-          <p className="text-gray-600 mb-4">
-            {error instanceof Error ? error.message : 'Failed to load platform metrics'}
-          </p>
-          <Button onClick={() => window.location.reload()}>
-            Retry
-          </Button>
+      <div className="container mx-auto p-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+          <p>{error}</p>
+          <button 
+            onClick={loadDashboardData}
+            className="mt-2 text-sm underline"
+          >
+            Try again
+          </button>
         </div>
       </div>
     );
   }
 
-  const suspendedCompaniesPercent = metrics?.total_companies 
-    ? Math.round((metrics.suspended_companies / metrics.total_companies) * 100) 
-    : 0;
-
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Platform Administration</h1>
-          <p className="text-muted-foreground">
-            Monitor and manage your multi-tenant ERP platform
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/platform/companies">
-            <Button>
-              <Building className="h-4 w-4 mr-2" />
-              Manage Companies
-            </Button>
-          </Link>
-          <Link href="/platform/audit-logs">
-            <Button variant="outline">
-              <Activity className="h-4 w-4 mr-2" />
-              Audit Logs
-            </Button>
-          </Link>
-        </div>
-      </div>
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-8">Platform Dashboard</h1>
 
-      {/* Quick Status Alert */}
-      {suspendedCompaniesPercent > 10 && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-600" />
-              <span className="font-medium text-orange-800">
-                High Suspension Rate: {suspendedCompaniesPercent}% of companies are suspended
-              </span>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Companies</p>
+              <p className="text-3xl font-bold">{stats?.total_companies || 0}</p>
+              <p className="text-xs text-green-600">
+                {stats?.active_companies || 0} active
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Metrics Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Total Companies"
-          value={metrics?.total_companies || 0}
-          description="All registered companies"
-          icon={<Building className="h-4 w-4 text-muted-foreground" />}
-        />
-        <MetricCard
-          title="Active Companies"
-          value={metrics?.active_companies || 0}
-          description={`${metrics?.trial_companies || 0} in trial`}
-          icon={<TrendingUp className="h-4 w-4 text-green-600" />}
-        />
-        <MetricCard
-          title="Total Users"
-          value={metrics?.total_users || 0}
-          description={`${metrics?.active_users_today || 0} active today`}
-          icon={<Users className="h-4 w-4 text-blue-600" />}
-        />
-        <MetricCard
-          title="Monthly Revenue"
-          value={`$${(metrics?.revenue_this_month || 0).toLocaleString()}`}
-          description="Current month"
-          icon={<DollarSign className="h-4 w-4 text-green-600" />}
-        />
-      </div>
-
-      {/* Status Overview */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Company Status Overview</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Active</span>
-              <Badge variant="default" className="bg-green-100 text-green-800">
-                {metrics?.active_companies || 0}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Trial</span>
-              <Badge variant="secondary">
-                {metrics?.trial_companies || 0}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Suspended</span>
-              <Badge variant="destructive">
-                {metrics?.suspended_companies || 0}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Total</span>
-              <Badge variant="outline">
-                {metrics?.total_companies || 0}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Platform Activity</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Total Transactions</span>
-              <span className="font-medium">
-                {(metrics?.total_transactions || 0).toLocaleString()}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Active Users Today</span>
-              <span className="font-medium">
-                {metrics?.active_users_today || 0}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Platform Health</span>
-              <Badge 
-                variant={suspendedCompaniesPercent < 5 ? "default" : "destructive"}
-                className={suspendedCompaniesPercent < 5 ? "bg-green-100 text-green-800" : ""}
-              >
-                {suspendedCompaniesPercent < 5 ? "Healthy" : "Needs Attention"}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <Link href="/platform/companies/new">
-              <Button variant="outline" className="w-full justify-start">
-                <Building className="h-4 w-4 mr-2" />
-                Create Company
-              </Button>
-            </Link>
-            <Link href="/platform/companies?status=suspended">
-              <Button variant="outline" className="w-full justify-start">
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Review Suspended
-              </Button>
-            </Link>
-            <Link href="/platform/audit-logs">
-              <Button variant="outline" className="w-full justify-start">
-                <Activity className="h-4 w-4 mr-2" />
-                View Audit Logs
-              </Button>
-            </Link>
-            <Link href="/platform/companies?status=trial">
-              <Button variant="outline" className="w-full justify-start">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Trial Companies
-              </Button>
-            </Link>
+            <Building2 className="h-8 w-8 text-muted-foreground" />
           </div>
-        </CardContent>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Users</p>
+              <p className="text-3xl font-bold">{stats?.total_users || 0}</p>
+              <p className="text-xs text-muted-foreground">
+                Across all companies
+              </p>
+            </div>
+            <Users className="h-8 w-8 text-muted-foreground" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Transactions (30d)</p>
+              <p className="text-3xl font-bold">{stats?.total_transactions || 0}</p>
+              <p className="text-xs text-muted-foreground">
+                Last 30 days
+              </p>
+            </div>
+            <FileText className="h-8 w-8 text-muted-foreground" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Trial Companies</p>
+              <p className="text-3xl font-bold">{stats?.trial_companies || 0}</p>
+              <p className="text-xs text-yellow-600">
+                {stats?.suspended_companies || 0} suspended
+              </p>
+            </div>
+            <TrendingUp className="h-8 w-8 text-muted-foreground" />
+          </div>
+        </Card>
+      </div>
+
+      {/* Recent Companies */}
+      <Card>
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Recent Companies</h2>
+            <button
+              onClick={() => router.push('/platform/companies')}
+              className="text-sm text-primary hover:underline"
+            >
+              View all
+            </button>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2">Company</th>
+                  <th className="text-left py-2">Code</th>
+                  <th className="text-left py-2">Users</th>
+                  <th className="text-left py-2">Status</th>
+                  <th className="text-left py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {companies.map((companyData) => (
+                  <tr key={companyData.company.id} className="border-b">
+                    <td className="py-2">{companyData.company.name}</td>
+                    <td className="py-2">{companyData.company.code}</td>
+                    <td className="py-2">{companyData.user_count}</td>
+                    <td className="py-2">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        companyData.company.subscription_status === 'active' 
+                          ? 'bg-green-100 text-green-800'
+                          : companyData.company.subscription_status === 'suspended'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {companyData.company.subscription_status}
+                      </span>
+                    </td>
+                    <td className="py-2">
+                      <button
+                        onClick={() => handleImpersonate(companyData.company.id)}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        Impersonate
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </Card>
     </div>
   );

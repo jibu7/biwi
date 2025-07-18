@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_, or_, func, desc
+from sqlalchemy import and_, or_, func, desc, case
 from typing import List, Optional
 from app.models.ar import (
     Customer, SalesRepresentative, ARTransactionType, ARTransaction,
@@ -15,12 +15,21 @@ from app.schemas.ar import (
 )
 from app.crud.tax_calculator import TaxCalculator
 from app.crud.forex_service import ForexService
+from app.core.tenant_db import TenantAwareRepository
 from app import models, schemas
 from datetime import date
 from decimal import Decimal
+from fastapi import HTTPException
+
+# Tenant-aware repository classes
+class CustomerRepository(TenantAwareRepository):
+    model = models.Customer
+
+class ARTransactionRepository(TenantAwareRepository):
+    model = models.ARTransaction
 
 # Customer CRUD
-def get_customers(db: Session, company_id: int, skip: int = 0, limit: int = 100) -> List[Customer]:
+def get_customers_by_company(db: Session, company_id: int, skip: int = 0, limit: int = 100) -> List[Customer]:
     return db.query(Customer)\
         .filter(Customer.company_id == company_id)\
         .options(
@@ -29,6 +38,10 @@ def get_customers(db: Session, company_id: int, skip: int = 0, limit: int = 100)
             joinedload(Customer.currency)
         )\
         .offset(skip).limit(limit).all()
+
+def get_customers(db: Session, company_id: int, skip: int = 0, limit: int = 100) -> List[Customer]:
+    """Legacy function - use get_customers_by_company instead"""
+    return get_customers_by_company(db, company_id, skip, limit)
 
 def get_customer(db: Session, customer_id: int, company_id: int) -> Optional[Customer]:
     return db.query(Customer)\
@@ -46,6 +59,11 @@ def get_customer_by_code(db: Session, customer_code: str, company_id: int) -> Op
         .first()
 
 def create_customer(db: Session, customer: CustomerCreate, company_id: int) -> Customer:
+    # Check if customer code already exists within the company
+    existing = get_customer_by_code(db, customer.customer_code, company_id)
+    if existing:
+        raise HTTPException(status_code=400, detail="Customer code already exists in this company")
+    
     db_customer = Customer(**customer.dict(), company_id=company_id)
     db.add(db_customer)
     db.commit()
@@ -210,10 +228,15 @@ def create_ar_transaction(
     company_id: int, 
     user_id: int
 ) -> ARTransaction:
+    # Validate customer belongs to company
+    customer = get_customer(db, ar_transaction_in.customer_id, company_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found in this company")
+    
     # Generate document number if not provided
     transaction_type = get_ar_transaction_type(db, ar_transaction_in.ar_transaction_type_id, company_id)
     if not transaction_type:
-        raise ValueError("Invalid transaction type")
+        raise HTTPException(status_code=404, detail="Invalid transaction type for this company")
     
     # Use provided document number or generate sequential number
     if ar_transaction_in.document_number:
@@ -666,6 +689,48 @@ def get_customer_aging_report(db: Session, company_id: int, as_of_date: date):
     ).all()
     
     return aging_query
+
+def get_customer_ageing(db: Session, company_id: int, as_of_date: date) -> list[dict]:
+    """Customer ageing for specific company only"""
+    from datetime import timedelta
+    
+    # Calculate the date ranges for aging buckets
+    date_30_ago = as_of_date - timedelta(days=30)
+    date_60_ago = as_of_date - timedelta(days=60)
+    date_90_ago = as_of_date - timedelta(days=90)
+    date_120_ago = as_of_date - timedelta(days=120)
+    
+    aging_data = db.execute("""
+        SELECT 
+            c.id as customer_id,
+            c.name as customer_name,
+            SUM(CASE WHEN EXTRACT(days FROM %s - t.transaction_date) <= 30 THEN t.open_amount ELSE 0 END) as current,
+            SUM(CASE WHEN EXTRACT(days FROM %s - t.transaction_date) BETWEEN 31 AND 60 THEN t.open_amount ELSE 0 END) as days_30,
+            SUM(CASE WHEN EXTRACT(days FROM %s - t.transaction_date) BETWEEN 61 AND 90 THEN t.open_amount ELSE 0 END) as days_60,
+            SUM(CASE WHEN EXTRACT(days FROM %s - t.transaction_date) BETWEEN 91 AND 120 THEN t.open_amount ELSE 0 END) as days_90,
+            SUM(CASE WHEN EXTRACT(days FROM %s - t.transaction_date) > 120 THEN t.open_amount ELSE 0 END) as days_120_plus,
+            SUM(t.open_amount) as total_due
+        FROM customers c
+        LEFT JOIN ar_transactions t ON c.id = t.customer_id AND t.company_id = %s
+        WHERE c.company_id = %s
+        GROUP BY c.id, c.name
+        HAVING SUM(t.open_amount) > 0
+    """, (as_of_date, as_of_date, as_of_date, as_of_date, as_of_date, company_id, company_id)).fetchall()
+    
+    # Convert result to list of dictionaries
+    return [
+        {
+            'customer_id': row.customer_id,
+            'customer_name': row.customer_name,
+            'current': float(row.current or 0),
+            'days_30': float(row.days_30 or 0),
+            'days_60': float(row.days_60 or 0),
+            'days_90': float(row.days_90 or 0),
+            'days_120_plus': float(row.days_120_plus or 0),
+            'total_due': float(row.total_due or 0)
+        }
+        for row in aging_data
+    ]
 
 def get_customer_statement(db: Session, company_id: int, customer_id: int, 
                           from_date: date, to_date: date):
