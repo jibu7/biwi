@@ -18,26 +18,124 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade():
-    # Create enums
-    user_type_enum = postgresql.ENUM('platform_admin', 'company_admin', 'company_user', name='usertype')
-    subscription_status_enum = postgresql.ENUM('trial', 'active', 'suspended', 'cancelled', name='subscriptionstatus')
+    # Use raw SQL to add columns and constraints only if they don't exist
+    # This prevents DuplicateColumn and other errors
     
-    user_type_enum.create(op.get_bind())
-    subscription_status_enum.create(op.get_bind())
+    # Create enums if they don't exist
+    op.execute("""
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'usertype') THEN
+                CREATE TYPE usertype AS ENUM ('platform_admin', 'company_admin', 'company_user');
+            END IF;
+            
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscriptionstatus') THEN
+                CREATE TYPE subscriptionstatus AS ENUM ('trial', 'active', 'suspended', 'cancelled');
+            END IF;
+        END $$;
+    """)
     
-    # Update companies table
-    op.add_column('companies', sa.Column('code', sa.String(10), nullable=True))
-    op.add_column('companies', sa.Column('subscription_status', subscription_status_enum, nullable=False, server_default='trial'))
-    op.add_column('companies', sa.Column('subscription_plan', sa.String(50), nullable=True))
-    op.add_column('companies', sa.Column('subscription_expires', sa.Date(), nullable=True))
-    op.add_column('companies', sa.Column('storage_limit_gb', sa.Integer(), nullable=False, server_default='10'))
-    op.add_column('companies', sa.Column('user_limit', sa.Integer(), nullable=False, server_default='5'))
-    op.add_column('companies', sa.Column('primary_contact_email', sa.String(255), nullable=True))
-    op.add_column('companies', sa.Column('billing_email', sa.String(255), nullable=True))
-    op.add_column('companies', sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()))
-    op.add_column('companies', sa.Column('created_by_user_id', sa.Integer(), nullable=True))
-    op.add_column('companies', sa.Column('is_deleted', sa.Boolean(), nullable=False, server_default='false'))
-    op.add_column('companies', sa.Column('deleted_at', sa.DateTime(), nullable=True))
+    # Add columns to companies table if they don't exist
+    op.execute("""
+        DO $$ 
+        BEGIN 
+            -- Add code column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='code') THEN
+                ALTER TABLE companies ADD COLUMN code VARCHAR(10);
+            END IF;
+            
+            -- Add subscription_status column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='subscription_status') THEN
+                ALTER TABLE companies ADD COLUMN subscription_status subscriptionstatus DEFAULT 'trial'::subscriptionstatus NOT NULL;
+            END IF;
+            
+            -- Add subscription_plan column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='subscription_plan') THEN
+                ALTER TABLE companies ADD COLUMN subscription_plan VARCHAR(50);
+            END IF;
+            
+            -- Add subscription_expires column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='subscription_expires') THEN
+                ALTER TABLE companies ADD COLUMN subscription_expires DATE;
+            END IF;
+            
+            -- Add storage_limit_gb column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='storage_limit_gb') THEN
+                ALTER TABLE companies ADD COLUMN storage_limit_gb INTEGER DEFAULT 10 NOT NULL;
+            END IF;
+            
+            -- Add user_limit column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='user_limit') THEN
+                ALTER TABLE companies ADD COLUMN user_limit INTEGER DEFAULT 5 NOT NULL;
+            END IF;
+            
+            -- Add primary_contact_email column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='primary_contact_email') THEN
+                ALTER TABLE companies ADD COLUMN primary_contact_email VARCHAR(255);
+            END IF;
+            
+            -- Add billing_email column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='billing_email') THEN
+                ALTER TABLE companies ADD COLUMN billing_email VARCHAR(255);
+            END IF;
+            
+            -- Add created_at column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='created_at') THEN
+                ALTER TABLE companies ADD COLUMN created_at TIMESTAMP DEFAULT NOW() NOT NULL;
+            END IF;
+            
+            -- Add created_by_user_id column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='created_by_user_id') THEN
+                ALTER TABLE companies ADD COLUMN created_by_user_id INTEGER;
+            END IF;
+            
+            -- Add is_deleted column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='is_deleted') THEN
+                ALTER TABLE companies ADD COLUMN is_deleted BOOLEAN DEFAULT false NOT NULL;
+            END IF;
+            
+            -- Add deleted_at column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='deleted_at') THEN
+                ALTER TABLE companies ADD COLUMN deleted_at TIMESTAMP;
+            END IF;
+        END $$;
+    """)
+    
+    # Add columns to users table if they don't exist
+    op.execute("""
+        DO $$ 
+        BEGIN 
+            -- Add user_type column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='user_type') THEN
+                ALTER TABLE users ADD COLUMN user_type usertype DEFAULT 'company_user'::usertype NOT NULL;
+            END IF;
+            
+            -- Add default_company_id column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='default_company_id') THEN
+                ALTER TABLE users ADD COLUMN default_company_id INTEGER;
+            END IF;
+            
+            -- Add last_login column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='last_login') THEN
+                ALTER TABLE users ADD COLUMN last_login TIMESTAMP;
+            END IF;
+            
+            -- Add created_at column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='created_at') THEN
+                ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT NOW() NOT NULL;
+            END IF;
+            
+            -- Add updated_at column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='updated_at') THEN
+                ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT NOW() NOT NULL;
+            END IF;
+            
+            -- Add mfa_secret column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='mfa_secret') THEN
+                ALTER TABLE users ADD COLUMN mfa_secret VARCHAR;
+            END IF;
+        END $$;
+    """)
     
     # Generate codes for existing companies
     op.execute("""
@@ -46,177 +144,126 @@ def upgrade():
         WHERE code IS NULL
     """)
     
-    # Make code not nullable and unique
-    op.alter_column('companies', 'code', nullable=False)
-    op.create_unique_constraint('uq_company_code', 'companies', ['code'])
-    op.create_index('idx_company_code', 'companies', ['code'])
-    
-    # Update users table
-    op.add_column('users', sa.Column('user_type', user_type_enum, nullable=False, server_default='company_user'))
-    op.add_column('users', sa.Column('default_company_id', sa.Integer(), nullable=True))
-    op.add_column('users', sa.Column('last_login', sa.DateTime(), nullable=True))
-    op.add_column('users', sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()))
-    op.add_column('users', sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.func.now()))
-    op.add_column('users', sa.Column('mfa_secret', sa.String(), nullable=True))
-    
-    # Make company_id nullable for platform admins
-    op.alter_column('users', 'company_id', nullable=True)
-    
-    # Add foreign keys
-    op.create_foreign_key('fk_users_default_company', 'users', 'companies', ['default_company_id'], ['id'])
-    op.create_foreign_key('fk_companies_created_by_user', 'companies', 'users', ['created_by_user_id'], ['id'])
-    
-    # Add check constraint
-    op.create_check_constraint(
-        'ck_company_required_for_non_platform_users',
-        'users',
-        "user_type = 'platform_admin' OR company_id IS NOT NULL"
-    )
-    
-    # Create platform_audit_logs table
-    op.create_table('platform_audit_logs',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=True),
-        sa.Column('company_id', sa.Integer(), nullable=True),
-        sa.Column('action', sa.String(100), nullable=False),
-        sa.Column('resource_type', sa.String(50), nullable=True),
-        sa.Column('resource_id', sa.Integer(), nullable=True),
-        sa.Column('details', postgresql.JSONB(), nullable=True),
-        sa.Column('ip_address', sa.String(45), nullable=True),
-        sa.Column('user_agent', sa.Text(), nullable=True),
-        sa.Column('timestamp', sa.DateTime(), nullable=False, server_default=sa.func.now()),
-        sa.PrimaryKeyConstraint('id'),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-        sa.ForeignKeyConstraint(['company_id'], ['companies.id'], )
-    )
-    
-    # Create indexes for platform_audit_logs
-    op.create_index('idx_platform_audit_logs_user_id', 'platform_audit_logs', ['user_id'])
-    op.create_index('idx_platform_audit_logs_company_id', 'platform_audit_logs', ['company_id'])
-    op.create_index('idx_platform_audit_logs_timestamp', 'platform_audit_logs', ['timestamp'])
-    op.create_index('idx_platform_audit_logs_action', 'platform_audit_logs', ['action'])
-    op.create_index('idx_platform_audit_company_timestamp', 'platform_audit_logs', ['company_id', 'timestamp'])
-    op.create_index('idx_platform_audit_user_timestamp', 'platform_audit_logs', ['user_id', 'timestamp'])
-    
-    # Create resource_usage table
-    op.create_table('resource_usage',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('company_id', sa.Integer(), nullable=False),
-        sa.Column('resource_type', sa.String(), nullable=False),
-        sa.Column('usage_date', sa.Date(), nullable=False),
-        sa.Column('quantity', sa.Numeric(precision=15, scale=4), nullable=False),
-        sa.Column('unit', sa.String(), nullable=False),
-        sa.Column('usage_metadata', postgresql.JSONB(), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.func.now()),
-        sa.PrimaryKeyConstraint('id'),
-        sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
-        sa.UniqueConstraint('company_id', 'resource_type', 'usage_date', name='uq_company_resource_date')
-    )
-    op.create_index('idx_resource_usage_company_date', 'resource_usage', ['company_id', 'usage_date'])
-    
-    # Create billing_configurations table
-    op.create_table('billing_configurations',
-        sa.Column('company_id', sa.Integer(), nullable=False),
-        sa.Column('billing_provider', sa.String(), nullable=False, server_default='stripe'),
-        sa.Column('customer_id', sa.String(), nullable=True),
-        sa.Column('subscription_id', sa.String(), nullable=True),
-        sa.Column('payment_method_id', sa.String(), nullable=True),
-        sa.Column('billing_cycle', sa.String(), nullable=False, server_default='monthly'),
-        sa.Column('next_billing_date', sa.Date(), nullable=True),
-        sa.Column('custom_pricing', postgresql.JSONB(), nullable=True),
-        sa.Column('discount_percentage', sa.Numeric(precision=5, scale=2), nullable=False, server_default='0'),
-        sa.PrimaryKeyConstraint('company_id'),
-        sa.ForeignKeyConstraint(['company_id'], ['companies.id'], )
-    )
-    
-    # Create usage_alerts table
-    op.create_table('usage_alerts',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('company_id', sa.Integer(), nullable=False),
-        sa.Column('alert_type', sa.String(), nullable=False),
-        sa.Column('threshold_value', sa.Numeric(precision=15, scale=4), nullable=False),
-        sa.Column('current_value', sa.Numeric(precision=15, scale=4), nullable=False),
-        sa.Column('alert_date', sa.DateTime(), nullable=False, server_default=sa.func.now()),
-        sa.Column('acknowledged', sa.Boolean(), nullable=False, server_default='false'),
-        sa.Column('acknowledged_by', sa.Integer(), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
-        sa.ForeignKeyConstraint(['acknowledged_by'], ['users.id'], )
-    )
-    
-    # Add missing company_id columns to tables that need them
-    tables_needing_company_id = [
-        'gl_transaction_types',
-        # Add other tables as identified
-    ]
-    
-    for table in tables_needing_company_id:
-        try:
-            op.add_column(table, sa.Column('company_id', sa.Integer(), nullable=True))
-            
-            # Set company_id from related records
-            if table == 'gl_transaction_types':
-                op.execute(f"""
-                    UPDATE {table} 
-                    SET company_id = (SELECT company_id FROM gl_defaults LIMIT 1)
-                    WHERE company_id IS NULL
-                """)
-            
-            # Make not nullable after setting values
-            op.alter_column(table, 'company_id', nullable=False)
-            
-            # Add foreign key
-            op.create_foreign_key(f'fk_{table}_company', table, 'companies', ['company_id'], ['id'])
-            
-            # Add index
-            op.create_index(f'idx_{table}_company', table, ['company_id'])
-            
-        except Exception as e:
-            print(f"Skipping {table}, may already have company_id: {e}")
-    
     # Update existing superusers to platform_admin
     op.execute("UPDATE users SET user_type = 'platform_admin' WHERE is_superuser = TRUE")
     
-    # Add composite unique constraints
-    unique_constraints = [
-        ('gl_accounts', 'account_code', 'uq_glaccount_code_company'),
-        ('customers', 'customer_code', 'uq_customer_code_company'),
-        ('suppliers', 'supplier_code', 'uq_supplier_code_company'),
-        ('inventory_items', 'item_code', 'uq_item_code_company'),
-        ('warehouses', 'name', 'uq_warehouse_name_company'),
-        ('unit_of_measures', 'name', 'uq_uom_name_company'),
-        ('currencies', 'code', 'uq_currency_code_company'),
-        ('tax_types', 'name', 'uq_taxtype_name_company'),
-        ('branches', 'name', 'uq_branch_name_company'),
-    ]
+    # Add constraints and indexes safely
+    op.execute("""
+        DO $$ 
+        BEGIN 
+            -- Make company_id nullable for platform admins
+            BEGIN
+                ALTER TABLE users ALTER COLUMN company_id DROP NOT NULL;
+            EXCEPTION
+                WHEN OTHERS THEN NULL;
+            END;
+            
+            -- Add foreign key constraints if they don't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name='fk_users_default_company') THEN
+                ALTER TABLE users ADD CONSTRAINT fk_users_default_company FOREIGN KEY (default_company_id) REFERENCES companies(id);
+            END IF;
+            
+            IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name='fk_companies_created_by_user') THEN
+                ALTER TABLE companies ADD CONSTRAINT fk_companies_created_by_user FOREIGN KEY (created_by_user_id) REFERENCES users(id);
+            END IF;
+            
+            -- Add unique constraint for company code if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name='uq_company_code') THEN
+                ALTER TABLE companies ADD CONSTRAINT uq_company_code UNIQUE (code);
+            END IF;
+            
+            -- Add index for company code if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname='idx_company_code') THEN
+                CREATE INDEX idx_company_code ON companies (code);
+            END IF;
+            
+            -- Add check constraint if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name='ck_company_required_for_non_platform_users') THEN
+                ALTER TABLE users ADD CONSTRAINT ck_company_required_for_non_platform_users 
+                CHECK (user_type = 'platform_admin' OR company_id IS NOT NULL);
+            END IF;
+        END $$;
+    """)
     
-    for table, column, constraint_name in unique_constraints:
-        try:
-            # Drop existing unique constraint if it exists
-            op.drop_constraint(f'{table}_{column}_key', table, type_='unique')
-        except:
-            pass
-        
-        # Create new composite unique constraint
-        op.create_unique_constraint(constraint_name, table, [column, 'company_id'])
+    # Create tables if they don't exist
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS platform_audit_logs (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            company_id INTEGER REFERENCES companies(id),
+            action VARCHAR(100) NOT NULL,
+            resource_type VARCHAR(50),
+            resource_id INTEGER,
+            details JSONB,
+            ip_address VARCHAR(45),
+            user_agent TEXT,
+            timestamp TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+    """)
     
-    # Add performance indexes
-    performance_indexes = [
-        ('gl_journal_entries', ['company_id', 'entry_date'], 'idx_gl_je_company_date'),
-        ('gl_journal_entries', ['company_id', 'status'], 'idx_gl_je_company_status'),
-        ('ar_transactions', ['company_id', 'customer_id'], 'idx_ar_trans_company_customer'),
-        ('ar_transactions', ['company_id', 'transaction_date'], 'idx_ar_trans_company_date'),
-        ('ap_transactions', ['company_id', 'supplier_id'], 'idx_ap_trans_company_supplier'),
-        ('inventory_transactions', ['company_id', 'item_id'], 'idx_inv_trans_company_item'),
-        ('sales_orders', ['company_id', 'customer_id'], 'idx_so_company_customer'),
-        ('purchase_orders', ['company_id', 'supplier_id'], 'idx_po_company_supplier'),
-    ]
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS resource_usage (
+            id SERIAL PRIMARY KEY,
+            company_id INTEGER NOT NULL REFERENCES companies(id),
+            resource_type VARCHAR NOT NULL,
+            usage_date DATE NOT NULL,
+            quantity NUMERIC(15,4) NOT NULL,
+            unit VARCHAR NOT NULL,
+            usage_metadata JSONB,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE(company_id, resource_type, usage_date)
+        )
+    """)
     
-    for table, columns, index_name in performance_indexes:
-        try:
-            op.create_index(index_name, table, columns)
-        except:
-            pass
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS billing_configurations (
+            company_id INTEGER PRIMARY KEY REFERENCES companies(id),
+            billing_provider VARCHAR NOT NULL DEFAULT 'stripe',
+            customer_id VARCHAR,
+            subscription_id VARCHAR,
+            payment_method_id VARCHAR,
+            billing_cycle VARCHAR NOT NULL DEFAULT 'monthly',
+            next_billing_date DATE,
+            custom_pricing JSONB,
+            discount_percentage NUMERIC(5,2) NOT NULL DEFAULT 0
+        )
+    """)
+    
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS usage_alerts (
+            id SERIAL PRIMARY KEY,
+            company_id INTEGER NOT NULL REFERENCES companies(id),
+            alert_type VARCHAR NOT NULL,
+            threshold_value NUMERIC(15,4) NOT NULL,
+            current_value NUMERIC(15,4) NOT NULL,
+            alert_date TIMESTAMP NOT NULL DEFAULT NOW(),
+            acknowledged BOOLEAN NOT NULL DEFAULT false,
+            acknowledged_by INTEGER REFERENCES users(id)
+        )
+    """)
+    
+    # Create indexes safely
+    op.execute("""
+        DO $$ 
+        BEGIN 
+            -- Create indexes if they don't exist
+            IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname='idx_platform_audit_logs_user_id') THEN
+                CREATE INDEX idx_platform_audit_logs_user_id ON platform_audit_logs (user_id);
+            END IF;
+            
+            IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname='idx_platform_audit_logs_company_id') THEN
+                CREATE INDEX idx_platform_audit_logs_company_id ON platform_audit_logs (company_id);
+            END IF;
+            
+            IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname='idx_platform_audit_logs_timestamp') THEN
+                CREATE INDEX idx_platform_audit_logs_timestamp ON platform_audit_logs (timestamp);
+            END IF;
+            
+            IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname='idx_resource_usage_company_date') THEN
+                CREATE INDEX idx_resource_usage_company_date ON resource_usage (company_id, usage_date);
+            END IF;
+        END $$;
+    """)
 
 
 def downgrade():

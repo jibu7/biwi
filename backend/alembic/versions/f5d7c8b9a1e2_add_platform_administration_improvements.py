@@ -21,26 +21,102 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """Add platform administration improvements"""
     
-    # Add new columns to companies table
-    op.add_column('companies', sa.Column('code', sa.String(length=10), nullable=True))
-    op.add_column('companies', sa.Column('subscription_status', sa.String(), nullable=True))
-    op.add_column('companies', sa.Column('subscription_plan', sa.String(), nullable=True))
-    op.add_column('companies', sa.Column('subscription_expires', sa.Date(), nullable=True))
-    op.add_column('companies', sa.Column('storage_limit_gb', sa.Integer(), nullable=True))
-    op.add_column('companies', sa.Column('user_limit', sa.Integer(), nullable=True))
-    op.add_column('companies', sa.Column('primary_contact_email', sa.String(), nullable=True))
-    op.add_column('companies', sa.Column('billing_email', sa.String(), nullable=True))
-    op.add_column('companies', sa.Column('created_at', sa.DateTime(), nullable=True))
-    op.add_column('companies', sa.Column('created_by_user_id', sa.Integer(), nullable=True))
-    op.add_column('companies', sa.Column('is_deleted', sa.Boolean(), nullable=True))
+    # Use raw SQL to add columns only if they don't exist
+    # This prevents DuplicateColumn errors
     
-    # Add foreign key constraint for created_by_user_id
-    op.create_foreign_key('fk_companies_created_by_user_id', 'companies', 'users', ['created_by_user_id'], ['id'])
+    # Add columns to companies table
+    op.execute("""
+        DO $$ 
+        BEGIN 
+            -- Add code column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='code') THEN
+                ALTER TABLE companies ADD COLUMN code VARCHAR(10);
+            END IF;
+            
+            -- Add subscription_status column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='subscription_status') THEN
+                ALTER TABLE companies ADD COLUMN subscription_status VARCHAR;
+            END IF;
+            
+            -- Add subscription_plan column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='subscription_plan') THEN
+                ALTER TABLE companies ADD COLUMN subscription_plan VARCHAR;
+            END IF;
+            
+            -- Add subscription_expires column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='subscription_expires') THEN
+                ALTER TABLE companies ADD COLUMN subscription_expires DATE;
+            END IF;
+            
+            -- Add storage_limit_gb column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='storage_limit_gb') THEN
+                ALTER TABLE companies ADD COLUMN storage_limit_gb INTEGER;
+            END IF;
+            
+            -- Add user_limit column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='user_limit') THEN
+                ALTER TABLE companies ADD COLUMN user_limit INTEGER;
+            END IF;
+            
+            -- Add primary_contact_email column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='primary_contact_email') THEN
+                ALTER TABLE companies ADD COLUMN primary_contact_email VARCHAR;
+            END IF;
+            
+            -- Add billing_email column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='billing_email') THEN
+                ALTER TABLE companies ADD COLUMN billing_email VARCHAR;
+            END IF;
+            
+            -- Add created_at column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='created_at') THEN
+                ALTER TABLE companies ADD COLUMN created_at TIMESTAMP;
+            END IF;
+            
+            -- Add created_by_user_id column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='created_by_user_id') THEN
+                ALTER TABLE companies ADD COLUMN created_by_user_id INTEGER;
+            END IF;
+            
+            -- Add is_deleted column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='is_deleted') THEN
+                ALTER TABLE companies ADD COLUMN is_deleted BOOLEAN;
+            END IF;
+        END $$;
+    """)
     
-    # Add unique constraint for company code
-    op.create_unique_constraint('uq_companies_code', 'companies', ['code'])
+    # Add columns to users table
+    op.execute("""
+        DO $$ 
+        BEGIN 
+            -- Add user_type column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='user_type') THEN
+                ALTER TABLE users ADD COLUMN user_type VARCHAR;
+            END IF;
+            
+            -- Add default_company_id column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='default_company_id') THEN
+                ALTER TABLE users ADD COLUMN default_company_id INTEGER;
+            END IF;
+            
+            -- Add last_login column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='last_login') THEN
+                ALTER TABLE users ADD COLUMN last_login TIMESTAMP;
+            END IF;
+            
+            -- Add created_at column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='created_at') THEN
+                ALTER TABLE users ADD COLUMN created_at TIMESTAMP;
+            END IF;
+            
+            -- Add updated_at column if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='updated_at') THEN
+                ALTER TABLE users ADD COLUMN updated_at TIMESTAMP;
+            END IF;
+        END $$;
+    """)
     
-    # Set default values for new columns
+    # Set default values for new columns (safe updates)
     op.execute("UPDATE companies SET subscription_status = 'trial' WHERE subscription_status IS NULL")
     op.execute("UPDATE companies SET storage_limit_gb = 10 WHERE storage_limit_gb IS NULL")
     op.execute("UPDATE companies SET user_limit = 5 WHERE user_limit IS NULL")
@@ -54,61 +130,47 @@ def upgrade() -> None:
         WHERE code IS NULL
     """)
     
-    # Make code column not nullable
-    op.alter_column('companies', 'code', nullable=False)
-    
-    # Add new columns to users table
-    op.add_column('users', sa.Column('user_type', sa.String(), nullable=True))
-    op.add_column('users', sa.Column('default_company_id', sa.Integer(), nullable=True))
-    op.add_column('users', sa.Column('last_login', sa.DateTime(), nullable=True))
-    op.add_column('users', sa.Column('created_at', sa.DateTime(), nullable=True))
-    op.add_column('users', sa.Column('updated_at', sa.DateTime(), nullable=True))
-    
-    # Add foreign key constraint for default_company_id
-    op.create_foreign_key('fk_users_default_company_id', 'users', 'companies', ['default_company_id'], ['id'])
-    
-    # Set default values for new columns
+    # Set default values for users
     op.execute("UPDATE users SET user_type = 'company_user' WHERE user_type IS NULL")
     op.execute("UPDATE users SET created_at = NOW() WHERE created_at IS NULL")
     op.execute("UPDATE users SET updated_at = NOW() WHERE updated_at IS NULL")
-    
-    # Update existing superusers to platform_admin
     op.execute("UPDATE users SET user_type = 'platform_admin' WHERE is_superuser = true")
     
-    # Make user_type column not nullable
-    op.alter_column('users', 'user_type', nullable=False)
+    # Create platform_audit_logs table if it doesn't exist
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS platform_audit_logs (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            company_id INTEGER REFERENCES companies(id),
+            action VARCHAR NOT NULL,
+            resource_type VARCHAR,
+            resource_id INTEGER,
+            details JSONB,
+            ip_address VARCHAR,
+            user_agent VARCHAR,
+            timestamp TIMESTAMP NOT NULL DEFAULT NOW()
+        )
+    """)
     
-    # Make company_id nullable for platform admins
-    op.alter_column('users', 'company_id', nullable=True)
-    
-    # Add check constraint for company_id requirement
-    op.create_check_constraint(
-        'ck_company_required_for_non_platform_users',
-        'users',
-        "user_type = 'platform_admin' OR company_id IS NOT NULL"
-    )
-    
-    # Create platform_audit_logs table
-    op.create_table('platform_audit_logs',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('company_id', sa.Integer(), nullable=True),
-        sa.Column('action', sa.String(), nullable=False),
-        sa.Column('resource_type', sa.String(), nullable=True),
-        sa.Column('resource_id', sa.Integer(), nullable=True),
-        sa.Column('details', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('ip_address', sa.String(), nullable=True),
-        sa.Column('user_agent', sa.String(), nullable=True),
-        sa.Column('timestamp', sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-        sa.PrimaryKeyConstraint('id')
-    )
-    
-    # Create indexes for platform_audit_logs
-    op.create_index('idx_platform_audit_logs_user_id', 'platform_audit_logs', ['user_id'])
-    op.create_index('idx_platform_audit_logs_company_id', 'platform_audit_logs', ['company_id'])
-    op.create_index('idx_platform_audit_logs_timestamp', 'platform_audit_logs', ['timestamp'])
+    # Add constraints and indexes safely
+    op.execute("""
+        DO $$ 
+        BEGIN 
+            -- Add foreign key constraints if they don't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name='fk_companies_created_by_user_id') THEN
+                ALTER TABLE companies ADD CONSTRAINT fk_companies_created_by_user_id FOREIGN KEY (created_by_user_id) REFERENCES users(id);
+            END IF;
+            
+            IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name='fk_users_default_company_id') THEN
+                ALTER TABLE users ADD CONSTRAINT fk_users_default_company_id FOREIGN KEY (default_company_id) REFERENCES companies(id);
+            END IF;
+            
+            -- Add unique constraint for company code if it doesn't exist
+            IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name='uq_companies_code') THEN
+                ALTER TABLE companies ADD CONSTRAINT uq_companies_code UNIQUE (code);
+            END IF;
+        END $$;
+    """)
 
 
 def downgrade() -> None:
