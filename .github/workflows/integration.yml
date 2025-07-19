@@ -154,6 +154,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Create backend .env file for Docker Compose
+      run: |
+        echo "DATABASE_URL=postgresql://test_user:test_password@postgres:5432/test_db" > backend/.env
+        echo "SECRET_KEY=test-secret-key-for-docker" >> backend/.env
+        echo "ALGORITHM=HS256" >> backend/.env
+        echo "ACCESS_TOKEN_EXPIRE_MINUTES=30" >> backend/.env
+        echo "CORS_ORIGINS=http://localhost:3000,http://localhost" >> backend/.env
+
     - name: Build and test with Docker Compose
       run: |
         echo "Testing Docker Compose configuration..."
