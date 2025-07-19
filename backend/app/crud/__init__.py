@@ -1,4 +1,4 @@
-from . import core, gl, ar, ap, inventory, oe, common, reporting, bom, pos
+from . import core, gl, ar, ap, inventory, oe, common, reporting, bom, pos, platform
 
 # GL imports
 from .gl import (
@@ -63,6 +63,18 @@ from app.crud.core import (
     update_user,
     delete_user,
     get_user_roles
+)
+
+# Platform imports
+from .platform import (
+    authenticate_platform_admin, create_platform_admin,
+    create_billing_plan, get_billing_plans,
+    create_company_subscription, check_subscription_limits,
+    track_usage, get_usage_summary, generate_invoice,
+    record_health_check, get_system_health_summary,
+    create_audit_log, query_audit_logs,
+    get_system_config, set_system_config,
+    is_feature_enabled, get_platform_stats
 )
 
 # Export all functions

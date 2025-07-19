@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.database.database import SessionLocal
 from app import crud, schemas
 from app.models.core import Company
-from app.models.common import Currency, TaxType, CompanyBranch
+from app.models.common import Currency, TaxType, Branch
 
 def test_currency_crud_operations():
     """Test Currency CRUD operations"""
@@ -197,11 +197,11 @@ def test_tax_type_crud_operations():
         db.close()
 
 def test_branch_crud_operations():
-    """Test CompanyBranch CRUD operations"""
+    """Test Branch CRUD operations"""
     db: Session = SessionLocal()
     
     try:
-        print("\n🧪 Testing CompanyBranch CRUD Operations...")
+        print("\n🧪 Testing Branch CRUD Operations...")
         
         # Get test company
         company = db.query(Company).first()
@@ -210,14 +210,14 @@ def test_branch_crud_operations():
             return False
         
         # Clear existing branches for clean test
-        db.query(CompanyBranch).filter(
-            CompanyBranch.company_id == company.id
+        db.query(Branch).filter(
+            Branch.company_id == company.id
         ).delete()
         db.commit()
         
         # Test 1: Create main branch
         print("\n1. Testing main branch creation...")
-        main_branch_data = schemas.CompanyBranchCreate(
+        main_branch_data = schemas.BranchCreate(
             branch_code="HQ",
             branch_name="Headquarters",
             address={
@@ -271,7 +271,7 @@ def test_branch_crud_operations():
         ]
         
         for branch_info in branch_data_list:
-            branch_create = schemas.CompanyBranchCreate(
+            branch_create = schemas.BranchCreate(
                 contact_info={"phone": "+1-555-0200"},
                 is_active=True,
                 **branch_info
@@ -288,7 +288,7 @@ def test_branch_crud_operations():
         
         # Test 4: Update branch
         print("\n4. Testing branch update...")
-        update_data = schemas.CompanyBranchUpdate(
+        update_data = schemas.BranchUpdate(
             branch_name="Updated Manhattan Branch",
             gl_segment_code="201"
         )
@@ -301,7 +301,7 @@ def test_branch_crud_operations():
         
         # Try to create duplicate branch code
         try:
-            duplicate_data = schemas.CompanyBranchCreate(
+            duplicate_data = schemas.BranchCreate(
                 branch_code="HQ",  # Already exists
                 branch_name="Duplicate HQ",
                 address={"street": "999 Test St"},
@@ -315,11 +315,11 @@ def test_branch_crud_operations():
         except Exception as e:
             print("✅ Correctly prevented duplicate branch code")
         
-        print("\n✅ All CompanyBranch CRUD tests passed!")
+        print("\n✅ All Branch CRUD tests passed!")
         return True
         
     except Exception as e:
-        print(f"\n❌ CompanyBranch CRUD test failed: {e}")
+        print(f"\n❌ Branch CRUD test failed: {e}")
         import traceback
         traceback.print_exc()
         return False

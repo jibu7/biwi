@@ -5,6 +5,8 @@ from app.api.v1.api import api_router
 from app.config import settings
 from app.middleware.tenant_isolation import TenantIsolationMiddleware
 from app.middleware.audit_logging import AuditLoggingMiddleware
+from app.middleware.database_connection import DatabaseConnectionMiddleware
+from app.middleware.audit import AuditMiddleware
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -21,7 +23,10 @@ app.add_middleware(
 )
 
 # Custom middleware - ORDER MATTERS!
+# Database connection middleware should be first to handle connection errors
+app.add_middleware(DatabaseConnectionMiddleware)
 app.add_middleware(AuditLoggingMiddleware)
+app.add_middleware(AuditMiddleware)
 app.add_middleware(TenantIsolationMiddleware)
 
 # Include API router

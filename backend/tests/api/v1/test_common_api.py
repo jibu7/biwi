@@ -242,7 +242,7 @@ def test_tax_type_endpoints(token):
     return True
 
 def test_branch_endpoints(token):
-    """Test CompanyBranch API endpoints"""
+    """Test Branch API endpoints"""
     headers = {"Authorization": f"Bearer {token}"}
     
     print("\n=== Testing Branch Endpoints ===")

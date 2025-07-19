@@ -257,3 +257,53 @@ class InventoryService {
 }
 
 export const inventoryService = new InventoryService();
+
+// Export individual functions for direct import
+export const getInventoryItems = (skip = 0, limit = 100) => inventoryService.getInventoryItems(skip, limit);
+export const createInventoryItem = (itemData: InventoryItemCreate) => inventoryService.createInventoryItem(itemData);
+export const processAdjustment = (adjustmentData: InventoryAdjustmentCreate) => inventoryService.processAdjustment(adjustmentData);
+export const getInventoryValuation = (warehouseId?: number, asOfDate?: string) => inventoryService.getInventoryValuation(warehouseId, asOfDate);
+export const getStockQuantities = (warehouseId?: number) => inventoryService.getStockQuantities(warehouseId);
+export const getInventoryTransactions = (skip = 0, limit = 100, itemId?: number) => inventoryService.getInventoryTransactions(skip, limit, itemId);
+export const updateInventoryItem = (id: number, itemData: InventoryItemUpdate) => inventoryService.updateInventoryItem(id, itemData);
+export const getInventoryItem = (id: number) => inventoryService.getInventoryItem(id);
+export const deleteInventoryItem = (id: number) => inventoryService.deleteInventoryItem(id);
+export const searchItems = (query: string, limit = 10) => inventoryService.searchItems(query, limit);
+
+export const getWarehouses = (skip = 0, limit = 100) => inventoryService.getWarehouses(skip, limit);
+export const createWarehouse = (warehouseData: WarehouseCreate) => inventoryService.createWarehouse(warehouseData);
+export const updateWarehouse = (id: number, warehouseData: WarehouseUpdate) => inventoryService.updateWarehouse(id, warehouseData);
+export const getWarehouse = (id: number) => inventoryService.getWarehouse(id);
+export const deleteWarehouse = (id: number) => inventoryService.deleteWarehouse(id);
+
+export const getUnitsOfMeasure = (skip = 0, limit = 100) => inventoryService.getUnitsOfMeasure(skip, limit);
+export const createUnitOfMeasure = (uomData: UnitOfMeasureCreate) => inventoryService.createUnitOfMeasure(uomData);
+export const updateUnitOfMeasure = (id: number, uomData: UnitOfMeasureUpdate) => inventoryService.updateUnitOfMeasure(id, uomData);
+export const getUnitOfMeasure = (id: number) => inventoryService.getUnitOfMeasure(id);
+export const deleteUnitOfMeasure = (id: number) => inventoryService.deleteUnitOfMeasure(id);
+
+export const createItemBarcode = (itemId: number, barcodeData: ItemBarcodeCreate) => inventoryService.createItemBarcode(itemId, barcodeData);
+export const getItemBarcodes = (itemId: number) => inventoryService.getItemBarcodes(itemId);
+export const deleteItemBarcode = (itemId: number, barcodeId: number) => inventoryService.deleteItemBarcode(itemId, barcodeId);
+
+export const getInventoryTransactionTypes = () => inventoryService.getInventoryTransactionTypes();
+export const createInventoryTransactionType = (typeData: InventoryTransactionTypeCreate) => inventoryService.createInventoryTransactionType(typeData);
+export const updateInventoryTransactionType = (id: number, typeData: InventoryTransactionTypeUpdate) => inventoryService.updateInventoryTransactionType(id, typeData);
+export const deleteInventoryTransactionType = (id: number) => inventoryService.deleteInventoryTransactionType(id);
+
+export const processInventoryAdjustment = (adjustmentData: InventoryAdjustmentCreate) => inventoryService.processInventoryAdjustment(adjustmentData);
+export const processWarehouseTransfer = (transferData: WarehouseTransferCreate) => inventoryService.processWarehouseTransfer(transferData);
+
+export const getInventoryDefaults = () => inventoryService.getInventoryDefaults();
+export const updateInventoryDefaults = (defaultsData: InventoryDefaultsUpdate) => inventoryService.updateInventoryDefaults(defaultsData);
+
+export const getInventoryCountSessions = (skip = 0, limit = 100) => inventoryService.getInventoryCountSessions(skip, limit);
+export const startInventoryCount = (sessionData: InventoryCountSessionCreate) => inventoryService.startInventoryCount(sessionData);
+export const getInventoryCountSession = (id: number) => inventoryService.getInventoryCountSession(id);
+
+export const getInventoryCountLines = (sessionId: number) => inventoryService.getInventoryCountLines(sessionId);
+export const recordCountedQuantities = (sessionId: number, updates: InventoryCountLineUpdate[]) => inventoryService.recordCountedQuantities(sessionId, updates);
+export const processCountVariances = (sessionId: number) => inventoryService.processCountVariances(sessionId);
+
+export const getInventoryMovement = (itemId: number, startDate: string, endDate: string, warehouseId?: number) => inventoryService.getInventoryMovement(itemId, startDate, endDate, warehouseId);
+export const getItemListing = (activeOnly = true) => inventoryService.getItemListing(activeOnly);

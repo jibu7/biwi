@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.database.database import SessionLocal
 from app import crud, schemas
 from app.models.core import Company
-from app.models.common import Currency, TaxType, CompanyBranch
+from app.models.common import Currency, TaxType, Branch
 
 def test_currency_exchange_scenarios():
     """Test various currency exchange scenarios"""
@@ -245,14 +245,14 @@ def test_multi_branch_scenarios():
             return False
         
         # Clear existing branches
-        db.query(CompanyBranch).filter(CompanyBranch.company_id == company.id).delete()
+        db.query(Branch).filter(Branch.company_id == company.id).delete()
         db.commit()
         
         # Scenario 1: Retail chain setup
         print("\n1. Setting up retail chain with multiple locations...")
         
         # Create headquarters
-        hq = crud.common.create_company_branch(db, schemas.CompanyBranchCreate(
+        hq = crud.common.create_company_branch(db, schemas.BranchCreate(
             branch_code="HQ001",
             branch_name="Corporate Headquarters",
             address={
@@ -283,7 +283,7 @@ def test_multi_branch_scenarios():
         
         regional_branches = []
         for code, name, city, state, gl_code in regions:
-            branch = crud.common.create_company_branch(db, schemas.CompanyBranchCreate(
+            branch = crud.common.create_company_branch(db, schemas.BranchCreate(
                 branch_code=code,
                 branch_name=name,
                 address={
@@ -311,7 +311,7 @@ def test_multi_branch_scenarios():
                 store_code = f"STR{store_counter:03d}"
                 store_gl = f"{region_gl[0]}{store_counter:03d}"
                 
-                store = crud.common.create_company_branch(db, schemas.CompanyBranchCreate(
+                store = crud.common.create_company_branch(db, schemas.BranchCreate(
                     branch_code=store_code,
                     branch_name=f"Store #{store_counter} - {region_branch.branch_name.split()[0]}",
                     address={
@@ -355,7 +355,7 @@ def test_multi_branch_scenarios():
         
         closed_store = crud.common.update_company_branch(
             db, store_to_close.id, company.id,
-            schemas.CompanyBranchUpdate(is_active=False)
+            schemas.BranchUpdate(is_active=False)
         )
         print(f"  ✓ Closed store: {closed_store.branch_name}")
         

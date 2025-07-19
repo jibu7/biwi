@@ -35,5 +35,12 @@ from .pos import Till, POSTransactionType, POSSession, POSTransaction, POSTransa
 # Billing models (NEW)
 from .billing import ResourceUsage, BillingConfiguration, UsageAlert, BillingTransaction
 
+# Platform models
+from .platform import (
+    PlatformAdmin, BillingPlan, CompanySubscription, UsageMetric, PlatformInvoice,
+    SystemHealth, AuditLog, SystemConfiguration, FeatureFlag,
+    UsageMetricType, BillingPlanType, AuditActionType
+)
+
 # Reporting models
 from .reporting import ReportTemplate, ReportSchedule, BankReconciliation, BankReconciliationItem

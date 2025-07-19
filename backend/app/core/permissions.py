@@ -53,6 +53,14 @@ class Permission(str, Enum):
     PLATFORM_USER_MANAGE = "platform:user_manage"
     PLATFORM_AUDIT_VIEW = "platform:audit_view"
 
+# Platform Permissions
+PLATFORM_SUPER_ADMIN = "platform:super_admin"
+PLATFORM_VIEW_METRICS = "platform:view_metrics"
+PLATFORM_MANAGE_COMPANIES = "platform:manage_companies"
+PLATFORM_VIEW_AUDIT = "platform:view_audit"
+PLATFORM_MANAGE_BILLING = "platform:manage_billing"
+PLATFORM_SYSTEM_CONFIG = "platform:system_config"
+
 # Legacy permission constants for backward compatibility
 USER_CREATE = "users:create"
 USER_READ = "users:read"
