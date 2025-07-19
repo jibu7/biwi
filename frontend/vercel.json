@@ -7,9 +7,6 @@
       "use": "@vercel/next"
     }
   ],
-  "github": {
-    "silent": true
-  },
   "routes": [
     {
       "src": "/api/v1/(.*)",
