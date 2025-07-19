@@ -12,6 +12,11 @@ on:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
 
+# Cancel in-progress runs for the same workflow and branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   PYTHON_VERSION: '3.12'
   POETRY_VERSION: '1.8.0'

@@ -1,12 +1,10 @@
 {
   "version": 2,
   "name": "channelzap",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
+  "github": {
+    "enabled": false,
+    "silent": true
+  },
   "routes": [
     {
       "src": "/api/v1/(.*)",

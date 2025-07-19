@@ -9,6 +9,11 @@ on:
     # Run security scans daily at 2 AM UTC
     - cron: '0 2 * * *'
 
+# Cancel in-progress runs for the same workflow and branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   security-scan:
     runs-on: ubuntu-latest

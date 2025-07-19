@@ -9,6 +9,11 @@ on:
     # Run quality checks weekly on Sundays at 6 AM UTC
     - cron: '0 6 * * 0'
 
+# Cancel in-progress runs for the same workflow and branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   code-quality:
     runs-on: ubuntu-latest
@@ -191,12 +196,13 @@ jobs:
           poetry run sphinx-build -b html docs docs/_build/html
         fi
 
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./backend/docs/_build/html
+    # GitHub Pages deployment disabled until Pages is properly configured
+    # - name: Deploy to GitHub Pages
+    #   uses: peaceiris/actions-gh-pages@v3
+    #   if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    #   with:
+    #     github_token: ${{ secrets.GITHUB_TOKEN }}
+    #     publish_dir: ./backend/docs/_build/html
 
   accessibility-testing:
     runs-on: ubuntu-latest

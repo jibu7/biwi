@@ -1,0 +1,18 @@
+# Disable Vercel's GitHub integration to prevent conflicts with GitHub Actions
+.github/
+.git/
+
+# Development files
+*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage/
+.nyc_output
+
+# Cache directories
+.next/cache/
+node_modules/.cache/
