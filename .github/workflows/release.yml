@@ -1,36 +1,20 @@
-# TEMPORARILY DISABLED - Release & Deploy workflow
-# This workflow has been disabled due to missing Docker secrets and configuration issues
-# To re-enable:
-# 1. Configure Docker Hub credentials in repository secrets
-# 2. Set up proper deployment environments
-# 3. Remove the comment block and uncomment the workflow
+  on:
+  push:
+    branches:
+      - master
 
-# name: Release & Deploy
-# 
-# on:
-#   release:
-#     types: [published]
-#   workflow_dispatch:
-#     inputs:
-#       environment:
-#         description: 'Environment to deploy to'
-#         required: true
-#         default: 'staging'
-#         type: choice
-#         options:
-#         - staging
-#         - production
-#       version:
-#         description: 'Version to deploy'
-#         required: true
-#         default: 'latest'
+name: Release & Deploy
+on:
+  push:
+    branches:
+      - master
 
 env:
-  PYTHON_VERSION: '3.12'
-  NODE_VERSION: '20'
+PYTHON_VERSION: '3.12'
+NODE_VERSION: '20'
 
 jobs:
-  build-and-test:
+build-and-test:
     runs-on: ubuntu-latest
     
     outputs:

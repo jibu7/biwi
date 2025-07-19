@@ -35,14 +35,14 @@ jobs:
         node-version: '20'
 
     # SonarQube Analysis (only if secrets are available)
-    - name: SonarQube Scan
-      if: false  # Disabled until SonarQube is configured
-      uses: sonarqube-quality-gate-action@master
-      timeout-minutes: 5
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      continue-on-error: true
+    # - name: SonarQube Scan
+    #   if: false  # Disabled until SonarQube is configured
+    #   uses: mr-smithers-excellent/sonarqube-quality-gate-action@v1
+    #   timeout-minutes: 5
+    #   env:
+    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+    #   continue-on-error: true
 
     # Python Code Quality
     - name: Install Poetry
