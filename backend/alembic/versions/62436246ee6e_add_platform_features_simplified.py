@@ -38,7 +38,7 @@ def upgrade() -> None:
     connection.execute(sa.text("""
         DO $$ BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscriptionstatus') THEN
-                CREATE TYPE subscriptionstatus AS ENUM ('TRIAL', 'ACTIVE', 'CANCELLED', 'EXPIRED');
+                CREATE TYPE subscriptionstatus AS ENUM ('trial', 'active', 'cancelled', 'expired');
             END IF;
         END $$;
     """))
@@ -46,7 +46,7 @@ def upgrade() -> None:
     connection.execute(sa.text("""
         DO $$ BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'usagemetrictype') THEN
-                CREATE TYPE usagemetrictype AS ENUM ('API_CALLS', 'STORAGE', 'USERS', 'TRANSACTIONS', 'CUSTOM');
+                CREATE TYPE usagemetrictype AS ENUM ('api_calls', 'storage', 'users', 'transactions', 'custom');
             END IF;
         END $$;
     """))
@@ -54,7 +54,7 @@ def upgrade() -> None:
     connection.execute(sa.text("""
         DO $$ BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'billingplantype') THEN
-                CREATE TYPE billingplantype AS ENUM ('TRIAL', 'BASIC', 'PROFESSIONAL', 'ENTERPRISE', 'CUSTOM');
+                CREATE TYPE billingplantype AS ENUM ('trial', 'basic', 'professional', 'enterprise', 'custom');
             END IF;
         END $$;
     """))
@@ -62,7 +62,7 @@ def upgrade() -> None:
     connection.execute(sa.text("""
         DO $$ BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'auditactiontype') THEN
-                CREATE TYPE auditactiontype AS ENUM ('CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'API_CALL', 'PERMISSION_CHANGE', 'SUBSCRIPTION_CHANGE', 'OTHER');
+                CREATE TYPE auditactiontype AS ENUM ('create', 'update', 'delete', 'login', 'logout', 'api_call', 'permission_change', 'subscription_change', 'other');
             END IF;
         END $$;
     """))
@@ -87,7 +87,7 @@ def upgrade() -> None:
     op.create_table('billing_plans',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('name', sa.String(), nullable=False),
-        sa.Column('plan_type', postgresql.ENUM('TRIAL', 'BASIC', 'PROFESSIONAL', 'ENTERPRISE', 'CUSTOM', name='billingplantype', create_type=False), nullable=False),
+        sa.Column('plan_type', postgresql.ENUM('trial', 'basic', 'professional', 'enterprise', 'custom', name='billingplantype', create_type=False), nullable=False),
         sa.Column('price_monthly', sa.Numeric(precision=10, scale=2), nullable=False, server_default=sa.text('0')),
         sa.Column('price_yearly', sa.Numeric(precision=10, scale=2), nullable=False, server_default=sa.text('0')),
         sa.Column('features', postgresql.JSONB(astext_type=sa.Text()), nullable=False, server_default=sa.text("'{}'::jsonb")),
@@ -102,8 +102,8 @@ def upgrade() -> None:
     
     # Add new columns to companies table
     op.add_column('companies', sa.Column('subscription_status', 
-                  postgresql.ENUM('TRIAL', 'ACTIVE', 'CANCELLED', 'EXPIRED', name='subscriptionstatus', create_type=False), 
-                  nullable=False, server_default=sa.text("'TRIAL'::subscriptionstatus")))
+                  postgresql.ENUM('trial', 'active', 'cancelled', 'expired', name='subscriptionstatus', create_type=False), 
+                  nullable=False, server_default=sa.text("'trial'::subscriptionstatus")))
     op.add_column('companies', sa.Column('billing_plan_id', sa.Integer(), nullable=True))
     op.add_column('companies', sa.Column('subscription_start_date', sa.DateTime(), nullable=True))
     op.add_column('companies', sa.Column('subscription_end_date', sa.DateTime(), nullable=True))
@@ -123,7 +123,7 @@ def upgrade() -> None:
         sa.Column('billing_plan_id', sa.Integer(), nullable=False),
         sa.Column('start_date', sa.DateTime(), nullable=False),
         sa.Column('end_date', sa.DateTime(), nullable=True),
-        sa.Column('status', postgresql.ENUM('TRIAL', 'ACTIVE', 'CANCELLED', 'EXPIRED', name='subscriptionstatus', create_type=False), nullable=False),
+        sa.Column('status', postgresql.ENUM('trial', 'active', 'cancelled', 'expired', name='subscriptionstatus', create_type=False), nullable=False),
         sa.Column('payment_method', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column('next_billing_date', sa.DateTime(), nullable=True),
         sa.Column('cancellation_date', sa.DateTime(), nullable=True),
@@ -166,7 +166,7 @@ def upgrade() -> None:
     
     op.create_table('audit_logs',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('action_type', postgresql.ENUM('CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'API_CALL', 'PERMISSION_CHANGE', 'SUBSCRIPTION_CHANGE', 'OTHER', name='auditactiontype', create_type=False), nullable=False),
+        sa.Column('action_type', postgresql.ENUM('create', 'update', 'delete', 'login', 'logout', 'api_call', 'permission_change', 'subscription_change', 'other', name='auditactiontype', create_type=False), nullable=False),
         sa.Column('entity_type', sa.String(), nullable=False),
         sa.Column('entity_id', sa.Integer(), nullable=True),
         sa.Column('company_id', sa.Integer(), nullable=True),
@@ -235,7 +235,7 @@ def upgrade() -> None:
     op.create_table('usage_metrics',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('company_id', sa.Integer(), nullable=False),
-        sa.Column('metric_type', postgresql.ENUM('API_CALLS', 'STORAGE', 'USERS', 'TRANSACTIONS', 'CUSTOM', name='usagemetrictype', create_type=False), nullable=False),
+        sa.Column('metric_type', postgresql.ENUM('api_calls', 'storage', 'users', 'transactions', 'custom', name='usagemetrictype', create_type=False), nullable=False),
         sa.Column('metric_name', sa.String(), nullable=True),
         sa.Column('value', sa.Numeric(), nullable=False),
         sa.Column('unit', sa.String(), nullable=True),

@@ -4,32 +4,36 @@ from datetime import datetime
 from app.database.database import Base
 import enum
 
-class UsageMetricType(enum.Enum):
-    API_CALLS = "api_calls"
-    STORAGE_MB = "storage_mb"
-    ACTIVE_USERS = "active_users"
-    TRANSACTIONS = "transactions"
-    DOCUMENTS = "documents"
-    REPORTS_GENERATED = "reports_generated"
+class SubscriptionStatus(str, enum.Enum):
+    TRIAL = "trial"
+    ACTIVE = "active"
+    CANCELLED = "cancelled"
+    EXPIRED = "expired"
 
-class BillingPlanType(enum.Enum):
-    FREE = "free"
-    STARTER = "starter"
+class UsageMetricType(str, enum.Enum):
+    API_CALLS = "api_calls"
+    STORAGE = "storage"
+    USERS = "users"
+    TRANSACTIONS = "transactions"
+    CUSTOM = "custom"
+
+class BillingPlanType(str, enum.Enum):
+    TRIAL = "trial"
+    BASIC = "basic"
     PROFESSIONAL = "professional"
     ENTERPRISE = "enterprise"
     CUSTOM = "custom"
 
-class AuditActionType(enum.Enum):
+class AuditActionType(str, enum.Enum):
     CREATE = "create"
-    READ = "read"
     UPDATE = "update"
     DELETE = "delete"
     LOGIN = "login"
     LOGOUT = "logout"
-    EXPORT = "export"
-    IMPORT = "import"
-    APPROVE = "approve"
-    REJECT = "reject"
+    API_CALL = "api_call"
+    PERMISSION_CHANGE = "permission_change"
+    SUBSCRIPTION_CHANGE = "subscription_change"
+    OTHER = "other"
 
 class PlatformAdmin(Base):
     __tablename__ = "platform_admins"
@@ -90,7 +94,7 @@ class CompanySubscription(Base):
     custom_limits = Column(JSON, nullable=True)  # Override plan limits
     custom_price = Column(Numeric(10, 2), nullable=True)
     
-    status = Column(String, default="active")  # "active", "past_due", "cancelled", "suspended"
+    status = Column(Enum(SubscriptionStatus), default=SubscriptionStatus.ACTIVE)
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

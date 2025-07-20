@@ -164,10 +164,9 @@ export default function NewPaymentMethodPage() {
                 >
                   <option value="Cash">Cash</option>
                   <option value="Check">Check</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
-                  <option value="Credit Card">Credit Card</option>
-                  <option value="Electronic">Electronic</option>
-                  <option value="Other">Other</option>
+                  <option value="ACH">ACH</option>
+                  <option value="Wire">Wire</option>
+                  <option value="other">Other</option>
                 </select>
                 {errors.method_type && (
                   <p className="mt-1 text-sm text-red-600">{errors.method_type.message}</p>
