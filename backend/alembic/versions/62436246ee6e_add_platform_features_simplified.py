@@ -1,8 +1,8 @@
-"""add platform features with proper enums
+"""add platform features simplified
 
-Revision ID: 72406a47cf05
+Revision ID: 62436246ee6e
 Revises: ff859d8ad766
-Create Date: 2025-07-19 22:42:51.196272
+Create Date: 2025-07-20 19:33:04.367187
 
 """
 from alembic import op
@@ -10,47 +10,60 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '72406a47cf05'
+revision = '62436246ee6e'
 down_revision = 'ff859d8ad766'
 branch_labels = None
 depends_on = None
 
 
 def upgrade() -> None:
-    # First, create all enum types
-    # Use raw SQL to handle enum creation safely
+    # Get database connection
     connection = op.get_bind()
     
-    # Create enums if they don't exist
+    # First, handle the existing subscription_status column
+    # Check if companies table already has subscription_status column
+    result = connection.execute(sa.text("""
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'companies' 
+        AND column_name = 'subscription_status'
+    """))
+    existing_column = result.fetchone()
+    
+    if existing_column:
+        # Drop the existing column - we'll recreate it with enum type
+        op.drop_column('companies', 'subscription_status')
+    
+    # Create all enum types using DO blocks for safety
     connection.execute(sa.text("""
         DO $$ BEGIN
-            CREATE TYPE subscriptionstatus AS ENUM ('TRIAL', 'ACTIVE', 'CANCELLED', 'EXPIRED');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscriptionstatus') THEN
+                CREATE TYPE subscriptionstatus AS ENUM ('TRIAL', 'ACTIVE', 'CANCELLED', 'EXPIRED');
+            END IF;
         END $$;
     """))
     
     connection.execute(sa.text("""
         DO $$ BEGIN
-            CREATE TYPE usagemetrictype AS ENUM ('API_CALLS', 'STORAGE', 'USERS', 'TRANSACTIONS', 'CUSTOM');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'usagemetrictype') THEN
+                CREATE TYPE usagemetrictype AS ENUM ('API_CALLS', 'STORAGE', 'USERS', 'TRANSACTIONS', 'CUSTOM');
+            END IF;
         END $$;
     """))
     
     connection.execute(sa.text("""
         DO $$ BEGIN
-            CREATE TYPE billingplantype AS ENUM ('TRIAL', 'BASIC', 'PROFESSIONAL', 'ENTERPRISE', 'CUSTOM');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'billingplantype') THEN
+                CREATE TYPE billingplantype AS ENUM ('TRIAL', 'BASIC', 'PROFESSIONAL', 'ENTERPRISE', 'CUSTOM');
+            END IF;
         END $$;
     """))
     
     connection.execute(sa.text("""
         DO $$ BEGIN
-            CREATE TYPE auditactiontype AS ENUM ('CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'API_CALL', 'PERMISSION_CHANGE', 'SUBSCRIPTION_CHANGE', 'OTHER');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'auditactiontype') THEN
+                CREATE TYPE auditactiontype AS ENUM ('CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'API_CALL', 'PERMISSION_CHANGE', 'SUBSCRIPTION_CHANGE', 'OTHER');
+            END IF;
         END $$;
     """))
     
@@ -60,10 +73,10 @@ def upgrade() -> None:
         sa.Column('email', sa.String(), nullable=False),
         sa.Column('hashed_password', sa.String(), nullable=False),
         sa.Column('full_name', sa.String(), nullable=True),
-        sa.Column('is_active', sa.Boolean(), nullable=False),
-        sa.Column('is_superadmin', sa.Boolean(), nullable=False),
+        sa.Column('is_active', sa.Boolean(), nullable=False, server_default=sa.text('true')),
+        sa.Column('is_superadmin', sa.Boolean(), nullable=False, server_default=sa.text('false')),
         sa.Column('permissions', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.Column('last_login', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
@@ -75,90 +88,30 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('name', sa.String(), nullable=False),
         sa.Column('plan_type', postgresql.ENUM('TRIAL', 'BASIC', 'PROFESSIONAL', 'ENTERPRISE', 'CUSTOM', name='billingplantype', create_type=False), nullable=False),
-        sa.Column('price_monthly', sa.Numeric(precision=10, scale=2), nullable=False),
-        sa.Column('price_yearly', sa.Numeric(precision=10, scale=2), nullable=False),
-        sa.Column('features', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column('limits', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column('is_active', sa.Boolean(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.Column('price_monthly', sa.Numeric(precision=10, scale=2), nullable=False, server_default=sa.text('0')),
+        sa.Column('price_yearly', sa.Numeric(precision=10, scale=2), nullable=False, server_default=sa.text('0')),
+        sa.Column('features', postgresql.JSONB(astext_type=sa.Text()), nullable=False, server_default=sa.text("'{}'::jsonb")),
+        sa.Column('limits', postgresql.JSONB(astext_type=sa.Text()), nullable=False, server_default=sa.text("'{}'::jsonb")),
+        sa.Column('is_active', sa.Boolean(), nullable=False, server_default=sa.text('true')),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('name')
     )
     op.create_index(op.f('ix_billing_plans_id'), 'billing_plans', ['id'], unique=False)
     
-    # Handle the subscription_status column conversion carefully
-    # First check if column exists and handle it properly
-    try:
-        # Remove default value if it exists
-        op.alter_column('companies', 'subscription_status', server_default=None)
-        
-        # Update existing values to uppercase to match enum values
-        connection.execute(sa.text("""
-            UPDATE companies 
-            SET subscription_status = CASE 
-                WHEN UPPER(subscription_status) IN ('TRIAL', 'ACTIVE', 'CANCELLED', 'EXPIRED') 
-                THEN UPPER(subscription_status)
-                ELSE 'TRIAL'
-            END
-            WHERE subscription_status IS NOT NULL;
-        """))
-        
-        # Now alter the column type with explicit casting
-        op.execute(sa.text("""
-            ALTER TABLE companies 
-            ALTER COLUMN subscription_status 
-            TYPE subscriptionstatus 
-            USING CASE
-                WHEN subscription_status = 'TRIAL' THEN 'TRIAL'::subscriptionstatus
-                WHEN subscription_status = 'ACTIVE' THEN 'ACTIVE'::subscriptionstatus
-                WHEN subscription_status = 'CANCELLED' THEN 'CANCELLED'::subscriptionstatus
-                WHEN subscription_status = 'EXPIRED' THEN 'EXPIRED'::subscriptionstatus
-                ELSE 'TRIAL'::subscriptionstatus
-            END
-        """))
-        
-        # Set the default value back
-        op.alter_column('companies', 'subscription_status', 
-                       server_default=sa.text("'TRIAL'::subscriptionstatus"))
-        
-    except Exception as e:
-        # If the column doesn't exist, add it with the enum type
-        op.add_column('companies', sa.Column('subscription_status', 
-                      postgresql.ENUM('TRIAL', 'ACTIVE', 'CANCELLED', 'EXPIRED', name='subscriptionstatus', create_type=False),
-                      nullable=False, server_default=sa.text("'TRIAL'::subscriptionstatus")))
-    
-    # Add new columns to companies table (check if they don't already exist)
-    inspector = sa.inspect(connection)
-    existing_columns = [col['name'] for col in inspector.get_columns('companies')]
-    
-    if 'billing_plan_id' not in existing_columns:
-        op.add_column('companies', sa.Column('billing_plan_id', sa.Integer(), nullable=True))
-    if 'subscription_start_date' not in existing_columns:
-        op.add_column('companies', sa.Column('subscription_start_date', sa.DateTime(), nullable=True))
-    if 'subscription_end_date' not in existing_columns:
-        op.add_column('companies', sa.Column('subscription_end_date', sa.DateTime(), nullable=True))
-    if 'trial_end_date' not in existing_columns:
-        op.add_column('companies', sa.Column('trial_end_date', sa.DateTime(), nullable=True))
-    if 'storage_used_mb' not in existing_columns:
-        op.add_column('companies', sa.Column('storage_used_mb', sa.Integer(), nullable=False, server_default='0'))
-    if 'api_calls_this_month' not in existing_columns:
-        op.add_column('companies', sa.Column('api_calls_this_month', sa.Integer(), nullable=False, server_default='0'))
-    if 'created_at' not in existing_columns:
-        op.add_column('companies', sa.Column('created_at', sa.DateTime(), nullable=True))
-    if 'updated_at' not in existing_columns:
-        op.add_column('companies', sa.Column('updated_at', sa.DateTime(), nullable=True))
-    
-    # Update existing rows with default timestamps (only if columns exist and are null)
-    if 'created_at' in existing_columns:
-        op.execute(sa.text("UPDATE companies SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
-        # Make timestamp column non-nullable
-        op.alter_column('companies', 'created_at', nullable=False)
-    
-    if 'updated_at' in existing_columns:
-        op.execute(sa.text("UPDATE companies SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
-        # Make timestamp column non-nullable
-        op.alter_column('companies', 'updated_at', nullable=False)
+    # Add new columns to companies table
+    op.add_column('companies', sa.Column('subscription_status', 
+                  postgresql.ENUM('TRIAL', 'ACTIVE', 'CANCELLED', 'EXPIRED', name='subscriptionstatus', create_type=False), 
+                  nullable=False, server_default=sa.text("'TRIAL'::subscriptionstatus")))
+    op.add_column('companies', sa.Column('billing_plan_id', sa.Integer(), nullable=True))
+    op.add_column('companies', sa.Column('subscription_start_date', sa.DateTime(), nullable=True))
+    op.add_column('companies', sa.Column('subscription_end_date', sa.DateTime(), nullable=True))
+    op.add_column('companies', sa.Column('trial_end_date', sa.DateTime(), nullable=True))
+    op.add_column('companies', sa.Column('storage_used_mb', sa.Integer(), nullable=False, server_default='0'))
+    op.add_column('companies', sa.Column('api_calls_this_month', sa.Integer(), nullable=False, server_default='0'))
+    op.add_column('companies', sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')))
+    op.add_column('companies', sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')))
     
     # Create foreign key after billing_plans table exists
     op.create_foreign_key(None, 'companies', 'billing_plans', ['billing_plan_id'], ['id'])
@@ -174,8 +127,8 @@ def upgrade() -> None:
         sa.Column('payment_method', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column('next_billing_date', sa.DateTime(), nullable=True),
         sa.Column('cancellation_date', sa.DateTime(), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.ForeignKeyConstraint(['billing_plan_id'], ['billing_plans.id'], ),
         sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
         sa.PrimaryKeyConstraint('id')
@@ -188,10 +141,10 @@ def upgrade() -> None:
         sa.Column('key', sa.String(), nullable=False),
         sa.Column('value', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column('description', sa.String(), nullable=True),
-        sa.Column('is_sensitive', sa.Boolean(), nullable=False),
+        sa.Column('is_sensitive', sa.Boolean(), nullable=False, server_default=sa.text('false')),
         sa.Column('updated_by_admin_id', sa.Integer(), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.ForeignKeyConstraint(['updated_by_admin_id'], ['platform_admins.id'], ),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('key')
@@ -204,7 +157,7 @@ def upgrade() -> None:
         sa.Column('value', sa.Float(), nullable=False),
         sa.Column('status', sa.String(), nullable=False),
         sa.Column('details', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('recorded_at', sa.DateTime(), nullable=False),
+        sa.Column('recorded_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_system_health_id'), 'system_health', ['id'], unique=False)
@@ -224,7 +177,7 @@ def upgrade() -> None:
         sa.Column('description', sa.String(), nullable=False),
         sa.Column('old_values', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column('new_values', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.ForeignKeyConstraint(['admin_id'], ['platform_admins.id'], ),
         sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
@@ -240,13 +193,13 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('name', sa.String(), nullable=False),
         sa.Column('description', sa.String(), nullable=True),
-        sa.Column('is_enabled', sa.Boolean(), nullable=False),
+        sa.Column('is_enabled', sa.Boolean(), nullable=False, server_default=sa.text('false')),
         sa.Column('enabled_for_companies', postgresql.ARRAY(sa.Integer()), nullable=True),
         sa.Column('enabled_for_plans', postgresql.ARRAY(sa.String()), nullable=True),
         sa.Column('configuration', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column('created_by_admin_id', sa.Integer(), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.ForeignKeyConstraint(['created_by_admin_id'], ['platform_admins.id'], ),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('name')
@@ -261,16 +214,16 @@ def upgrade() -> None:
         sa.Column('billing_period_start', sa.DateTime(), nullable=False),
         sa.Column('billing_period_end', sa.DateTime(), nullable=False),
         sa.Column('amount', sa.Numeric(precision=10, scale=2), nullable=False),
-        sa.Column('tax_amount', sa.Numeric(precision=10, scale=2), nullable=False),
+        sa.Column('tax_amount', sa.Numeric(precision=10, scale=2), nullable=False, server_default=sa.text('0')),
         sa.Column('total_amount', sa.Numeric(precision=10, scale=2), nullable=False),
-        sa.Column('currency', sa.String(length=3), nullable=False),
+        sa.Column('currency', sa.String(length=3), nullable=False, server_default=sa.text("'USD'")),
         sa.Column('status', sa.String(), nullable=False),
         sa.Column('payment_date', sa.DateTime(), nullable=True),
         sa.Column('payment_method', sa.String(), nullable=True),
         sa.Column('payment_reference', sa.String(), nullable=True),
-        sa.Column('line_items', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.Column('line_items', postgresql.JSONB(astext_type=sa.Text()), nullable=False, server_default=sa.text("'[]'::jsonb")),
+        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
         sa.ForeignKeyConstraint(['subscription_id'], ['company_subscriptions.id'], ),
         sa.PrimaryKeyConstraint('id'),
@@ -286,7 +239,7 @@ def upgrade() -> None:
         sa.Column('metric_name', sa.String(), nullable=True),
         sa.Column('value', sa.Numeric(), nullable=False),
         sa.Column('unit', sa.String(), nullable=True),
-        sa.Column('recorded_at', sa.DateTime(), nullable=False),
+        sa.Column('recorded_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.Column('billing_period', sa.DateTime(), nullable=False),
         sa.Column('details', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
@@ -344,17 +297,7 @@ def downgrade() -> None:
     op.drop_column('companies', 'subscription_end_date')
     op.drop_column('companies', 'subscription_start_date')
     op.drop_column('companies', 'billing_plan_id')
-    
-    # Convert subscription_status back to VARCHAR
-    op.execute(sa.text("""
-        ALTER TABLE companies 
-        ALTER COLUMN subscription_status 
-        TYPE VARCHAR 
-        USING subscription_status::text
-    """))
-    
-    # Set default back to lowercase
-    op.execute(sa.text("UPDATE companies SET subscription_status = 'trial' WHERE subscription_status = 'TRIAL'"))
+    op.drop_column('companies', 'subscription_status')
     
     op.drop_index(op.f('ix_billing_plans_id'), table_name='billing_plans')
     op.drop_table('billing_plans')
@@ -365,7 +308,7 @@ def downgrade() -> None:
     
     # Drop enum types
     connection = op.get_bind()
-    connection.execute(sa.text("DROP TYPE IF EXISTS subscriptionstatus"))
-    connection.execute(sa.text("DROP TYPE IF EXISTS usagemetrictype"))
-    connection.execute(sa.text("DROP TYPE IF EXISTS billingplantype"))
-    connection.execute(sa.text("DROP TYPE IF EXISTS auditactiontype"))
+    connection.execute(sa.text("DROP TYPE IF EXISTS subscriptionstatus CASCADE"))
+    connection.execute(sa.text("DROP TYPE IF EXISTS usagemetrictype CASCADE"))
+    connection.execute(sa.text("DROP TYPE IF EXISTS billingplantype CASCADE"))
+    connection.execute(sa.text("DROP TYPE IF EXISTS auditactiontype CASCADE"))
