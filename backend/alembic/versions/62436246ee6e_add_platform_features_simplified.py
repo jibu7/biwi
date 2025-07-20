@@ -110,8 +110,6 @@ def upgrade() -> None:
     op.add_column('companies', sa.Column('trial_end_date', sa.DateTime(), nullable=True))
     op.add_column('companies', sa.Column('storage_used_mb', sa.Integer(), nullable=False, server_default='0'))
     op.add_column('companies', sa.Column('api_calls_this_month', sa.Integer(), nullable=False, server_default='0'))
-    op.add_column('companies', sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')))
-    op.add_column('companies', sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')))
     
     # Create foreign key after billing_plans table exists
     op.create_foreign_key(None, 'companies', 'billing_plans', ['billing_plan_id'], ['id'])
@@ -289,8 +287,6 @@ def downgrade() -> None:
     
     # Remove columns from companies table
     op.drop_constraint(None, 'companies', type_='foreignkey')
-    op.drop_column('companies', 'updated_at')
-    op.drop_column('companies', 'created_at')
     op.drop_column('companies', 'api_calls_this_month')
     op.drop_column('companies', 'storage_used_mb')
     op.drop_column('companies', 'trial_end_date')
