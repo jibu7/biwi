@@ -1,4 +1,5 @@
 import platformAxiosInstance from '@/lib/platformAxiosInstance';
+import { BillingPlan, CreateBillingPlan, UpdateBillingPlan } from '@/types/platform';
 
 export interface CompanyWithStats {
   company: {
@@ -49,6 +50,37 @@ export interface UserUpdate {
   is_active?: boolean;
 }
 
+export interface PlatformAuditLog {
+  id: number;
+  company_id?: number;
+  user_id?: number;
+  platform_admin_id?: number;
+  action: string;
+  resource_type: string;
+  resource_id?: string;
+  ip_address?: string;
+  user_agent?: string;
+  request_method?: string;
+  request_path?: string;
+  old_values?: any;
+  new_values?: any;
+  status_code?: number;
+  error_message?: string;
+  created_at: string;
+  timestamp: string; // Alias for created_at for compatibility
+}
+
+export interface AuditLogFilters {
+  company_id?: number | null;
+  user_id?: number | null;
+  action?: string | null;
+  resource_type?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  limit?: number;
+  offset?: number;
+}
+
 export interface CompanyCreate {
   name: string;
   code: string;
@@ -67,6 +99,47 @@ export const platformService = {
   getSystemHealth: async () => {
     const response = await platformAxiosInstance.get('/platform/dashboard/health');
     return response.data;
+  },
+  getSystemHealthDetailed: async () => {
+    // For now, return mock detailed health data
+    // In a real implementation, this would call a specific detailed health endpoint
+    return {
+      services: {
+        database: {
+          status: 'operational',
+          metrics: {
+            response_time: 45,
+            uptime: 99.9,
+            connections: 23
+          }
+        },
+        api_server: {
+          status: 'operational',
+          metrics: {
+            response_time: 120,
+            uptime: 99.8,
+            cpu_usage: 35,
+            memory_usage: 42
+          }
+        },
+        file_storage: {
+          status: 'operational',
+          metrics: {
+            response_time: 80,
+            uptime: 100,
+            disk_usage: 65
+          }
+        },
+        email_service: {
+          status: 'degraded',
+          metrics: {
+            response_time: 250,
+            uptime: 98.5,
+            queue_size: 150
+          }
+        }
+      }
+    };
   },
   getRevenueChartData: async () => {
     const response = await platformAxiosInstance.get('/platform/dashboard/revenue-chart');
@@ -131,6 +204,21 @@ export const platformService = {
     start_date?: string;
     end_date?: string;
   }) => {
+    const response = await platformAxiosInstance.get('/platform/audit-logs', { params });
+    return response.data;
+  },
+
+  queryAuditLogs: async (filters: AuditLogFilters): Promise<PlatformAuditLog[]> => {
+    const params = {
+      company_id: filters.company_id,
+      user_id: filters.user_id,
+      action: filters.action,
+      resource_type: filters.resource_type,
+      start_date: filters.start_date,
+      end_date: filters.end_date,
+      limit: filters.limit,
+      skip: filters.offset,
+    };
     const response = await platformAxiosInstance.get('/platform/audit-logs', { params });
     return response.data;
   },
@@ -234,5 +322,97 @@ export const platformService = {
   deleteCompany: async (companyId: number) => {
     const response = await platformAxiosInstance.delete(`/platform/companies/${companyId}`);
     return response.data;
+  },
+
+  // Billing Plans
+  getBillingPlans: async (): Promise<BillingPlan[]> => {
+    const response = await platformAxiosInstance.get('/platform/billing/plans');
+    return response.data;
+  },
+
+  createBillingPlan: async (data: CreateBillingPlan): Promise<BillingPlan> => {
+    const response = await platformAxiosInstance.post('/platform/billing/plans', data);
+    return response.data;
+  },
+
+  updateBillingPlan: async (id: number, data: UpdateBillingPlan): Promise<BillingPlan> => {
+    const response = await platformAxiosInstance.put(`/platform/billing/plans/${id}`, data);
+    return response.data;
+  },
+
+  deleteBillingPlan: async (id: number): Promise<void> => {
+    await platformAxiosInstance.delete(`/platform/billing/plans/${id}`);
+  },
+
+  // Feature Flags
+  getFeatureFlags: async () => {
+    // Mock data for now - in a real implementation, you'd call a specific feature flags endpoint
+    return [
+      {
+        id: 1,
+        name: 'advanced_reporting',
+        description: 'Enable advanced reporting features',
+        is_enabled_globally: false,
+        enabled_companies: [1, 3, 5],
+        disabled_companies: [],
+        rollout_percentage: 25,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 2,
+        name: 'multi_currency',
+        description: 'Enable multi-currency support',
+        is_enabled_globally: true,
+        enabled_companies: [],
+        disabled_companies: [2],
+        rollout_percentage: 100,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 3,
+        name: 'beta_dashboard',
+        description: 'New dashboard beta features',
+        is_enabled_globally: false,
+        enabled_companies: [1, 2],
+        disabled_companies: [],
+        rollout_percentage: 10,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+    ];
+  },
+
+  createFeatureFlag: async (data: any) => {
+    // Mock implementation - in a real app, this would call the API
+    return {
+      id: Math.random(),
+      name: data.name,
+      description: data.description,
+      is_enabled_globally: data.is_enabled_globally || false,
+      enabled_companies: data.enabled_companies || [],
+      disabled_companies: data.disabled_companies || [],
+      rollout_percentage: data.rollout_percentage || 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  },
+
+  updateFeatureFlag: async (name: string, data: any) => {
+    // Mock implementation - in a real app, this would call the API
+    return {
+      name,
+      ...data,
+      updated_at: new Date().toISOString(),
+    };
+  },
+
+  checkFeatureFlag: async (name: string, companyId?: number) => {
+    // Mock implementation - in a real app, this would call the API
+    return {
+      feature: name,
+      enabled: Math.random() > 0.5,
+    };
   }
 };

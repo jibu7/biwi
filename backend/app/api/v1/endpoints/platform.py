@@ -820,3 +820,131 @@ def delete_company(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete company: {str(e)}"
         )
+
+@router.get("/health")
+def get_platform_health(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """
+    Get platform health status including services, database, etc.
+    """
+    try:
+        from app.models.platform import SystemHealth
+        
+        # Get latest health checks
+        health_records = db.query(SystemHealth).order_by(SystemHealth.checked_at.desc()).limit(10).all()
+        
+        health_data = {
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "services": {},
+            "overall_status": "healthy"
+        }
+        
+        # Process health records
+        service_statuses = {}
+        for record in health_records:
+            if record.service_name not in service_statuses:
+                service_statuses[record.service_name] = {
+                    "status": record.status,
+                    "response_time_ms": record.response_time_ms,
+                    "cpu_usage_percent": float(record.cpu_usage_percent or 0),
+                    "memory_usage_mb": record.memory_usage_mb,
+                    "last_checked": record.checked_at.isoformat(),
+                    "error_count": record.error_count
+                }
+        
+        health_data["services"] = service_statuses
+        
+        # Determine overall status
+        if any(status["status"] == "down" for status in service_statuses.values()):
+            health_data["overall_status"] = "down"
+        elif any(status["status"] == "degraded" for status in service_statuses.values()):
+            health_data["overall_status"] = "degraded"
+            
+        return health_data
+        
+    except Exception as e:
+        print(f"Error in get_platform_health: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get platform health: {str(e)}"
+        )
+
+@router.get("/billing/plans")
+def get_billing_plans(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """
+    Get all billing plans for platform administration.
+    """
+    try:
+        from app.models.platform import BillingPlan
+        
+        plans = db.query(BillingPlan).filter(BillingPlan.is_active == True).all()
+        
+        result = []
+        for plan in plans:
+            plan_data = {
+                "id": plan.id,
+                "name": plan.name,
+                "plan_type": plan.plan_type,
+                "monthly_price": float(plan.monthly_price or 0),
+                "annual_price": float(plan.annual_price or 0),
+                "max_users": plan.max_users,
+                "max_transactions_per_month": plan.max_transactions_per_month,
+                "max_storage_gb": plan.max_storage_gb,
+                "max_api_calls_per_day": plan.max_api_calls_per_day,
+                "features": plan.features or {},
+                "is_active": plan.is_active,
+                "created_at": plan.created_at.isoformat() if plan.created_at else None
+            }
+            result.append(plan_data)
+            
+        return result
+        
+    except Exception as e:
+        print(f"Error in get_billing_plans: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get billing plans: {str(e)}"
+        )
+
+@router.get("/feature-flags")
+def get_feature_flags(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """
+    Get all feature flags for platform administration.
+    """
+    try:
+        from app.models.platform import FeatureFlag
+        
+        flags = db.query(FeatureFlag).all()
+        
+        result = []
+        for flag in flags:
+            flag_data = {
+                "id": flag.id,
+                "name": flag.name,
+                "description": flag.description,
+                "is_enabled_globally": flag.is_enabled_globally,
+                "enabled_companies": flag.enabled_companies or [],
+                "disabled_companies": flag.disabled_companies or [],
+                "rollout_percentage": flag.rollout_percentage,
+                "created_at": flag.created_at.isoformat() if flag.created_at else None,
+                "updated_at": flag.updated_at.isoformat() if flag.updated_at else None
+            }
+            result.append(flag_data)
+            
+        return result
+        
+    except Exception as e:
+        print(f"Error in get_feature_flags: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get feature flags: {str(e)}"
+        )
