@@ -1,10 +1,11 @@
 'use client';
 
+import { PlatformAuthProvider } from '@/providers/PlatformAuthProvider';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePlatformAuthStore } from '@/store/platformAuthStore';
 import { PlatformSidebar } from '@/components/platform/PlatformSidebar';
-import { PlatformNavbar } from '@/components/platform/PlatformNavbar';
+import { PlatformHeader } from '@/components/platform/PlatformHeader';
 import { CompanySelector } from '@/components/platform/CompanySelector';
 
 export default function PlatformLayout({
@@ -38,19 +39,21 @@ export default function PlatformLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <PlatformSidebar />
-      <div className="flex-1 flex flex-col">
-        <PlatformNavbar />
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="mb-4">
-            <CompanySelector />
-          </div>
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
-        </main>
+    <PlatformAuthProvider>
+      <div className="flex h-screen bg-gray-100">
+        <PlatformSidebar />
+        <div className="flex flex-1 flex-col">
+          <PlatformHeader />
+          <main className="flex-1 overflow-y-auto p-6">
+            <div className="mb-4">
+              <CompanySelector />
+            </div>
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </PlatformAuthProvider>
   );
 }

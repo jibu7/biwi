@@ -30,6 +30,7 @@ export interface PlatformUser {
   company_name?: string;
   created_at: string;
   last_login?: string;
+  permissions?: string[];
 }
 
 export interface UserCreate {
@@ -59,8 +60,16 @@ export interface CompanyCreate {
 
 export const platformService = {
   // Dashboard
-  getDashboardStats: async () => {
+  getPlatformStats: async () => {
     const response = await platformAxiosInstance.get('/platform/dashboard/stats');
+    return response.data;
+  },
+  getSystemHealth: async () => {
+    const response = await platformAxiosInstance.get('/platform/dashboard/health');
+    return response.data;
+  },
+  getRevenueChartData: async () => {
+    const response = await platformAxiosInstance.get('/platform/dashboard/revenue-chart');
     return response.data;
   },
 
@@ -70,6 +79,8 @@ export const platformService = {
     limit?: number;
     search?: string;
     status?: string;
+    sortBy?: string;
+    sortOrder?: string;
   }) => {
     const response = await platformAxiosInstance.get('/platform/companies', { params });
     return response.data;

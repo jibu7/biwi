@@ -1,70 +1,131 @@
-import { cn } from '@/lib/utils';
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
 
-interface Column<T> {
-  header: string;
-  accessor: keyof T | ((item: T) => React.ReactNode);
-  className?: string;
-}
+import { cn } from "@/lib/utils"
 
-interface TableProps<T> {
-  data: T[];
-  columns: Column<T>[];
-  actions?: (item: T) => React.ReactNode;
-}
+const tableVariants = cva("w-full caption-bottom text-sm")
 
-export function Table<T extends { id: number }>({ 
-  data, 
-  columns, 
-  actions 
-}: TableProps<T>) {
-  return (
-    <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-      <table className="min-w-full divide-y divide-gray-300">
-        <thead className="bg-gray-50">
-          <tr>
-            {columns.map((column, index) => (
-              <th
-                key={index}
-                className={cn(
-                  'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
-                  column.className
-                )}
-              >
-                {column.header}
-              </th>
-            ))}
-            {actions && (
-              <th className="relative px-6 py-3">
-                <span className="sr-only">Actions</span>
-              </th>
-            )}
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {data.map((item) => (
-            <tr key={item.id}>
-              {columns.map((column, index) => (
-                <td
-                  key={index}
-                  className={cn(
-                    'px-6 py-4 whitespace-nowrap text-sm text-gray-900',
-                    column.className
-                  )}
-                >
-                  {typeof column.accessor === 'function'
-                    ? column.accessor(item)
-                    : item[column.accessor] as React.ReactNode}
-                </td>
-              ))}
-              {actions && (
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {actions(item)}
-                </td>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+const Table = React.forwardRef<
+  HTMLTableElement,
+  React.HTMLAttributes<HTMLTableElement>
+>(({ className, ...props }, ref) => (
+  <div className="relative w-full overflow-auto">
+    <table
+      ref={ref}
+      className={cn(tableVariants(), className)}
+      {...props}
+    />
+  </div>
+))
+Table.displayName = "Table"
+
+const tableHeaderVariants = cva("[&_tr]:border-b")
+
+const TableHeader = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <thead ref={ref} className={cn(tableHeaderVariants(), className)} {...props} />
+))
+TableHeader.displayName = "TableHeader"
+
+const tableBodyVariants = cva("[&_tr:last-child]:border-0")
+
+const TableBody = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <tbody
+    ref={ref}
+    className={cn(tableBodyVariants(), className)}
+    {...props}
+  />
+))
+TableBody.displayName = "TableBody"
+
+const tableFooterVariants = cva(
+  "bg-muted/50 font-medium [&>tr]:last:border-b-0"
+)
+
+const TableFooter = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <tfoot
+    ref={ref}
+    className={cn(tableFooterVariants(), className)}
+    {...props}
+  />
+))
+TableFooter.displayName = "TableFooter"
+
+const tableRowVariants = cva(
+  "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+)
+
+const TableRow = React.forwardRef<
+  HTMLTableRowElement,
+  React.HTMLAttributes<HTMLTableRowElement>
+>(({ className, ...props }, ref) => (
+  <tr
+    ref={ref}
+    className={cn(tableRowVariants(), className)}
+    {...props}
+  />
+))
+TableRow.displayName = "TableRow"
+
+const tableHeadVariants = cva(
+  "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
+)
+
+const TableHead = React.forwardRef<
+  HTMLTableCellElement,
+  React.ThHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
+  <th
+    ref={ref}
+    className={cn(tableHeadVariants(), className)}
+    {...props}
+  />
+))
+TableHead.displayName = "TableHead"
+
+const tableCellVariants = cva("p-4 align-middle [&:has([role=checkbox])]:pr-0")
+
+const TableCell = React.forwardRef<
+  HTMLTableCellElement,
+  React.TdHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
+  <td
+    ref={ref}
+    className={cn(tableCellVariants(), className)}
+    {...props}
+  />
+))
+TableCell.displayName = "TableCell"
+
+const tableCaptionVariants = cva("mt-4 text-sm text-muted-foreground")
+
+const TableCaption = React.forwardRef<
+  HTMLTableCaptionElement,
+  React.HTMLAttributes<HTMLTableCaptionElement>
+>(({ className, ...props }, ref) => (
+  <caption
+    ref={ref}
+    className={cn(tableCaptionVariants(), className)}
+    {...props}
+  />
+))
+TableCaption.displayName = "TableCaption"
+
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
 }

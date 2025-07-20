@@ -10,6 +10,7 @@ export interface PlatformUser {
   company_code?: string | null;
   last_login?: string | null;
   created_at?: string;
+  permissions?: string[];
 }
 
 export interface CreatePlatformUser {

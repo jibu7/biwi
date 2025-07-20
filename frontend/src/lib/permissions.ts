@@ -75,3 +75,15 @@ export const POS_SALES_PROCESS = "pos:sales_process";
 export const POS_RETURNS_PROCESS = "pos:returns_process";
 export const POS_CASH_MANAGE = "pos:cash_manage";
 export const POS_REPORTS_VIEW = "pos:reports_view";
+
+// Platform Permissions
+export const PLATFORM_SUPER_ADMIN = "platform:super_admin";
+export const PLATFORM_VIEW_METRICS = "platform:view_metrics";
+export const PLATFORM_MANAGE_COMPANIES = "platform:manage_companies";
+export const PLATFORM_VIEW_AUDIT = "platform:view_audit";
+export const PLATFORM_MANAGE_BILLING = "platform:manage_billing";
+export const PLATFORM_SYSTEM_CONFIG = "platform:system_config";
+
+export const hasPermission = (userPermissions: string[], requiredPermission: string) => {
+    return userPermissions.includes(requiredPermission);
+};

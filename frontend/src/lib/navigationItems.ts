@@ -17,7 +17,9 @@ import {
   Settings,
   Factory,
   Wrench,
-  Calculator
+  Calculator,
+  LayoutDashboard,
+  Building2,
 } from 'lucide-react';
 import * as permissions from './permissions';
 
@@ -719,4 +721,54 @@ export const navItems: NavItem[] = [
       }
     ]
   }
+];
+
+// Add to navigationItems.ts - This would be a separate navigation for platform admins
+export const platformNavItems = [
+  {
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    href: "/platform/dashboard",
+    requiredPermission: permissions.PLATFORM_VIEW_METRICS,
+  },
+  {
+    label: "Companies",
+    icon: Building2,
+    href: "/platform/companies",
+    requiredPermission: permissions.PLATFORM_MANAGE_COMPANIES,
+    children: [
+      { label: "All Companies", href: "/platform/companies", requiredPermission: permissions.PLATFORM_MANAGE_COMPANIES },
+      { label: "Subscriptions", href: "/platform/subscriptions", requiredPermission: permissions.PLATFORM_MANAGE_BILLING },
+      { label: "Usage Reports", href: "/platform/usage", requiredPermission: permissions.PLATFORM_VIEW_METRICS },
+    ],
+  },
+  {
+    label: "Billing",
+    icon: CreditCard,
+    href: "/platform/billing",
+    requiredPermission: permissions.PLATFORM_MANAGE_BILLING,
+    children: [
+      { label: "Plans", href: "/platform/billing/plans", requiredPermission: permissions.PLATFORM_MANAGE_BILLING },
+      { label: "Invoices", href: "/platform/billing/invoices", requiredPermission: permissions.PLATFORM_MANAGE_BILLING },
+      { label: "Revenue Reports", href: "/platform/billing/revenue", requiredPermission: permissions.PLATFORM_VIEW_METRICS },
+    ],
+  },
+  {
+    label: "System",
+    icon: Settings,
+    href: "/platform/system",
+    requiredPermission: permissions.PLATFORM_SYSTEM_CONFIG,
+    children: [
+      { label: "Configuration", href: "/platform/system/config", requiredPermission: permissions.PLATFORM_SYSTEM_CONFIG },
+      { label: "Feature Flags", href: "/platform/system/features", requiredPermission: permissions.PLATFORM_SYSTEM_CONFIG },
+      { label: "Health Monitor", href: "/platform/system/health", requiredPermission: permissions.PLATFORM_VIEW_METRICS },
+      { label: "Audit Logs", href: "/platform/system/audit", requiredPermission: permissions.PLATFORM_VIEW_AUDIT },
+    ],
+  },
+  {
+    label: "Platform Admins",
+    icon: Users,
+    href: "/platform/admins",
+    requiredPermission: permissions.PLATFORM_SUPER_ADMIN,
+  },
 ];
