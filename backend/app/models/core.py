@@ -22,7 +22,7 @@ class Company(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
-    code = Column(String, nullable=False)
+    code = Column(String, unique=True, nullable=False)
     
     # Subscription details
     subscription_status = Column(String(20), nullable=False, default='trial')

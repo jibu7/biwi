@@ -20,6 +20,7 @@ class SubscriptionStatus(str, Enum):
 # Company Schemas
 class CompanyBase(BaseModel):
     name: str
+    code: str
     address: Optional[dict] = None
     contact_info: Optional[dict] = None
     default_currency_code: Optional[str] = None

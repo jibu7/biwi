@@ -55,7 +55,19 @@ export const usePlatformAuth = create<PlatformAuthState>()(
 
       checkAuth: async () => {
         set({ isLoading: true });
+        
+        // Add a small delay to ensure cookies are properly loaded
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const token = Cookies.get('platform_access_token');
+        const state = get();
+        
+        // If we have persisted auth state and token matches, consider user authenticated
+        if (token && state.isAuthenticated && state.platformUser && state.token === token) {
+          set({ isLoading: false });
+          return;
+        }
+        
         if (!token) {
           set({ isAuthenticated: false, isLoading: false });
           return;
@@ -69,14 +81,22 @@ export const usePlatformAuth = create<PlatformAuthState>()(
             isAuthenticated: true,
             isLoading: false,
           });
-        } catch (error) {
-          Cookies.remove('platform_access_token');
-          set({
-            platformUser: null,
-            token: null,
-            isAuthenticated: false,
-            isLoading: false,
-          });
+        } catch (error: any) {
+          console.warn('Platform auth check failed:', error);
+          // Don't immediately clear auth - might be a temporary network issue
+          // Only clear if it's a 401 (unauthorized) or 403 (forbidden)
+          if (error?.response?.status === 401 || error?.response?.status === 403) {
+            Cookies.remove('platform_access_token');
+            set({
+              platformUser: null,
+              token: null,
+              isAuthenticated: false,
+              isLoading: false,
+            });
+          } else {
+            // For other errors (network issues, etc), keep current state but stop loading
+            set({ isLoading: false });
+          }
         }
       },
     }),
@@ -87,6 +107,16 @@ export const usePlatformAuth = create<PlatformAuthState>()(
         platformUser: state.platformUser,
         isAuthenticated: state.isAuthenticated 
       }),
+      // Reset version to 0 to avoid migration issues
+      version: 0,
+      // Add error handling for corrupted storage
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.warn('Platform auth rehydration failed:', error);
+          // Clear localStorage if there's an error
+          localStorage.removeItem('platform-auth');
+        }
+      },
     }
   )
 );

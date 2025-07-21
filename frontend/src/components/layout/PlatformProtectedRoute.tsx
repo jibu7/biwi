@@ -1,25 +1,32 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePlatformAuth } from '@/hooks/usePlatformAuth';
 
 export function PlatformProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, checkAuth, platformUser } = usePlatformAuth();
   const router = useRouter();
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    const performAuthCheck = async () => {
+      await checkAuth();
+      setHasCheckedAuth(true);
+    };
+    
+    performAuthCheck();
+  }, [checkAuth]);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    // Only redirect after we've completed the initial auth check
+    if (hasCheckedAuth && !isLoading && !isAuthenticated) {
       router.replace('/platform-login');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, hasCheckedAuth, router]);
 
-  // Show loading while checking authentication
-  if (isLoading) {
+  // Show loading while checking authentication or haven't completed initial check
+  if (isLoading || !hasCheckedAuth) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
