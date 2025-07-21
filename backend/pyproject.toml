@@ -1,3 +1,16 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "--cov=app --cov-report=html --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["*/tests/*", "*/alembic/*"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
 [tool.poetry]
 name = "backend"
 version = "0.1.0"
