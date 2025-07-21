@@ -96,6 +96,10 @@ export const platformService = {
     const response = await platformAxiosInstance.get('/platform/dashboard/stats');
     return response.data;
   },
+  getDashboardStats: async () => {
+    const response = await platformAxiosInstance.get('/platform/dashboard/stats');
+    return response.data;
+  },
   getSystemHealth: async () => {
     const response = await platformAxiosInstance.get('/platform/dashboard/health');
     return response.data;

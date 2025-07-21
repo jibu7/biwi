@@ -127,18 +127,33 @@ def get_dashboard_stats(
         ).count()
         
         # Count users by type - use string values to avoid enum issues
-        total_users = db.query(User).filter(
-            and_(
-                User.user_type != 'platform_admin',
-                User.user_type != 'PLATFORM_ADMIN'
-            )
-        ).count()
+        total_users = db.query(User).count()
         
         platform_admins = db.query(User).filter(
             or_(
                 User.user_type == 'platform_admin',
                 User.user_type == 'PLATFORM_ADMIN'
             )
+        ).count()
+        
+        company_admins = db.query(User).filter(
+            or_(
+                User.user_type == 'company_admin',
+                User.user_type == 'COMPANY_ADMIN'
+            )
+        ).count()
+        
+        company_users = db.query(User).filter(
+            or_(
+                User.user_type == 'company_user',
+                User.user_type == 'COMPANY_USER'
+            )
+        ).count()
+        
+        # Active today (users who logged in today)
+        today = datetime.now().date()
+        active_today = db.query(User).filter(
+            User.last_login >= today
         ).count()
         
         # Get transaction counts (last 30 days)
@@ -156,8 +171,11 @@ def get_dashboard_stats(
             "suspended_companies": suspended_companies,
             "trial_companies": trial_companies,
             "total_users": total_users,
-            "total_transactions": total_transactions,
             "platform_admins": platform_admins,
+            "company_admins": company_admins,
+            "company_users": company_users,
+            "active_today": active_today,
+            "total_transactions": total_transactions,
         }
     except Exception as e:
         raise HTTPException(
@@ -402,7 +420,7 @@ def get_all_users(
                 "company_id": user.company_id,
                 "company_name": company_name,
                 "last_login": user.last_login.isoformat() if user.last_login else None,
-                "created_at": user.created_at.isoformat()
+                "created_at": user.created_at.isoformat() if user.created_at else None
             })
         
         return result

@@ -74,79 +74,79 @@ export default function PlatformUsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">User Management</h1>
-          <p className="mt-2 text-gray-600">
-            Manage users across all tenant companies
+          <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+          <p className="mt-2 text-muted-foreground">
+            Manage users across all tenant companies with comprehensive controls
           </p>
         </div>
-        <Button onClick={handleCreateUser}>
-          <UserPlus className="h-4 w-4 mr-2" />
+        <Button onClick={handleCreateUser} className="gap-2">
+          <UserPlus className="h-4 w-4" />
           Create User
         </Button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
+            <Users className="h-5 w-5 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userStats?.total_users || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-blue-600">{userStats?.total_users || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               Across all companies
             </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Platform Admins</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Platform Admins</CardTitle>
+            <Shield className="h-5 w-5 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userStats?.platform_admins || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-red-600">{userStats?.platform_admins || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               Full platform access
             </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Company Admins</CardTitle>
-            <Building className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Company Admins</CardTitle>
+            <Building className="h-5 w-5 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userStats?.company_admins || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-orange-600">{userStats?.company_admins || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               Company administrators
             </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Company Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Company Users</CardTitle>
+            <Users className="h-5 w-5 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userStats?.company_users || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-green-600">{userStats?.company_users || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               Regular users
             </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Today</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Today</CardTitle>
+            <Users className="h-5 w-5 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userStats?.active_today || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-3xl font-bold text-purple-600">{userStats?.active_today || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               Users logged in today
             </p>
           </CardContent>
@@ -154,95 +154,112 @@ export default function PlatformUsersPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search users by name or email..."
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="pl-10"
-          />
+      <Card className="p-4">
+        <div className="flex gap-4 items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search users by name or email..."
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={userTypeFilter} onChange={(e) => setUserTypeFilter(e.target.value)}>
+            <option value="all">All Types</option>
+            <option value="platform_admin">Platform Admin</option>
+            <option value="company_admin">Company Admin</option>
+            <option value="company_user">Company User</option>
+          </Select>
+          <Select value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)}>
+            <option value="all">All Companies</option>
+            {companies?.map((comp: any) => (
+              <option key={comp.company.id} value={comp.company.id.toString()}>
+                {comp.company.name}
+              </option>
+            ))}
+          </Select>
         </div>
-        <Select value={userTypeFilter} onChange={(e) => setUserTypeFilter(e.target.value)}>
-          <option value="all">All Types</option>
-          <option value="platform_admin">Platform Admin</option>
-          <option value="company_admin">Company Admin</option>
-          <option value="company_user">Company User</option>
-        </Select>
-        <Select value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)}>
-          <option value="all">All Companies</option>
-          {companies?.map((comp: any) => (
-            <option key={comp.company.id} value={comp.company.id.toString()}>
-              {comp.company.name}
-            </option>
-          ))}
-        </Select>
-      </div>
+      </Card>
 
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Users ({users?.length || 0})</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Users ({users?.length || 0})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Name</th>
-                  <th className="text-left p-2">Email</th>
-                  <th className="text-left p-2">User Type</th>
-                  <th className="text-left p-2">Company</th>
-                  <th className="text-left p-2">Status</th>
-                  <th className="text-left p-2">Last Login</th>
-                  <th className="text-left p-2">Actions</th>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left p-3 font-semibold text-gray-900">Name</th>
+                  <th className="text-left p-3 font-semibold text-gray-900">Email</th>
+                  <th className="text-left p-3 font-semibold text-gray-900">User Type</th>
+                  <th className="text-left p-3 font-semibold text-gray-900">Company</th>
+                  <th className="text-left p-3 font-semibold text-gray-900">Status</th>
+                  <th className="text-left p-3 font-semibold text-gray-900">Last Login</th>
+                  <th className="text-left p-3 font-semibold text-gray-900">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {users?.map((user: any) => (
-                  <tr key={user.id} className="border-b hover:bg-gray-50">
-                    <td className="p-2 font-medium">{user.full_name}</td>
-                    <td className="p-2">{user.email}</td>
-                    <td className="p-2">
-                      <Badge variant={
-                        user.user_type === 'platform_admin' ? 'destructive' :
-                        user.user_type === 'company_admin' ? 'default' : 'secondary'
-                      }>
-                        {user.user_type.replace('_', ' ').toUpperCase()}
-                      </Badge>
-                    </td>
-                    <td className="p-2">
-                      {user.company_name ? (
-                        <div>
-                          <div className="font-medium">{user.company_name}</div>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">No Company</span>
-                      )}
-                    </td>
-                    <td className="p-2">
-                      <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </td>
-                    <td className="p-2">
-                      {user.last_login ? (
-                        <div className="text-sm">
-                          {new Date(user.last_login).toLocaleDateString()}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">Never</span>
-                      )}
-                    </td>
-                    <td className="p-2">
-                      <UserActions 
-                        user={user} 
-                        onEdit={handleEditUser}
-                      />
+                {users?.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center p-8 text-muted-foreground">
+                      No users found matching your criteria
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  users?.map((user: any) => (
+                    <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="p-3">
+                        <div className="font-medium text-gray-900">{user.full_name || 'No Name'}</div>
+                      </td>
+                      <td className="p-3">
+                        <div className="text-gray-600">{user.email}</div>
+                      </td>
+                      <td className="p-3">
+                        <Badge variant={
+                          user.user_type === 'platform_admin' ? 'destructive' :
+                          user.user_type === 'company_admin' ? 'default' : 'secondary'
+                        }>
+                          {user.user_type.replace('_', ' ').toUpperCase()}
+                        </Badge>
+                      </td>
+                      <td className="p-3">
+                        {user.company_name ? (
+                          <div>
+                            <div className="font-medium text-gray-900">{user.company_name}</div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">No Company</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </td>
+                      <td className="p-3">
+                        {user.last_login ? (
+                          <div className="text-sm text-gray-600">
+                            {new Date(user.last_login).toLocaleDateString()}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Never</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <UserActions 
+                          user={user} 
+                          onEdit={handleEditUser}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
