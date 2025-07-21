@@ -1,7 +1,7 @@
 # Environment Variables to add in Render Dashboard
 # Copy these one by one into Render's environment variables section
 
-DATABASE_URL=postgresql://neondb_owner:npg_5ZVGnR4bPqso@ep-mute-bread-adfl61ww-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DATABASE_URL=postgresql://neondb_owner:npg_6FVlUXmA3IQq@ep-mute-bread-adfl61ww-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 
 SECRET_KEY=k9nKqn1wa-BEc7DmVsxowLJ21cXx-bH3oW0nKRZ-m8g
 
