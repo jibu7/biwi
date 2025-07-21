@@ -20,6 +20,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    # First, remove the default value from the column
+    op.alter_column('companies', 'subscription_status', server_default=None)
+
     # Convert columns using the enum to plain strings first
     op.alter_column('companies', 'subscription_status',
         type_=sa.String(length=20),
@@ -31,6 +34,9 @@ def upgrade() -> None:
 
     # Now that no columns use the enum, it can be safely dropped.
     op.execute("DROP TYPE subscriptionstatus;")
+
+    # Set the new default value
+    op.alter_column('companies', 'subscription_status', server_default='trial')
 
 
 def downgrade() -> None:
