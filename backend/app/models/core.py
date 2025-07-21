@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Numeric, UniqueConstraint, DateTime, CheckConstraint, Text, Index
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 from sqlalchemy import Enum
 from enum import Enum as PyEnum
 from datetime import datetime
@@ -22,35 +22,29 @@ class Company(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
-    code = Column(String(10), unique=True, nullable=False, index=True)  # Short code for easy identification
     
-    # Multi-tenant specific fields
-    subscription_status = Column(Enum(SubscriptionStatus), default=SubscriptionStatus.TRIAL, nullable=False)
-    subscription_plan = Column(String(50), nullable=True)  # basic, professional, enterprise
-    subscription_expires = Column(Date, nullable=True)
-    storage_limit_gb = Column(Integer, default=10, nullable=False)
-    user_limit = Column(Integer, default=5, nullable=False)
-    
-    # Contact and billing
-    primary_contact_email = Column(String(255), nullable=True)
-    billing_email = Column(String(255), nullable=True)
-    
-    # Platform metadata
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    
-    # Existing fields
+    # Subscription details
+    subscription_status = Column(String(20), nullable=False, default='trial')
+    subscription_start_date = Column(Date, nullable=True)
+    subscription_end_date = Column(Date, nullable=True)
+    subscription_plan = Column(String(50), nullable=True)
+
     address = Column(JSONB, nullable=True)
     contact_info = Column(JSONB, nullable=True)
     default_currency_code = Column(String(3), nullable=True)
     is_active = Column(Boolean, default=True)
-    is_deleted = Column(Boolean, default=False)
-    deleted_at = Column(DateTime, nullable=True)
     
-    users = relationship("User", foreign_keys="User.company_id", back_populates="company")
-    roles = relationship("Role", back_populates="company", cascade="all, delete-orphan")
-    accounting_periods = relationship("AccountingPeriod", back_populates="company", cascade="all, delete-orphan")
+    users = relationship("User", foreign_keys="[User.company_id]", back_populates="company")
+    roles = relationship("Role", back_populates="company")
+    accounting_periods = relationship("AccountingPeriod", back_populates="company")
     audit_logs = relationship("PlatformAuditLog", back_populates="company")
+
+    @validates('subscription_status')
+    def validate_subscription_status(self, key, value):
+        valid_statuses = ['trial', 'active', 'suspended', 'cancelled']
+        if value not in valid_statuses:
+            raise ValueError(f"Invalid subscription status: {value}")
+        return value
     
     # GL relationships
     gl_accounts = relationship("GLAccount", back_populates="company", cascade="all, delete-orphan")
@@ -65,10 +59,6 @@ class Company(Base):
     report_schedules = relationship("ReportSchedule", back_populates="company")
     bank_reconciliations = relationship("BankReconciliation", back_populates="company")
     
-    # GL relationships
-    gl_accounts = relationship("GLAccount", back_populates="company")
-    gl_journal_entries = relationship("GLJournalEntry", back_populates="company")
-
 class Role(Base):
     __tablename__ = "roles"
     
@@ -103,7 +93,7 @@ class User(Base):
     mfa_secret = Column(String, nullable=True)  # For MFA
     
     # Update relationships
-    company = relationship("Company", foreign_keys=[company_id], back_populates="users")
+    company = relationship("Company", foreign_keys=[company_id])
     default_company = relationship("Company", foreign_keys=[default_company_id])
     roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
     platform_audit_logs = relationship("PlatformAuditLog", back_populates="user")

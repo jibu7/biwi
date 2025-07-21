@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 from typing import Optional, List
 from datetime import date, datetime
 from enum import Enum
@@ -10,43 +10,45 @@ class UserType(str, Enum):
     COMPANY_ADMIN = "company_admin"
     COMPANY_USER = "company_user"
 
+# Subscription Status Enum
+class SubscriptionStatus(str, Enum):
+    TRIAL = "trial"
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    CANCELLED = "cancelled"
+
 # Company Schemas
 class CompanyBase(BaseModel):
     name: str
-    code: str
     address: Optional[dict] = None
     contact_info: Optional[dict] = None
     default_currency_code: Optional[str] = None
     is_active: bool = True
-    
-    # Multi-tenant specific fields
-    subscription_status: str = "trial"
+    subscription_status: str = 'trial'
+    subscription_start_date: Optional[date] = None
+    subscription_end_date: Optional[date] = None
     subscription_plan: Optional[str] = None
-    subscription_expires: Optional[date] = None
-    storage_limit_gb: int = 10
-    user_limit: int = 5
-    
-    # Contact and billing
-    primary_contact_email: Optional[str] = None
-    billing_email: Optional[str] = None
+
+    @validator('subscription_status')
+    def validate_subscription_status(cls, v):
+        valid_statuses = ['trial', 'active', 'suspended', 'cancelled']
+        if v not in valid_statuses:
+            raise ValueError(f"Invalid subscription status: {v}")
+        return v
 
 class CompanyCreate(CompanyBase):
     pass
 
 class CompanyUpdate(BaseModel):
     name: Optional[str] = None
-    code: Optional[str] = None
     address: Optional[dict] = None
     contact_info: Optional[dict] = None
     default_currency_code: Optional[str] = None
     is_active: Optional[bool] = None
     subscription_status: Optional[str] = None
     subscription_plan: Optional[str] = None
-    subscription_expires: Optional[date] = None
-    storage_limit_gb: Optional[int] = None
-    user_limit: Optional[int] = None
-    primary_contact_email: Optional[str] = None
-    billing_email: Optional[str] = None
+    subscription_start_date: Optional[date] = None
+    subscription_end_date: Optional[date] = None
 
 class Company(CompanyBase):
     id: int
@@ -227,9 +229,3 @@ class AuditLogFilters(BaseModel):
     action: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-
-class SubscriptionStatus(str, Enum):
-    TRIAL = "trial"
-    ACTIVE = "active"
-    SUSPENDED = "suspended"
-    CANCELLED = "cancelled"
