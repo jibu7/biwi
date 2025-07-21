@@ -1,5 +1,9 @@
 {
   "dependencies": {
     "recharts": "^3.1.0"
-  }
+  },
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build"
+  },
+  "name": "biwi-monorepo"
 }
