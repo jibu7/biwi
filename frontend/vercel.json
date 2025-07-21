@@ -2,7 +2,7 @@
   "version": 2,
   "name": "channelzap",
   "github": {
-    "enabled": false,
+    "enabled": true,
     "silent": true
   },
   "routes": [
