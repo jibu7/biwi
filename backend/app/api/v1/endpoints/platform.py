@@ -64,11 +64,11 @@ def get_platform_stats(
         
         # Company stats - use string values to avoid enum issues
         total_companies = db.query(func.count(Company.id)).filter(
-            Company.is_deleted == False
+            or_(Company.is_deleted == False, Company.is_deleted.is_(None))
         ).scalar() or 0
         active_companies = db.query(func.count(Company.id)).filter(
             Company.is_active == True,
-            Company.is_deleted == False,
+            or_(Company.is_deleted == False, Company.is_deleted.is_(None)),
             or_(
                 Company.subscription_status == 'active',
                 Company.subscription_status == 'ACTIVE'
@@ -197,7 +197,9 @@ def get_all_companies(
         # Rollback any pending transaction to start fresh
         db.rollback()
         
-        query = db.query(Company)
+        query = db.query(Company).filter(
+            or_(Company.is_deleted == False, Company.is_deleted.is_(None))
+        )
         
         # Apply filters
         if search:
@@ -502,7 +504,7 @@ def create_company(
     # Check if company with this name or code already exists
     existing_company = db.query(Company).filter(
         (Company.name == company_in.name) | (Company.code == company_in.code),
-        Company.is_deleted == False
+        or_(Company.is_deleted == False, Company.is_deleted.is_(None))
     ).first()
     
     if existing_company:
@@ -705,7 +707,7 @@ def get_company(
     """
     company = db.query(Company).filter(
         Company.id == company_id,
-        Company.is_deleted == False
+        or_(Company.is_deleted == False, Company.is_deleted.is_(None))
     ).first()
     
     if not company:
@@ -727,7 +729,7 @@ def update_company(
     """
     company = db.query(Company).filter(
         Company.id == company_id,
-        Company.is_deleted == False
+        or_(Company.is_deleted == False, Company.is_deleted.is_(None))
     ).first()
     
     if not company:
@@ -801,7 +803,7 @@ def delete_company(
     try:
         company = db.query(Company).filter(
             Company.id == company_id,
-            Company.is_deleted == False
+            or_(Company.is_deleted == False, Company.is_deleted.is_(None))
         ).first()
         
         if not company:
@@ -809,6 +811,35 @@ def delete_company(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Company not found",
             )
+        
+        # Soft delete
+        company.is_deleted = True
+        company.deleted_at = datetime.utcnow()
+        company.is_active = False
+        db.commit()
+        
+        # Log company deletion
+        db.add(PlatformAuditLog(
+            user_id=current_user.id,
+            company_id=company.id,
+            action="company_deleted",
+            resource_type="company",
+            resource_id=company.id,
+            details={"name": company.name}
+        ))
+        db.commit()
+        
+        return {"message": "Company deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in delete_company: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete company: {str(e)}"
+        )
         
         # Soft delete
         company.is_deleted = True

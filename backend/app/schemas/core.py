@@ -38,7 +38,12 @@ class CompanyBase(BaseModel):
         return v
 
 class CompanyCreate(CompanyBase):
-    pass
+    # Additional fields required for company creation
+    subscription_expires: Optional[date] = None
+    primary_contact_email: Optional[str] = None
+    billing_email: Optional[str] = None
+    storage_limit_gb: Optional[int] = 10
+    user_limit: Optional[int] = 5
 
 class CompanyUpdate(BaseModel):
     name: Optional[str] = None
@@ -50,12 +55,22 @@ class CompanyUpdate(BaseModel):
     subscription_plan: Optional[str] = None
     subscription_start_date: Optional[date] = None
     subscription_end_date: Optional[date] = None
+    subscription_expires: Optional[date] = None
+    primary_contact_email: Optional[str] = None
+    billing_email: Optional[str] = None
+    storage_limit_gb: Optional[int] = None
+    user_limit: Optional[int] = None
 
 class Company(CompanyBase):
     id: int
     created_at: Optional[datetime] = None
     created_by_user_id: Optional[int] = None
     is_deleted: bool = False
+    subscription_expires: Optional[date] = None
+    primary_contact_email: Optional[str] = None
+    billing_email: Optional[str] = None
+    storage_limit_gb: Optional[int] = None
+    user_limit: Optional[int] = None
     
     class Config:
         from_attributes = True

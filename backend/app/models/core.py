@@ -52,7 +52,7 @@ class Company(Base):
     # Audit fields
     created_at = Column(DateTime, nullable=True)
     created_by_user_id = Column(Integer, nullable=True)
-    is_deleted = Column(Boolean, nullable=True)
+    is_deleted = Column(Boolean, nullable=False, default=False)
     deleted_at = Column(DateTime, nullable=True)
     
     users = relationship("User", foreign_keys="[User.company_id]", back_populates="company")
