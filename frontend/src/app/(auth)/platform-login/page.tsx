@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { usePlatformAuthStore } from '@/store/platformAuthStore';
+import { usePlatformAuth } from '@/hooks/usePlatformAuth';
 import { Shield, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ type FormData = {
 export default function PlatformLoginPage() {
   const router = useRouter();
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
-  const { login, isLoading } = usePlatformAuthStore();
+  const { login, isLoading } = usePlatformAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [needsMFA, setNeedsMFA] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export default function PlatformLoginPage() {
   const onSubmit = async (data: FormData) => {
     try {
       setLoginError(null);
-      await login({ email: data.email, password: data.password });
+      await login(data.email, data.password);
       router.push('/platform/dashboard');
     } catch (error) {
       if ((error as Error).message === 'MFA_REQUIRED') {
