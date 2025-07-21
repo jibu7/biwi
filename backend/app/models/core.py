@@ -22,17 +22,38 @@ class Company(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
+    code = Column(String, nullable=False)
     
     # Subscription details
     subscription_status = Column(String(20), nullable=False, default='trial')
-    subscription_start_date = Column(Date, nullable=True)
-    subscription_end_date = Column(Date, nullable=True)
+    subscription_start_date = Column(DateTime, nullable=True)
+    subscription_end_date = Column(DateTime, nullable=True)
     subscription_plan = Column(String(50), nullable=True)
+    subscription_expires = Column(Date, nullable=True)
+    trial_end_date = Column(DateTime, nullable=True)
+    billing_plan_id = Column(Integer, nullable=True)
 
+    # Contact information
     address = Column(JSONB, nullable=True)
     contact_info = Column(JSONB, nullable=True)
+    primary_contact_email = Column(String, nullable=True)
+    billing_email = Column(String, nullable=True)
+    
+    # Configuration
     default_currency_code = Column(String(3), nullable=True)
     is_active = Column(Boolean, default=True)
+    
+    # Resource limits and usage
+    storage_limit_gb = Column(Integer, nullable=True)
+    user_limit = Column(Integer, nullable=True)
+    storage_used_mb = Column(Integer, nullable=False, default=0)
+    api_calls_this_month = Column(Integer, nullable=False, default=0)
+    
+    # Audit fields
+    created_at = Column(DateTime, nullable=True)
+    created_by_user_id = Column(Integer, nullable=True)
+    is_deleted = Column(Boolean, nullable=True)
+    deleted_at = Column(DateTime, nullable=True)
     
     users = relationship("User", foreign_keys="[User.company_id]", back_populates="company")
     roles = relationship("Role", back_populates="company")
