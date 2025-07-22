@@ -152,6 +152,36 @@ def get_current_platform_admin(
     
     return current_user
 
+def get_current_company_admin(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """
+    Get current user and ensure they are a company admin.
+    This is for company admin endpoints.
+    """
+    if current_user.user_type not in [UserType.COMPANY_ADMIN, UserType.PLATFORM_ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized for company administration",
+        )
+    
+    return current_user
+
+def get_current_admin(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """
+    Get current user and ensure they are either a platform admin or company admin.
+    This is for endpoints that require admin privileges.
+    """
+    if current_user.user_type not in [UserType.PLATFORM_ADMIN, UserType.COMPANY_ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized for administration",
+        )
+    
+    return current_user
+
 def require_tenant_context() -> int:
     """Dependency that requires a valid tenant context."""
     tenant_id = get_current_tenant_id()

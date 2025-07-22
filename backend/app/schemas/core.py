@@ -112,7 +112,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
-    user_type: Optional[UserType] = UserType.COMPANY_USER
+    user_type: Optional[str] = "company_user"
     company_id: Optional[int] = None
 
 class UserUpdate(BaseModel):
@@ -121,7 +121,7 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_superuser: Optional[bool] = None
     password: Optional[str] = None
-    user_type: Optional[UserType] = None
+    user_type: Optional[str] = None
     company_id: Optional[int] = None
 
 class User(UserBase):

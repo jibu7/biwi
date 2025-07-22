@@ -9,7 +9,7 @@ from app.models.core import User, Company, PlatformAuditLog, UserType, Subscript
 from app.models.gl import GLJournalEntry
 from app.models.ar import ARTransaction
 from app.schemas.core import Company as CompanySchema, CompanyCreate, CompanyUpdate, CompanyWithStats
-from app.schemas.core import User as UserSchema
+from app.schemas.core import User as UserSchema, UserCreate, UserUpdate
 from app.api.deps import get_current_platform_admin
 from app.core.context_managers import tenant_context
 from app.core.security import get_password_hash
@@ -431,6 +431,204 @@ def get_all_users(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching users: {str(e)}"
+        )
+
+@router.post("/users", response_model=UserSchema)
+def create_platform_user(
+    user_in: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """
+    Create new user (platform admin only).
+    """
+    try:
+        print(f"DEBUG: Creating user with data: {user_in.dict()}")
+        print(f"DEBUG: Current user: {current_user.email} (type: {current_user.user_type})")
+        
+        # Check if user with this email already exists
+        existing_user = db.query(User).filter(User.email == user_in.email).first()
+        if existing_user:
+            print(f"DEBUG: User with email {user_in.email} already exists")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this email already exists",
+            )
+        
+        # Validate company exists and is not deleted
+        if user_in.company_id:
+            company = db.query(Company).filter(
+                Company.id == user_in.company_id,
+                or_(Company.is_deleted == False, Company.is_deleted.is_(None))
+            ).first()
+            if not company:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Company not found or is deleted",
+                )
+        
+        # Create new user
+        db_user = User(
+            email=user_in.email,
+            hashed_password=get_password_hash(user_in.password),
+            full_name=user_in.full_name,
+            user_type=user_in.user_type or "company_user",
+            company_id=user_in.company_id,
+            is_active=user_in.is_active if user_in.is_active is not None else True,
+            is_superuser=user_in.is_superuser or False,
+            created_at=datetime.utcnow()
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        
+        # Log user creation
+        db.add(PlatformAuditLog(
+            user_id=current_user.id,
+            company_id=user_in.company_id,
+            action="user_created",
+            resource_type="user",
+            resource_id=db_user.id,
+            details={
+                "email": db_user.email,
+                "user_type": db_user.user_type,
+                "company_id": db_user.company_id
+            }
+        ))
+        db.commit()
+        
+        return db_user
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in create_platform_user: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create user: {str(e)}"
+        )
+
+@router.put("/users/{user_id}", response_model=UserSchema)
+def update_platform_user(
+    user_id: int,
+    user_in: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """
+    Update user (platform admin only).
+    """
+    try:
+        print(f"DEBUG: Updating user {user_id} with data: {user_in.dict(exclude_unset=True)}")
+        
+        # Get the user to update
+        db_user = db.query(User).filter(User.id == user_id).first()
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        
+        # Check if email already exists (if email is being updated)
+        if user_in.email and user_in.email != db_user.email:
+            existing_user = db.query(User).filter(User.email == user_in.email).first()
+            if existing_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="User with this email already exists",
+                )
+        
+        # Update user fields
+        update_data = user_in.dict(exclude_unset=True)
+        if 'password' in update_data:
+            update_data['hashed_password'] = get_password_hash(update_data.pop('password'))
+        
+        for field, value in update_data.items():
+            if hasattr(db_user, field):
+                setattr(db_user, field, value)
+        
+        db.commit()
+        db.refresh(db_user)
+        
+        # Log user update
+        db.add(PlatformAuditLog(
+            user_id=current_user.id,
+            company_id=db_user.company_id,
+            action="user_updated",
+            resource_type="user",
+            resource_id=db_user.id,
+            details={
+                "email": db_user.email,
+                "updated_fields": list(update_data.keys())
+            }
+        ))
+        db.commit()
+        
+        return db_user
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in update_platform_user: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update user: {str(e)}"
+        )
+
+@router.delete("/users/{user_id}")
+def delete_platform_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """
+    Delete user (platform admin only).
+    """
+    try:
+        # Get the user to delete
+        db_user = db.query(User).filter(User.id == user_id).first()
+        if not db_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        
+        # Prevent deletion of platform admins
+        if db_user.user_type == UserType.PLATFORM_ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot delete platform admin users",
+            )
+        
+        # Log user deletion before deleting
+        db.add(PlatformAuditLog(
+            user_id=current_user.id,
+            company_id=db_user.company_id,
+            action="user_deleted",
+            resource_type="user",
+            resource_id=db_user.id,
+            details={
+                "email": db_user.email,
+                "user_type": db_user.user_type
+            }
+        ))
+        
+        # Delete the user
+        db.delete(db_user)
+        db.commit()
+        
+        return {"message": "User deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in delete_platform_user: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete user: {str(e)}"
         )
 
 @router.post("/companies/{company_id}/impersonate", response_model=dict)

@@ -239,6 +239,21 @@ export const platformService = {
     return response.data;
   },
 
+  createUser: async (userData: any) => {
+    const response = await platformAxiosInstance.post('/platform/users', userData);
+    return response.data;
+  },
+
+  updateUser: async (userId: number, userData: any) => {
+    const response = await platformAxiosInstance.put(`/platform/users/${userId}`, userData);
+    return response.data;
+  },
+
+  deleteUser: async (userId: number) => {
+    const response = await platformAxiosInstance.delete(`/platform/users/${userId}`);
+    return response.data;
+  },
+
   // Analytics (placeholder)
   getAnalytics: async () => {
     // TODO: Implement analytics endpoint
