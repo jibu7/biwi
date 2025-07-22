@@ -1,7 +1,7 @@
 'use client';
 
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -24,22 +24,23 @@ export default function ARTransactionTypesPage() {
   const router = useRouter();
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredTypes, setFilteredTypes] = useState<ARTransactionType[]>([]);
+
+  // Memoize the permission check to prevent unnecessary re-renders
+  const canManageARSetup = useMemo(() => hasPermission(AR_SETUP_MANAGE), [hasPermission]);
 
   const { data: transactionTypes = [], isLoading, error, refetch } = useQuery({
     queryKey: ['arTransactionTypes'],
-    queryFn: arTransactionTypeService.getAll,
-    enabled: hasPermission(AR_SETUP_MANAGE),
+    queryFn: () => arTransactionTypeService.getAll(),
+    enabled: canManageARSetup,
   });
 
-  useEffect(() => {
-    if (transactionTypes) {
-      const filtered = transactionTypes.filter((type) =>
-        type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        type.base_type.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredTypes(filtered);
-    }
+  // Use useMemo instead of useEffect + useState to prevent infinite loops
+  const filteredTypes = useMemo(() => {
+    if (!transactionTypes) return [];
+    return transactionTypes.filter((type) =>
+      type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      type.base_type.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   }, [transactionTypes, searchTerm]);
 
   const handleDelete = async (id: number) => {
@@ -83,7 +84,7 @@ export default function ARTransactionTypesPage() {
     }
   };
 
-  if (!hasPermission(AR_SETUP_MANAGE)) {
+  if (!canManageARSetup) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-gray-500">You don&apos;t have permission to manage AR transaction types.</p>

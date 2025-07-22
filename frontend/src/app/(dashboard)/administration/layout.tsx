@@ -20,7 +20,7 @@ export default function AdministrationLayout({
     if (!isLoading && (!user || !user.is_superuser)) {
       router.push('/dashboard');
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading]); // Remove router from dependencies
 
   // Show loading or redirect if not authorized
   if (isLoading) {

@@ -17,7 +17,7 @@ export const PlatformAdminLayout: React.FC<PlatformAdminLayoutProps> = ({ childr
     if (!isLoading && (!isAuthenticated || !isPlatformAdmin)) {
       router.push('/platform-login');
     }
-  }, [isLoading, isAuthenticated, isPlatformAdmin, router]);
+  }, [isLoading, isAuthenticated, isPlatformAdmin]); // Remove router from dependencies
   
   if (isLoading) {
     return (

@@ -9,7 +9,7 @@ export default function PlatformPage() {
 
   useEffect(() => {
     router.replace('/platform/dashboard');
-  }, [router]);
+  }, []); // Remove router from dependencies
 
   return (
     <div className="flex items-center justify-center min-h-screen">

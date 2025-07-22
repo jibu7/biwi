@@ -1,7 +1,7 @@
 'use client';
 
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { 
@@ -25,14 +25,31 @@ export default function ARReceiptsPage() {
   const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredReceipts, setFilteredReceipts] = useState<ARTransaction[]>([]);
   const [postingTransactionId, setPostingTransactionId] = useState<number | null>(null);
 
-  const { data: transactions = [], isLoading, error } = useQuery({
-    queryKey: ['ar-transactions', 'Receipt'],
-    queryFn: () => arTransactionService.getByType('Receipt'),
+  const { data: allTransactions = [], isLoading, error } = useQuery({
+    queryKey: ['ar-transactions'],
+    queryFn: () => arTransactionService.getAll(),
     enabled: hasPermission(AR_REPORTS_VIEW),
   });
+
+  // Filter for receipts and apply search filter using useMemo
+  const filteredReceipts = useMemo(() => {
+    if (!allTransactions) return [];
+    
+    // First filter for Receipt transactions
+    const receipts = allTransactions.filter((transaction: ARTransaction) => 
+      transaction.ar_transaction_type_id === 2 || // Assuming Receipt type ID is 2
+      transaction.document_number.includes('REC-') // Alternative: filter by document pattern
+    );
+
+    // Then apply search filter
+    return receipts.filter((transaction: ARTransaction) =>
+      transaction.document_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.reference?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [allTransactions, searchTerm]);
 
   const postTransactionMutation = useMutation({
     mutationFn: (transactionId: number) => arTransactionService.post(transactionId),
@@ -76,17 +93,6 @@ export default function ARReceiptsPage() {
     setPostingTransactionId(transactionId);
     await postTransactionMutation.mutateAsync(transactionId);
   };
-
-  useEffect(() => {
-    if (transactions) {
-      const filtered = transactions.filter((transaction: ARTransaction) =>
-        transaction.document_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.reference?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredReceipts(filtered);
-    }
-  }, [transactions, searchTerm]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

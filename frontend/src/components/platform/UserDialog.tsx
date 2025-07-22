@@ -51,7 +51,7 @@ export function UserDialog({ open, onOpenChange, user, companies, mode }: UserDi
         is_active: true,
       });
     }
-  }, [user, mode, open]);
+  }, [user, mode]); // Remove 'open' from dependencies
 
   const queryClient = useQueryClient();
 

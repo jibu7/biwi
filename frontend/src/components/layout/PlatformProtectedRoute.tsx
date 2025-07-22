@@ -23,7 +23,7 @@ export function PlatformProtectedRoute({ children }: { children: React.ReactNode
     if (hasCheckedAuth && !isLoading && !isAuthenticated) {
       router.replace('/platform-login');
     }
-  }, [isAuthenticated, isLoading, hasCheckedAuth, router]);
+  }, [isAuthenticated, isLoading, hasCheckedAuth]); // Remove router from dependencies
 
   // Show loading while checking authentication or haven't completed initial check
   if (isLoading || !hasCheckedAuth) {

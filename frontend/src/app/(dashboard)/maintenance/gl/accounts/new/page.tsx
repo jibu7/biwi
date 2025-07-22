@@ -63,7 +63,7 @@ export default function NewGLAccountPage() {
     if (!hasPermission(permissions.GL_SETUP_MANAGE)) {
       router.push('/maintenance/gl/accounts');
     }
-  }, [hasPermission, router]);
+  }, [hasPermission]); // Remove router from dependencies
 
   // Don't render anything if no permission
   if (!hasPermission(permissions.GL_SETUP_MANAGE)) {

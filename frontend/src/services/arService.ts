@@ -187,6 +187,210 @@ class ARService {
     });
     return response.data;
   }
+
+  // AR Transaction Type methods
+  async getARTransactionTypes(skip = 0, limit = 100): Promise<ARTransactionType[]> {
+    const response = await axiosInstance.get('/ar/transaction-types', {
+      params: { skip, limit },
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async createARTransactionType(data: ARTransactionTypeCreate): Promise<ARTransactionType> {
+    const response = await axiosInstance.post('/ar/transaction-types', data, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async getARTransactionType(id: number): Promise<ARTransactionType> {
+    const response = await axiosInstance.get(`/ar/transaction-types/${id}`, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async updateARTransactionType(id: number, data: ARTransactionTypeUpdate): Promise<ARTransactionType> {
+    const response = await axiosInstance.put(`/ar/transaction-types/${id}`, data, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async deleteARTransactionType(id: number): Promise<void> {
+    await axiosInstance.delete(`/ar/transaction-types/${id}`, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+  }
+
+  // AR Defaults methods
+  async getARDefaults(): Promise<ARDefaults> {
+    const response = await axiosInstance.get('/ar/defaults', {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async updateARDefaults(data: ARDefaultsUpdate): Promise<ARDefaults> {
+    const response = await axiosInstance.put('/ar/defaults', data, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  // Sales Representative methods
+  async getSalesRepresentatives(skip = 0, limit = 100): Promise<SalesRepresentative[]> {
+    const response = await axiosInstance.get('/ar/sales-representatives', {
+      params: { skip, limit },
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async createSalesRepresentative(data: SalesRepresentativeCreate): Promise<SalesRepresentative> {
+    const response = await axiosInstance.post('/ar/sales-representatives', data, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async getSalesRepresentative(id: number): Promise<SalesRepresentative> {
+    const response = await axiosInstance.get(`/ar/sales-representatives/${id}`, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async updateSalesRepresentative(id: number, data: SalesRepresentativeUpdate): Promise<SalesRepresentative> {
+    const response = await axiosInstance.put(`/ar/sales-representatives/${id}`, data, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async deleteSalesRepresentative(id: number): Promise<void> {
+    await axiosInstance.delete(`/ar/sales-representatives/${id}`, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+  }
+
+  // AR Allocation methods
+  async getARAllocations(skip = 0, limit = 100): Promise<ARAllocation[]> {
+    const response = await axiosInstance.get('/ar/allocations', {
+      params: { skip, limit },
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async createARAllocation(data: ARAllocationCreate): Promise<ARAllocation> {
+    const response = await axiosInstance.post('/ar/allocations', data, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async getARAllocation(id: number): Promise<ARAllocation> {
+    const response = await axiosInstance.get(`/ar/allocations/${id}`, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async deleteARAllocation(id: number): Promise<void> {
+    await axiosInstance.delete(`/ar/allocations/${id}`, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+  }
+
+  // AR Write-off methods
+  async getARWriteOffs(skip = 0, limit = 100): Promise<ARWriteOff[]> {
+    const response = await axiosInstance.get('/ar/writeoffs', {
+      params: { skip, limit },
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async createARWriteOff(data: ARWriteOffCreate): Promise<ARWriteOff> {
+    const response = await axiosInstance.post('/ar/writeoffs', data, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async getARWriteOff(id: number): Promise<ARWriteOff> {
+    const response = await axiosInstance.get(`/ar/writeoffs/${id}`, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async updateARWriteOff(id: number, data: ARWriteOffUpdate): Promise<ARWriteOff> {
+    const response = await axiosInstance.put(`/ar/writeoffs/${id}`, data, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async approveARWriteOff(id: number, approval: ARWriteOffApproval): Promise<ARWriteOff> {
+    const response = await axiosInstance.post(`/ar/writeoffs/${id}/approve`, approval, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
+
+  async rejectARWriteOff(id: number, approval: ARWriteOffApproval): Promise<ARWriteOff> {
+    const response = await axiosInstance.post(`/ar/writeoffs/${id}/reject`, approval, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  }
 }
 
 export const arService = new ARService();
@@ -206,4 +410,41 @@ export const arTransactionService = {
   create: (data: ARTransactionCreate) => arService.createARTransaction(data),
   update: (id: number, data: ARTransactionUpdate) => arService.updateARTransaction(id, data),
   post: (id: number) => arService.postARTransaction(id),
+};
+
+export const arTransactionTypeService = {
+  getAll: (skip?: number, limit?: number) => arService.getARTransactionTypes(skip, limit),
+  getById: (id: number) => arService.getARTransactionType(id),
+  create: (data: ARTransactionTypeCreate) => arService.createARTransactionType(data),
+  update: (id: number, data: ARTransactionTypeUpdate) => arService.updateARTransactionType(id, data),
+  delete: (id: number) => arService.deleteARTransactionType(id),
+};
+
+export const arDefaultsService = {
+  get: () => arService.getARDefaults(),
+  update: (data: ARDefaultsUpdate) => arService.updateARDefaults(data),
+};
+
+export const salesRepService = {
+  getAll: (skip?: number, limit?: number) => arService.getSalesRepresentatives(skip, limit),
+  getById: (id: number) => arService.getSalesRepresentative(id),
+  create: (data: SalesRepresentativeCreate) => arService.createSalesRepresentative(data),
+  update: (id: number, data: SalesRepresentativeUpdate) => arService.updateSalesRepresentative(id, data),
+  delete: (id: number) => arService.deleteSalesRepresentative(id),
+};
+
+export const arAllocationService = {
+  getAll: (skip?: number, limit?: number) => arService.getARAllocations(skip, limit),
+  getById: (id: number) => arService.getARAllocation(id),
+  create: (data: ARAllocationCreate) => arService.createARAllocation(data),
+  delete: (id: number) => arService.deleteARAllocation(id),
+};
+
+export const writeOffService = {
+  getAll: (skip?: number, limit?: number) => arService.getARWriteOffs(skip, limit),
+  getById: (id: number) => arService.getARWriteOff(id),
+  create: (data: ARWriteOffCreate) => arService.createARWriteOff(data),
+  update: (id: number, data: ARWriteOffUpdate) => arService.updateARWriteOff(id, data),
+  approve: (id: number, approval: ARWriteOffApproval) => arService.approveARWriteOff(id, approval),
+  reject: (id: number, approval: ARWriteOffApproval) => arService.rejectARWriteOff(id, approval),
 };

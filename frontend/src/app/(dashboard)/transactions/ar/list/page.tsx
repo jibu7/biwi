@@ -1,7 +1,7 @@
 'use client';
 
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { 
@@ -24,7 +24,6 @@ export default function ARTransactionsListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-  const [filteredTransactions, setFilteredTransactions] = useState<ARTransaction[]>([]);
 
   const { data: transactions = [], isLoading, error } = useQuery({
     queryKey: ['ar-transactions'],
@@ -32,24 +31,25 @@ export default function ARTransactionsListPage() {
     enabled: hasPermission(AR_REPORTS_VIEW),
   });
 
-  useEffect(() => {
-    if (transactions && Array.isArray(transactions)) {
-      let filtered = transactions.filter((transaction: ARTransaction) =>
-        transaction.document_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.reference?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  // Use useMemo instead of useEffect for filtering
+  const filteredTransactions = useMemo(() => {
+    if (!transactions || !Array.isArray(transactions)) return [];
 
-      if (statusFilter) {
-        filtered = filtered.filter(t => t.status === statusFilter);
-      }
+    let filtered = transactions.filter((transaction: ARTransaction) =>
+      transaction.document_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.reference?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-      if (typeFilter) {
-        filtered = filtered.filter(t => t.ar_transaction_type_name?.includes(typeFilter));
-      }
-
-      setFilteredTransactions(filtered);
+    if (statusFilter) {
+      filtered = filtered.filter(t => t.status === statusFilter);
     }
+
+    if (typeFilter) {
+      filtered = filtered.filter(t => t.ar_transaction_type_name?.includes(typeFilter));
+    }
+
+    return filtered;
   }, [transactions, searchTerm, statusFilter, typeFilter]);
 
   const formatCurrency = (amount: number) => {

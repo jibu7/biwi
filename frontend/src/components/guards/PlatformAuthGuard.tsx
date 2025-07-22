@@ -14,13 +14,13 @@ export default function PlatformAuthGuard({
 
   useEffect(() => {
     initAuth();
-  }, [initAuth]);
+  }, []); // Remove initAuth from dependencies
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push("/platform-login");
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading]); // Remove router from dependencies
 
   if (isLoading) {
     return (

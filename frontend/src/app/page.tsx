@@ -10,7 +10,7 @@ export default function Home() {
   useEffect(() => {
     // Redirect to login page on initial load
     router.push('/login');
-  }, [router]);
+  }, []); // Remove router from dependencies
 
   return (
     <div className="min-h-screen flex items-center justify-center">

@@ -1,7 +1,7 @@
 'use client';
 
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { 
@@ -22,23 +22,28 @@ import { AR_TRANSACTIONS_POST, AR_REPORTS_VIEW } from '@/lib/permissions';
 export default function ARCreditNotesPage() {
   const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredCreditNotes, setFilteredCreditNotes] = useState<ARTransaction[]>([]);
 
   const { data: transactions = [], isLoading, error } = useQuery({
-    queryKey: ['ar-transactions', 'Credit Note'],
-    queryFn: () => arTransactionService.getByType('Credit Note'),
+    queryKey: ['ar-transactions'],
+    queryFn: () => arTransactionService.getAll(),
     enabled: hasPermission(AR_REPORTS_VIEW),
   });
 
-  useEffect(() => {
-    if (transactions) {
-      const filtered = transactions.filter((transaction: ARTransaction) =>
-        transaction.document_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.reference?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredCreditNotes(filtered);
-    }
+  // Use useMemo instead of useEffect for filtering
+  const filteredCreditNotes = useMemo(() => {
+    if (!transactions) return [];
+    
+    // First filter for Credit Note transactions, then apply search filter
+    const creditNotes = transactions.filter((transaction: ARTransaction) => 
+      transaction.ar_transaction_type_id === 3 || // Assuming Credit Note type ID is 3
+      transaction.document_number.includes('CN-') // Alternative: filter by document pattern
+    );
+
+    return creditNotes.filter((transaction: ARTransaction) =>
+      transaction.document_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.reference?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   }, [transactions, searchTerm]);
 
   const formatCurrency = (amount: number) => {
@@ -192,7 +197,7 @@ export default function ARCreditNotesPage() {
                   </td>
                 </tr>
               ) : (
-                filteredCreditNotes.map((creditNote) => (
+                filteredCreditNotes.map((creditNote: ARTransaction) => (
                   <tr key={creditNote.id} className="border-b hover:bg-gray-100/50">
                     <td className="px-4 py-4">
                       <div className="flex items-center space-x-2">
@@ -271,10 +276,10 @@ export default function ARCreditNotesPage() {
             </span>
             <div className="flex space-x-6">
               <span>
-                Total Credits: {formatCurrency(filteredCreditNotes.reduce((sum, cn) => sum + cn.total_amount, 0))}
+                Total Credits: {formatCurrency(filteredCreditNotes.reduce((sum: number, cn: ARTransaction) => sum + cn.total_amount, 0))}
               </span>
               <span>
-                Outstanding: {formatCurrency(filteredCreditNotes.reduce((sum, cn) => sum + cn.open_amount, 0))}
+                Outstanding: {formatCurrency(filteredCreditNotes.reduce((sum: number, cn: ARTransaction) => sum + cn.open_amount, 0))}
               </span>
             </div>
           </div>

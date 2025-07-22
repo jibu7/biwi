@@ -25,11 +25,19 @@ export default function ARInvoicesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [postingTransactionId, setPostingTransactionId] = useState<number | null>(null);
 
-  const { data: transactions = [], isLoading, error } = useQuery({
-    queryKey: ['ar-transactions', 'Invoice'],
-    queryFn: () => arTransactionService.getByType('Invoice'),
+  const { data: allTransactions = [], isLoading, error } = useQuery({
+    queryKey: ['ar-transactions'],
+    queryFn: () => arTransactionService.getAll(),
     enabled: hasPermission(AR_REPORTS_VIEW),
   });
+
+  // Filter for invoices using useMemo
+  const transactions = useMemo(() => {
+    return allTransactions.filter((transaction: ARTransaction) => 
+      transaction.ar_transaction_type_id === 1 || // Assuming Invoice type ID is 1
+      transaction.document_number.includes('INV-') // Alternative: filter by document pattern
+    );
+  }, [allTransactions]);
 
   const postTransactionMutation = useMutation({
     mutationFn: (transactionId: number) => arTransactionService.post(transactionId),

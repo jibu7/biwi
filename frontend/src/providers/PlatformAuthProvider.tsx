@@ -12,13 +12,13 @@ export const PlatformAuthProvider = ({ children }: { children: React.ReactNode }
   
   useEffect(() => {
     initAuth();
-  }, [initAuth]);
+  }, []); // Remove initAuth from dependencies
   
   useEffect(() => {
     if (!isLoading && (!isAuthenticated || user?.user_type !== 'platform_admin')) {
       router.push('/platform-login');
     }
-  }, [isLoading, isAuthenticated, user, router]);
+  }, [isLoading, isAuthenticated, user]); // Remove router from dependencies
 
   if (isLoading || !isAuthenticated || user?.user_type !== 'platform_admin') {
     return (

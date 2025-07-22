@@ -12,13 +12,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // Initialize auth on mount to validate token
   useEffect(() => {
     initAuth();
-  }, [initAuth]);
+  }, []); // Remove initAuth from dependencies
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace('/login');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading]); // Remove router from dependencies
 
   if (isLoading) {
     return (
