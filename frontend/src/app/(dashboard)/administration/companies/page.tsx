@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Building2, Plus, Search, Users, HardDrive } from 'lucide-react';
 import Link from 'next/link';
+import { CompanyWithStats } from '@/types/platform';
 
 export default function CompaniesPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,7 +36,7 @@ export default function CompaniesPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const filteredCompanies = companies.filter((company: any) => {
+  const filteredCompanies = companies.filter((company: CompanyWithStats) => {
     const matchesSearch = !searchTerm || 
       company.company?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.company?.code?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -144,7 +145,7 @@ export default function CompaniesPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCompanies.map((companyData: any) => {
+          {filteredCompanies.map((companyData: CompanyWithStats) => {
             const company = companyData.company || companyData;
             return (
               <Card key={company.id} className="hover:shadow-md transition-shadow">
@@ -236,19 +237,19 @@ export default function CompaniesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-green-600">
-                  {filteredCompanies.filter((c: any) => c.company?.subscription_status === 'active').length}
+                  {filteredCompanies.filter((c: CompanyWithStats) => c.company?.subscription_status === 'active').length}
                 </p>
                 <p className="text-sm text-gray-600">Active</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-blue-600">
-                  {filteredCompanies.filter((c: any) => c.company?.subscription_status === 'trial').length}
+                  {filteredCompanies.filter((c: CompanyWithStats) => c.company?.subscription_status === 'trial').length}
                 </p>
                 <p className="text-sm text-gray-600">Trial</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-red-600">
-                  {filteredCompanies.filter((c: any) => c.company?.subscription_status === 'suspended').length}
+                  {filteredCompanies.filter((c: CompanyWithStats) => c.company?.subscription_status === 'suspended').length}
                 </p>
                 <p className="text-sm text-gray-600">Suspended</p>
               </div>

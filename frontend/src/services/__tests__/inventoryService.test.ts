@@ -2,15 +2,11 @@
  * @jest-environment jsdom
  */
 
-import { inventoryService } from '@/services/inventoryService'
 
-// Mock axios instance
-jest.mock('@/lib/axiosInstance', () => ({
-  get: jest.fn(),
-  post: jest.fn(),
-  put: jest.fn(),
-  delete: jest.fn(),
-}))
+import { inventoryService } from '@/services/inventoryService';
+import * as axiosInstance from '@/lib/axiosInstance';
+
+jest.mock('@/lib/axiosInstance');
 
 describe('InventoryService', () => {
   beforeEach(() => {
@@ -35,7 +31,7 @@ describe('InventoryService', () => {
 
   describe('getInventoryItems', () => {
     it('should fetch items with correct endpoint and default parameters', async () => {
-      const mockAxios = require('@/lib/axiosInstance')
+      const mockAxios = axiosInstance as jest.Mocked<any>;
       const mockItems = [
         { id: 1, code: 'ITEM001', description: 'Test Item 1' },
         { id: 2, code: 'ITEM002', description: 'Test Item 2' }
@@ -66,19 +62,16 @@ describe('InventoryService', () => {
     it('should create item with correct data', async () => {
       const mockAxios = require('@/lib/axiosInstance')
       const newItem = {
-        code: 'NEW001',
+        item_code: 'NEW001',
         description: 'New Test Item',
-        item_type: 'Stock',
-        unit_of_measure: 'EA'
-      }
-      const createdItem = { id: 3, ...newItem }
-      
-      mockAxios.post.mockResolvedValue({ data: createdItem })
-
-      const result = await inventoryService.createInventoryItem(newItem)
-
-      expect(mockAxios.post).toHaveBeenCalledWith('/inventory/items', newItem)
-      expect(result).toEqual(createdItem)
+        item_type: "Stock" as const,
+        unit_of_measure_id: 1
+      };
+      const createdItem = { id: 3, ...newItem };
+      mockAxios.post.mockResolvedValue({ data: createdItem });
+      const result = await inventoryService.createInventoryItem(newItem);
+      expect(mockAxios.post).toHaveBeenCalledWith('/inventory/items', newItem);
+      expect(result).toEqual(createdItem);
     })
   })
 
@@ -89,16 +82,15 @@ describe('InventoryService', () => {
         item_id: 1,
         warehouse_id: 1,
         quantity: 10,
-        reason: 'Initial stock'
-      }
-      const processedAdjustment = { id: 1, ...adjustmentData }
-      
-      mockAxios.post.mockResolvedValue({ data: processedAdjustment })
+        reason: 'Initial stock',
+        inventory_transaction_type_id: 1
+      };
+      const processedAdjustment = { id: 1, ...adjustmentData };
+      mockAxios.post.mockResolvedValue({ data: processedAdjustment });
+      const result = await inventoryService.processAdjustment(adjustmentData);
+      expect(mockAxios.post).toHaveBeenCalledWith('/inventory/adjustments', adjustmentData);
+      expect(result).toEqual(processedAdjustment);
 
-      const result = await inventoryService.processAdjustment(adjustmentData)
-
-      expect(mockAxios.post).toHaveBeenCalledWith('/inventory/adjustments', adjustmentData)
-      expect(result).toEqual(processedAdjustment)
-    })
-  })
-}))
+    });
+  });
+});

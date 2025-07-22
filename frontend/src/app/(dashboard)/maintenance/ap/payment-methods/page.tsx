@@ -3,7 +3,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, CreditCard, Search } from 'lucide-react';
 import { Table } from '@/components/ui/Table';
 import { usePermissions } from '@/hooks/usePermissions';

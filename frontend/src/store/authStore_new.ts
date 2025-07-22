@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           let payload: FormData | string;
-          let headers: Record<string, string> = {};
+          const headers: Record<string, string> = {};
           
           if (otpCode) {
             payload = JSON.stringify({ username: email, password, otp_code: otpCode });

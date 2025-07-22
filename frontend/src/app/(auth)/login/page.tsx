@@ -17,7 +17,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading } = useAuthStore();
+  const { login } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
 
   const {

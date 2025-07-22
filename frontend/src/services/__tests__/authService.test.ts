@@ -2,18 +2,13 @@
  * @jest-environment jsdom
  */
 
-import { authService } from '@/services/authService'
 
-// Mock axios
-jest.mock('@/lib/axiosInstance', () => ({
-  post: jest.fn(),
-  get: jest.fn(),
-}))
+import { authService } from '@/services/authService';
+import * as axiosInstance from '@/lib/axiosInstance';
+import * as authStore from '@/store/authStore';
 
-// Mock auth store
-jest.mock('@/store/authStore', () => ({
-  useAuthStore: jest.fn(),
-}))
+jest.mock('@/lib/axiosInstance');
+jest.mock('@/store/authStore');
 
 describe('AuthService', () => {
   beforeEach(() => {
@@ -42,7 +37,7 @@ describe('AuthService', () => {
 
   describe('login method', () => {
     it('should call the correct endpoint with form data', async () => {
-      const mockAxios = require('@/lib/axiosInstance')
+      const mockAxios = axiosInstance as jest.Mocked<any>;
       const mockResponse = { 
         data: { 
           access_token: 'test-token',

@@ -1,10 +1,9 @@
-import { renderHook } from '@testing-library/react'
-import { usePermissions } from '@/hooks/usePermissions'
 
-// Mock the auth store
-jest.mock('@/store/authStore', () => ({
-  useAuthStore: jest.fn(),
-}))
+import { renderHook } from '@testing-library/react';
+import { usePermissions } from '@/hooks/usePermissions';
+import * as authStore from '@/store/authStore';
+
+jest.mock('@/store/authStore');
 
 describe('usePermissions Hook', () => {
   beforeEach(() => {
@@ -12,8 +11,7 @@ describe('usePermissions Hook', () => {
   })
 
   it('should return permissions state', () => {
-    const mockUseAuthStore = require('@/store/authStore').useAuthStore
-    mockUseAuthStore.mockReturnValue({
+    (authStore.useAuthStore as unknown as jest.Mock).mockReturnValue({
       user: {
         id: 1,
         email: 'test@example.com',
@@ -29,8 +27,7 @@ describe('usePermissions Hook', () => {
   })
 
   it('should check permissions correctly when user has permission', () => {
-    const mockUseAuthStore = require('@/store/authStore').useAuthStore
-    mockUseAuthStore.mockReturnValue({
+    (authStore.useAuthStore as unknown as jest.Mock).mockReturnValue({
       user: {
         id: 1,
         email: 'test@example.com',
@@ -48,8 +45,7 @@ describe('usePermissions Hook', () => {
   })
 
   it('should return false when user lacks permission', () => {
-    const mockUseAuthStore = require('@/store/authStore').useAuthStore
-    mockUseAuthStore.mockReturnValue({
+    (authStore.useAuthStore as unknown as jest.Mock).mockReturnValue({
       user: {
         id: 1,
         email: 'test@example.com',
@@ -67,8 +63,7 @@ describe('usePermissions Hook', () => {
   })
 
   it('should handle null user state', () => {
-    const mockUseAuthStore = require('@/store/authStore').useAuthStore
-    mockUseAuthStore.mockReturnValue({
+    (authStore.useAuthStore as unknown as jest.Mock).mockReturnValue({
       user: null,
       permissions: []
     })

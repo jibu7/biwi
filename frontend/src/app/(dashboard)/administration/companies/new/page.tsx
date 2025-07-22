@@ -12,7 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ArrowLeft, Building2, User, Settings, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -55,7 +54,6 @@ export default function NewCompanyPage() {
     register,
     handleSubmit,
     watch,
-    setValue,
     formState: { errors },
   } = useForm<CompanyCreationFormData>({
     resolver: zodResolver(companyCreationSchema),
@@ -122,7 +120,7 @@ export default function NewCompanyPage() {
       
       router.push('/administration/companies');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Company creation error:', error);
       toast.error(
         error.message || 'Failed to create company. Please try again.'
