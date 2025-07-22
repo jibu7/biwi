@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, Filter } from 'lucide-react';
 import { apService } from '@/services/apService';
-import { Table } from '@/components/ui/Table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { cn } from '@/lib/utils';
 
 export default function APTransactionsListPage() {
@@ -36,87 +36,95 @@ export default function APTransactionsListPage() {
     queryFn: () => apService.getAPTransactionTypes(),
   });
 
-  const columns = [
-    { header: 'Document #', accessor: 'document_number' as keyof typeof transactions[0] },
+  const columns: Column<typeof transactions[0]>[] = [
+    {
+      accessorKey: 'document_number',
+      header: 'Document #',
+    },
     { 
       header: 'Supplier', 
-      accessor: (transaction: typeof transactions[0]) => {
-        const supplier = suppliers.find(s => s.id === transaction.supplier_id);
+      cell: ({ row }) => {
+        const supplier = suppliers.find(s => s.id === row.original.supplier_id);
         return supplier ? `${supplier.supplier_code} - ${supplier.name}` : 'Unknown';
       }
     },
     { 
       header: 'Type', 
-      accessor: (transaction: typeof transactions[0]) => {
-        const type = transactionTypes.find(t => t.id === transaction.ap_transaction_type_id);
+      cell: ({ row }) => {
+        const type = transactionTypes.find(t => t.id === row.original.ap_transaction_type_id);
         return type?.name || 'Unknown';
       }
     },
     { 
       header: 'Date', 
-      accessor: (transaction: typeof transactions[0]) => 
-        new Date(transaction.transaction_date).toLocaleDateString()
+      cell: ({ row }) => 
+        new Date(row.original.transaction_date).toLocaleDateString()
     },
     { 
       header: 'Due Date', 
-      accessor: (transaction: typeof transactions[0]) => 
-        transaction.due_date ? new Date(transaction.due_date).toLocaleDateString() : '-'
+      cell: ({ row }) => 
+        row.original.due_date ? new Date(row.original.due_date).toLocaleDateString() : '-'
     },
     {
       header: 'Total Amount',
-      accessor: (transaction: typeof transactions[0]) => (
-        <span className={transaction.total_amount < 0 ? 'text-green-600' : 'text-red-600'}>
+      cell: ({ row }) => (
+        <span className={row.original.total_amount < 0 ? 'text-green-600' : 'text-red-600'}>
           {new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
-          }).format(Math.abs(transaction.total_amount))}
+          }).format(Math.abs(row.original.total_amount))}
         </span>
       ),
     },
     {
       header: 'Open Amount',
-      accessor: (transaction: typeof transactions[0]) => (
-        <span className={transaction.open_amount < 0 ? 'text-green-600' : 'text-red-600'}>
+      cell: ({ row }) => (
+        <span className={row.original.open_amount < 0 ? 'text-green-600' : 'text-red-600'}>
           {new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
-          }).format(Math.abs(transaction.open_amount))}
+          }).format(Math.abs(row.original.open_amount))}
         </span>
       ),
     },
     {
       header: 'Status',
-      accessor: (transaction: typeof transactions[0]) => (
+      cell: ({ row }) => (
         <span
           className={cn(
             'px-2 py-1 text-xs rounded-full',
-            transaction.status === 'Open'
+            row.original.status === 'Open'
               ? 'bg-yellow-100 text-yellow-800'
-              : transaction.status === 'Paid'
+              : row.original.status === 'Paid'
               ? 'bg-green-100 text-green-800'
               : 'bg-gray-100 text-gray-800'
           )}
         >
-          {transaction.status}
+          {row.original.status}
         </span>
       ),
     },
-    { header: 'Reference', accessor: 'reference' as keyof typeof transactions[0] },
+    {
+      accessorKey: 'reference',
+      header: 'Reference',
+    },
+    {
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              // Navigate to transaction detail view
+              console.log('View transaction:', row.original.id);
+            }}
+            className="text-blue-600 hover:text-blue-900"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+        </div>
+      ),
+    },
   ];
-
-  const actions = (transaction: typeof transactions[0]) => (
-    <div className="flex items-center gap-2">
-      <button
-        onClick={() => {
-          // Navigate to transaction detail view
-          console.log('View transaction:', transaction.id);
-        }}
-        className="text-blue-600 hover:text-blue-900"
-      >
-        <Eye className="h-4 w-4" />
-      </button>
-    </div>
-  );
 
   const handleFilterChange = (field: string, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
@@ -228,7 +236,7 @@ export default function APTransactionsListPage() {
         </p>
       </div>
 
-      <Table data={transactions} columns={columns} actions={actions} />
+      <DataTable data={transactions} columns={columns} />
     </div>
   );
 }

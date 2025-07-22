@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { salesRepService } from '@/services/arService';
 import { SalesRepresentative } from '@/types/ar';
-import { Table } from '@/components/ui/Table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { usePermissions } from '@/hooks/usePermissions';
 import * as permissions from '@/lib/permissions';
 import { cn } from '@/lib/utils';
@@ -28,58 +28,63 @@ export default function SalesRepsPage() {
     },
   });
 
-  const columns = [
-    { header: 'Name', accessor: 'name' as keyof SalesRepresentative },
+  const columns: Column<SalesRepresentative>[] = [
+    {
+      accessorKey: 'name',
+      header: 'Name',
+    },
     {
       header: 'Contact Info',
-      accessor: (rep: SalesRepresentative) => (
+      cell: ({ row }) => (
         <div className="text-sm">
-          {rep.contact_info?.phone && <div>Phone: {rep.contact_info.phone}</div>}
-          {rep.contact_info?.email && <div>Email: {rep.contact_info.email}</div>}
+          {row.original.contact_info?.phone && <div>Phone: {row.original.contact_info.phone}</div>}
+          {row.original.contact_info?.email && <div>Email: {row.original.contact_info.email}</div>}
         </div>
       ),
     },
     {
       header: 'Status',
-      accessor: (rep: SalesRepresentative) => (
+      cell: ({ row }) => (
         <span
           className={cn(
             'px-2 py-1 text-xs rounded-full',
-            rep.is_active
+            row.original.is_active
               ? 'bg-green-100 text-green-800'
               : 'bg-red-100 text-red-800'
           )}
         >
-          {rep.is_active ? 'Active' : 'Inactive'}
+          {row.original.is_active ? 'Active' : 'Inactive'}
         </span>
       ),
     },
+    {
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          {hasPermission(permissions.AR_SETUP_MANAGE) && (
+            <>
+              <Link
+                href={`/maintenance/ar/sales-reps/${row.original.id}`}
+                className="text-blue-600 hover:text-blue-900"
+              >
+                <Pencil className="h-4 w-4" />
+              </Link>
+              <button
+                onClick={() => {
+                  if (confirm('Are you sure you want to delete this sales representative?')) {
+                    deleteMutation.mutate(row.original.id);
+                  }
+                }}
+                className="text-red-600 hover:text-red-900"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </>
+          )}
+        </div>
+      ),
+    },
   ];
-
-  const actions = (rep: SalesRepresentative) => (
-    <div className="flex items-center gap-2">
-      {hasPermission(permissions.AR_SETUP_MANAGE) && (
-        <>
-          <Link
-            href={`/maintenance/ar/sales-reps/${rep.id}`}
-            className="text-blue-600 hover:text-blue-900"
-          >
-            <Pencil className="h-4 w-4" />
-          </Link>
-          <button
-            onClick={() => {
-              if (confirm('Are you sure you want to delete this sales representative?')) {
-                deleteMutation.mutate(rep.id);
-              }
-            }}
-            className="text-red-600 hover:text-red-900"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </>
-      )}
-    </div>
-  );
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -105,7 +110,7 @@ export default function SalesRepsPage() {
         )}
       </div>
 
-      <Table data={salesReps} columns={columns} actions={actions} />
+      <DataTable data={salesReps} columns={columns} />
     </div>
   );
 }

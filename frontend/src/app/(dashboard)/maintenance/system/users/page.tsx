@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import { userService } from '@/services/userService';
-import { Table } from '@/components/ui/Table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { usePermissions } from '@/hooks/usePermissions';
 import * as permissions from '@/lib/permissions';
 import { cn } from '@/lib/utils';
@@ -34,28 +34,34 @@ export default function UsersPage() {
       user.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const columns = [
-    { header: 'Email', accessor: 'email' as keyof typeof users[0] },
-    { header: 'Full Name', accessor: 'full_name' as keyof typeof users[0] },
+  const columns: Column<typeof users[0]>[] = [
+    {
+      accessorKey: 'email',
+      header: 'Email',
+    },
+    {
+      accessorKey: 'full_name',
+      header: 'Full Name',
+    },
     {
       header: 'Status',
-      accessor: (user: typeof users[0]) => (
+      cell: ({ row }) => (
         <span
           className={cn(
             'px-2 py-1 text-xs rounded-full',
-            user.is_active
+            row.original.is_active
               ? 'bg-green-100 text-green-800'
               : 'bg-red-100 text-red-800'
           )}
         >
-          {user.is_active ? 'Active' : 'Inactive'}
+          {row.original.is_active ? 'Active' : 'Inactive'}
         </span>
       ),
     },
     {
       header: 'Type',
-      accessor: (user: typeof users[0]) =>
-        user.is_superuser ? (
+      cell: ({ row }) =>
+        row.original.is_superuser ? (
           <span className="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
             Superuser
           </span>
@@ -63,32 +69,34 @@ export default function UsersPage() {
           <span className="text-gray-500">Regular</span>
         ),
     },
+    {
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          {hasPermission(permissions.USER_UPDATE) && (
+            <Link
+              href={`/maintenance/system/users/${row.original.id}`}
+              className="text-blue-600 hover:text-blue-900"
+            >
+              <Pencil className="h-4 w-4" />
+            </Link>
+          )}
+          {hasPermission(permissions.USER_DELETE) && (
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to delete this user?')) {
+                  deleteMutation.mutate(row.original.id);
+                }
+              }}
+              className="text-red-600 hover:text-red-900"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      ),
+    },
   ];
-
-  const actions = (user: typeof users[0]) => (
-    <div className="flex items-center gap-2">
-      {hasPermission(permissions.USER_UPDATE) && (
-        <Link
-          href={`/maintenance/system/users/${user.id}`}
-          className="text-blue-600 hover:text-blue-900"
-        >
-          <Pencil className="h-4 w-4" />
-        </Link>
-      )}
-      {hasPermission(permissions.USER_DELETE) && (
-        <button
-          onClick={() => {
-            if (confirm('Are you sure you want to delete this user?')) {
-              deleteMutation.mutate(user.id);
-            }
-          }}
-          className="text-red-600 hover:text-red-900"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      )}
-    </div>
-  );
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -124,7 +132,7 @@ export default function UsersPage() {
         />
       </div>
 
-      <Table data={filteredUsers} columns={columns} actions={actions} />
+      <DataTable data={filteredUsers} columns={columns} />
     </div>
   );
 }

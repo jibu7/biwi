@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { apService } from '@/services/apService';
-import { Table } from '@/components/ui/Table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { usePermissions } from '@/hooks/usePermissions';
 import * as permissions from '@/lib/permissions';
 import { cn } from '@/lib/utils';
@@ -35,62 +35,73 @@ export default function SuppliersPage() {
       supplier.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const columns = [
-    { header: 'Code', accessor: 'supplier_code' as keyof typeof suppliers[0] },
-    { header: 'Name', accessor: 'name' as keyof typeof suppliers[0] },
-    { header: 'Payment Terms', accessor: 'payment_terms' as keyof typeof suppliers[0] },
+  const columns: Column<typeof suppliers[0]>[] = [
+    {
+      accessorKey: 'supplier_code',
+      header: 'Code',
+    },
+    {
+      accessorKey: 'name',
+      header: 'Name',
+    },
+    {
+      accessorKey: 'payment_terms',
+      header: 'Payment Terms',
+    },
     {
       header: 'Balance',
-      accessor: (supplier: typeof suppliers[0]) => (
-        <span className={supplier.current_balance > 0 ? 'text-red-600' : ''}>
+      cell: ({ row }) => (
+        <span className={row.original.current_balance > 0 ? 'text-red-600' : ''}>
           {new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
-          }).format(supplier.current_balance)}
+          }).format(row.original.current_balance)}
         </span>
       ),
     },
     {
       header: 'Status',
-      accessor: (supplier: typeof suppliers[0]) => (
+      cell: ({ row }) => (
         <span
           className={cn(
             'px-2 py-1 text-xs rounded-full',
-            supplier.is_active
+            row.original.is_active
               ? 'bg-green-100 text-green-800'
               : 'bg-red-100 text-red-800'
           )}
         >
-          {supplier.is_active ? 'Active' : 'Inactive'}
+          {row.original.is_active ? 'Active' : 'Inactive'}
         </span>
       ),
     },
+    {
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          {hasPermission(permissions.AP_SETUP_MANAGE) && (
+            <>
+              <Link
+                href={`/maintenance/ap/suppliers/${row.original.id}`}
+                className="text-blue-600 hover:text-blue-900"
+              >
+                <Pencil className="h-4 w-4" />
+              </Link>
+              <button
+                onClick={() => {
+                  if (confirm('Are you sure you want to delete this supplier?')) {
+                    deleteMutation.mutate(row.original.id);
+                  }
+                }}
+                className="text-red-600 hover:text-red-900"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </>
+          )}
+        </div>
+      ),
+    },
   ];
-
-  const actions = (supplier: typeof suppliers[0]) => (
-    <div className="flex items-center gap-2">
-      {hasPermission(permissions.AP_SETUP_MANAGE) && (
-        <>
-          <Link
-            href={`/maintenance/ap/suppliers/${supplier.id}`}
-            className="text-blue-600 hover:text-blue-900"
-          >
-            <Pencil className="h-4 w-4" />
-          </Link>
-          <button
-            onClick={() => {
-              if (confirm('Are you sure you want to delete this supplier?')) {
-                deleteMutation.mutate(supplier.id);
-              }
-            }}
-            className="text-red-600 hover:text-red-900"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </>
-      )}
-    </div>
-  );
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -135,7 +146,7 @@ export default function SuppliersPage() {
         </label>
       </div>
 
-      <Table data={filteredSuppliers} columns={columns} actions={actions} />
+      <DataTable data={filteredSuppliers} columns={columns} />
     </div>
   );
 }

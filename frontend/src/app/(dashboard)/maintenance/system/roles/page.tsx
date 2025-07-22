@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import { roleService } from '@/services/roleService';
-import { Table } from '@/components/ui/Table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { usePermissions } from '@/hooks/usePermissions';
 import * as permissions from '@/lib/permissions';
 import { cn } from '@/lib/utils';
@@ -34,51 +34,59 @@ export default function RolesPage() {
       (role.description && role.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const columns = [
-    { header: 'Role Name', accessor: 'name' as keyof typeof roles[0] },
-    { header: 'Description', accessor: 'description' as keyof typeof roles[0] },
+  const columns: Column<typeof roles[0]>[] = [
+    {
+      accessorKey: 'name',
+      header: 'Role Name',
+    },
+    {
+      accessorKey: 'description',
+      header: 'Description',
+    },
     {
       header: 'Permissions Count',
-      accessor: (role: typeof roles[0]) => (
+      cell: ({ row }) => (
         <span className="text-gray-600">
-          {role.permissions ? role.permissions.length : 0} permissions
+          {row.original.permissions ? row.original.permissions.length : 0} permissions
         </span>
       ),
     },
     {
       header: 'Company',
-      accessor: (role: typeof roles[0]) => (
+      cell: ({ row }) => (
         <span className="text-gray-600">
-          Company ID: {role.company_id}
+          Company ID: {row.original.company_id}
         </span>
       ),
     },
+    {
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          {hasPermission(permissions.ROLE_UPDATE) && (
+            <Link
+              href={`/maintenance/system/roles/${row.original.id}`}
+              className="text-blue-600 hover:text-blue-900"
+            >
+              <Pencil className="h-4 w-4" />
+            </Link>
+          )}
+          {hasPermission(permissions.ROLE_DELETE) && (
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to delete this role?')) {
+                  deleteMutation.mutate(row.original.id);
+                }
+              }}
+              className="text-red-600 hover:text-red-900"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      ),
+    },
   ];
-
-  const actions = (role: typeof roles[0]) => (
-    <div className="flex items-center gap-2">
-      {hasPermission(permissions.ROLE_UPDATE) && (
-        <Link
-          href={`/maintenance/system/roles/${role.id}`}
-          className="text-blue-600 hover:text-blue-900"
-        >
-          <Pencil className="h-4 w-4" />
-        </Link>
-      )}
-      {hasPermission(permissions.ROLE_DELETE) && (
-        <button
-          onClick={() => {
-            if (confirm('Are you sure you want to delete this role?')) {
-              deleteMutation.mutate(role.id);
-            }
-          }}
-          className="text-red-600 hover:text-red-900"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      )}
-    </div>
-  );
 
   if (isLoading) {
     return (
@@ -133,7 +141,7 @@ export default function RolesPage() {
       </div>
 
       {filteredRoles.length > 0 ? (
-        <Table data={filteredRoles} columns={columns} actions={actions} />
+        <DataTable data={filteredRoles} columns={columns} />
       ) : (
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">

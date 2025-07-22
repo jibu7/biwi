@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { apService } from '@/services/apService';
-import { Table } from '@/components/ui/Table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { usePermissions } from '@/hooks/usePermissions';
 import * as permissions from '@/lib/permissions';
 import { cn } from '@/lib/utils';
@@ -34,52 +34,66 @@ export default function APTransactionTypesPage() {
       type.base_type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const columns = [
-    { header: 'Name', accessor: 'name' as keyof typeof transactionTypes[0] },
-    { header: 'Base Type', accessor: 'base_type' as keyof typeof transactionTypes[0] },
-    { header: 'Description', accessor: 'description' as keyof typeof transactionTypes[0] },
-    { header: 'Balance Direction', accessor: 'affects_balance_direction' as keyof typeof transactionTypes[0] },
+  const columns: Column<typeof transactionTypes[0]>[] = [
+    {
+      accessorKey: 'name',
+      header: 'Name',
+    },
+    {
+      accessorKey: 'base_type',
+      header: 'Base Type',
+    },
+    {
+      accessorKey: 'description',
+      header: 'Description',
+    },
+    {
+      accessorKey: 'affects_balance_direction',
+      header: 'Balance Direction',
+    },
     {
       header: 'Status',
-      accessor: (type: typeof transactionTypes[0]) => (
+      cell: ({ row }) => (
         <span
           className={cn(
             'px-2 py-1 text-xs rounded-full',
-            type.is_active
+            row.original.is_active
               ? 'bg-green-100 text-green-800'
               : 'bg-red-100 text-red-800'
           )}
         >
-          {type.is_active ? 'Active' : 'Inactive'}
+          {row.original.is_active ? 'Active' : 'Inactive'}
         </span>
       ),
     },
+    {
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          {hasPermission(permissions.AP_SETUP_MANAGE) && (
+            <>
+              <Link
+                href={`/maintenance/ap/transaction-types/${row.original.id}`}
+                className="text-blue-600 hover:text-blue-900"
+              >
+                <Pencil className="h-4 w-4" />
+              </Link>
+              <button
+                onClick={() => {
+                  if (confirm('Are you sure you want to delete this transaction type?')) {
+                    deleteMutation.mutate(row.original.id);
+                  }
+                }}
+                className="text-red-600 hover:text-red-900"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </>
+          )}
+        </div>
+      ),
+    },
   ];
-
-  const actions = (type: typeof transactionTypes[0]) => (
-    <div className="flex items-center gap-2">
-      {hasPermission(permissions.AP_SETUP_MANAGE) && (
-        <>
-          <Link
-            href={`/maintenance/ap/transaction-types/${type.id}`}
-            className="text-blue-600 hover:text-blue-900"
-          >
-            <Pencil className="h-4 w-4" />
-          </Link>
-          <button
-            onClick={() => {
-              if (confirm('Are you sure you want to delete this transaction type?')) {
-                deleteMutation.mutate(type.id);
-              }
-            }}
-            className="text-red-600 hover:text-red-900"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </>
-      )}
-    </div>
-  );
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -115,7 +129,7 @@ export default function APTransactionTypesPage() {
         />
       </div>
 
-      <Table data={filteredTransactionTypes} columns={columns} actions={actions} />
+      <DataTable data={filteredTransactionTypes} columns={columns} />
     </div>
   );
 }
