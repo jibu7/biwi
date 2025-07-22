@@ -100,6 +100,14 @@ export default function NewRolePage() {
       { key: permissions.OE_GRV_PROCESS, label: 'Process GRV' },
       { key: permissions.OE_REPORTS_VIEW, label: 'View OE Reports' },
     ],
+    'Reporting': [
+      { key: permissions.REPORTING_FINANCIAL_STATEMENTS, label: 'Financial Statements' },
+      { key: permissions.REPORTING_ADVANCED_GL, label: 'Advanced GL Reports' },
+      { key: permissions.REPORTING_ADVANCED_AR, label: 'Advanced AR Reports' },
+      { key: permissions.REPORTING_ADVANCED_AP, label: 'Advanced AP Reports' },
+      { key: permissions.REPORTING_TEMPLATES_MANAGE, label: 'Manage Reporting Templates' },
+      { key: permissions.REPORTING_BANK_RECONCILIATION, label: 'Bank Reconciliation' },
+    ],
     'Common Setup': [
       { key: permissions.COMMON_SETUP_CURRENCIES, label: 'Manage Currencies' },
       { key: permissions.COMMON_SETUP_TAXES, label: 'Manage Tax Codes' },
