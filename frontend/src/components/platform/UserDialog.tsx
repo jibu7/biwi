@@ -18,14 +18,15 @@ interface UserDialogProps {
   user?: PlatformUser;
   companies: Array<{ company: { id: number; name: string; code: string } }>;
   mode: 'create' | 'edit';
+  defaultUserType?: string;
 }
 
-export function UserDialog({ open, onOpenChange, user, companies, mode }: UserDialogProps) {
+export function UserDialog({ open, onOpenChange, user, companies, mode, defaultUserType = 'company_user' }: UserDialogProps) {
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
     password: '',
-    user_type: 'company_user',
+    user_type: defaultUserType,
     company_id: '',
     is_active: true,
   });
@@ -46,12 +47,12 @@ export function UserDialog({ open, onOpenChange, user, companies, mode }: UserDi
         email: '',
         full_name: '',
         password: '',
-        user_type: 'company_user',
+        user_type: defaultUserType,
         company_id: '',
         is_active: true,
       });
     }
-  }, [user, mode]); // Remove 'open' from dependencies
+  }, [user, mode, defaultUserType]);
 
   const queryClient = useQueryClient();
 
