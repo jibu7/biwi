@@ -479,6 +479,41 @@ def create_platform_user(
             created_at=datetime.utcnow()
         )
         db.add(db_user)
+        db.flush()  # Get the user ID without committing
+        
+        # Auto-assign default role based on user type
+        if user_in.company_id and user_in.user_type == "company_admin":
+            # Find Company Administrator role for this company
+            admin_role = db.query(Role).filter(
+                Role.company_id == user_in.company_id,
+                Role.name == "Company Administrator"
+            ).first()
+            
+            if admin_role:
+                user_role = UserRole(
+                    user_id=db_user.id,
+                    role_id=admin_role.id
+                )
+                db.add(user_role)
+                print(f"DEBUG: Assigned Company Administrator role (ID: {admin_role.id}) to user")
+            else:
+                print(f"WARNING: Company Administrator role not found for company {user_in.company_id}")
+        
+        elif user_in.company_id and user_in.user_type == "company_user":
+            # For regular company users, assign Data Entry Clerk role as default
+            default_role = db.query(Role).filter(
+                Role.company_id == user_in.company_id,
+                Role.name == "Data Entry Clerk"
+            ).first()
+            
+            if default_role:
+                user_role = UserRole(
+                    user_id=db_user.id,
+                    role_id=default_role.id
+                )
+                db.add(user_role)
+                print(f"DEBUG: Assigned Data Entry Clerk role (ID: {default_role.id}) to user")
+        
         db.commit()
         db.refresh(db_user)
         
@@ -492,7 +527,8 @@ def create_platform_user(
             details={
                 "email": db_user.email,
                 "user_type": db_user.user_type,
-                "company_id": db_user.company_id
+                "company_id": db_user.company_id,
+                "auto_role_assigned": True
             }
         ))
         db.commit()

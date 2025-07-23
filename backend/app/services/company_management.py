@@ -112,11 +112,32 @@ class CompanyManagementService:
             db.add(user)
             db.flush()  # Get the user ID without committing
             
-            # Assign roles if provided
+            # Assign roles if provided, or assign default roles
             if role_ids:
                 CompanyManagementService._assign_roles_to_user(
                     db, user.id, company_id, role_ids
                 )
+            else:
+                # Auto-assign default role based on user type if no roles specified
+                default_role_name = None
+                if user_type == UserType.COMPANY_ADMIN:
+                    default_role_name = "Company Administrator"
+                elif user_type == UserType.COMPANY_USER:
+                    default_role_name = "Data Entry Clerk"
+                
+                if default_role_name:
+                    default_role = db.query(Role).filter(
+                        Role.company_id == company_id,
+                        Role.name == default_role_name
+                    ).first()
+                    
+                    if default_role:
+                        CompanyManagementService._assign_roles_to_user(
+                            db, user.id, company_id, [default_role.id]
+                        )
+                        print(f"DEBUG: Auto-assigned {default_role_name} role to user {email}")
+                    else:
+                        print(f"WARNING: Default role '{default_role_name}' not found for company {company_id}")
             
             db.commit()
             db.refresh(user)

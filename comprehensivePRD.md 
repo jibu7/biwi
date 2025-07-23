@@ -1,515 +1,625 @@
 # 🚀 Vinea ERP - Comprehensive Project Requirements Document (PRD)
 
-**Document Version:** 2.0  
+**Document Version:** 3.0  
 **Date:** December 2024  
 **Project Name:** Vinea ERP  
-**Overall Objective:** To develop a robust, scalable, and user-friendly web-based ERP system, inspired by Sage Evolution. This system will incorporate core accounting (General Ledger, Accounts Receivable, Accounts Payable), Inventory Management, Order Entry, Bill of Materials, Point of Sale, and advanced reporting, adhering to client specifications for UI structure and functionality.
+**Key Enhancement:** Multi-tenant Architecture
 
-## 📋 Table of Contents
+## Executive Summary
 
-1. [Overall Vision & Strategy](#1-overall-vision--strategy)
-2. [Technology Stack](#2-technology-stack)
-3. [Overall Approach for AI Collaboration](#3-overall-approach-for-ai-collaboration)
-4. [Phase 0: Project Initialization & Core Setup](#phase-0-project-initialization--core-setup)
-5. [Phase 1: Core System Backend Foundation](#phase-1-core-system-backend-foundation)
-6. [Phase 2: Core System Frontend Foundation](#phase-2-core-system-frontend-foundation)
-7. [Phase 3: General Ledger Module](#phase-3-general-ledger-module)
-8. [Phase 4: Accounts Receivable Module](#phase-4-accounts-receivable-module)
-9. [Phase 5: Accounts Payable Module](#phase-5-accounts-payable-module)
-10. [Phase 6: Inventory Management Module](#phase-6-inventory-management-module)
-11. [Phase 7: Order Entry Module](#phase-7-order-entry-module)
-12. [Phase 8: Advanced Maintenance & Common Features](#phase-8-advanced-maintenance--common-features)
-13. [Phase 9: Advanced Reporting & Analytics](#phase-9-advanced-reporting--analytics)
-14. [Phase 10: Bill of Materials Module](#phase-10-bill-of-materials-module)
-15. [Phase 11: Point of Sale Module](#phase-11-point-of-sale-module)
-16. [Phase 12: Cross-Module Integration & Advanced Features](#phase-12-cross-module-integration--advanced-features)
-17. [Phase 13: Testing, Deployment & Documentation](#phase-13-testing-deployment--documentation)
+Vinea ERP is a modern, cloud-ready Enterprise Resource Planning system designed for small to medium-sized enterprises with robust multi-tenant capabilities. Built on a scalable architecture using FastAPI and Next.js, it provides comprehensive business management features including accounting, inventory management, order processing, and advanced reporting, all within a secure multi-company environment.
 
-## 1. Overall Vision & Strategy
+## Table of Contents
 
-Vinea ERP aims to be a modern, comprehensive solution for small to medium-sized enterprises, providing an intuitive interface and powerful backend capabilities. We will leverage a proven technology stack and an iterative development approach. This document serves as the primary Product Requirements Document (PRD) and Development Roadmap.
-
-## 2. Technology Stack
-
-**Frontend:** Next.js (App Router), React, TypeScript, Tailwind CSS, Tanstack React Query, Zustand (for global state if needed beyond AuthContext), Axios, React Hook Form, Zod, Lucide-react, js-cookie.
-
-**Backend:** FastAPI, Python 3.9+, SQLAlchemy (with Alembic), PostgreSQL, JWT for Authentication, Bcrypt for Hashing.
-
-**Containerization:** Docker, Docker Compose.
-
-**Testing:** Pytest (backend), Jest/React Testing Library (frontend), Cypress/Playwright (E2E - Phase 13).
-
-## 3. Overall Approach for AI Collaboration
-
-- **Iterative Development:** Each phase will be completed, thoroughly tested at its level, and confirmed by the AI before proceeding to the next.
-- **Absolute Clarity in Instructions:** Each task will be described with specific actions, target files, function signatures, expected UI behavior, and data flows.
-- **Dependency Awareness:** Instructions will explicitly state dependencies on functionalities or data structures created in previous phases.
-- **Mandatory Confirmation:** At the conclusion of each phase, the AI MUST explicitly confirm completion of all specified tasks.
-- **Robustness and Quality First:** Strong emphasis on comprehensive testing, meticulous error handling, and security best practices.
-- **Intent-Based UI Focus:** The user interface will be organized around user intents (Maintenance, Transactions, Reports).
+1. [Project Overview](#1-project-overview)
+2. [Multi-Tenant Architecture](#2-multi-tenant-architecture)
+3. [Technology Stack](#3-technology-stack)
+4. [System Architecture](#4-system-architecture)
+5. [Core Modules](#5-core-modules)
+6. [Development Methodology](#6-development-methodology)
+7. [Phase-by-Phase Implementation](#7-phase-by-phase-implementation)
+8. [Non-Functional Requirements](#8-non-functional-requirements)
+9. [Security & Compliance](#9-security--compliance)
+10. [Deployment Strategy](#10-deployment-strategy)
 
 ---
 
-## Phase 0: Project Initialization & Core Setup
+## 1. Project Overview
 
-**Objective:** Establish the foundational project structure, version control, and initial development environment for both frontend and backend, ensuring all core tools and configurations are in place.
+### 1.1 Vision Statement
+To develop a robust, scalable, and user-friendly web-based ERP system that empowers businesses with integrated management capabilities while supporting multiple companies within a single deployment.
 
-**Key Requirements Addressed:** GETTING_STARTED.md, initial project scaffolding.
+### 1.2 Objectives
+- **Multi-Tenant Support**: Complete data isolation between companies
+- **Comprehensive Coverage**: Full suite of business management modules
+- **Modern Architecture**: Cloud-native, API-first design
+- **User Experience**: Intent-based navigation and intuitive interfaces
+- **Scalability**: Support for growing businesses and user bases
+- **Integration Ready**: APIs for third-party integrations
 
-### Instructions for AI:
-
-#### 1. Create Root Directory:
-- **Action:** Create the main project directory named `Biwi/`.
-- **Outcome:** `Biwi/` directory exists.
-
-#### 2. Set Up Git Version Control:
-- **Action:** Navigate into `Biwi/`. Initialize a Git repository.
-- **Action:** Create a `.gitignore` file.
-- **Content Hint:** Include common ignores for Python, Node.js, OS files, and IDE-specific files.
-- **Outcome:** Git repository initialized; comprehensive `.gitignore` file created.
-
-#### 3. Create Core Project Structure:
-- **Action:** Inside `Biwi/`, create subdirectories: `frontend/`, `backend/`, `database/`, `docker/`, `docs/`
-- **Action:** Create initial `README.md` file
-- **Outcome:** Directory structure created
-
-#### 4. Backend Initialization:
-[Detailed backend setup instructions as in original document...]
-
-#### 5. Frontend Initialization:
-[Detailed frontend setup instructions as in original document...]
-
-#### 6. Docker Setup:
-[Detailed Docker setup instructions as in original document...]
-
-### Definition of Done for Phase 0:
-- All specified directories and files created
-- Git repository initialized
-- Backend and frontend projects initialized with dependencies
-- Docker setup complete
-- Application runnable via `docker-compose up --build`
+### 1.3 Target Audience
+- Small to Medium Enterprises (SMEs)
+- Multi-company organizations
+- Accounting firms managing multiple clients
+- Growing businesses requiring scalable solutions
 
 ---
 
-## Phase 1: Core System Backend Foundation
+## 2. Multi-Tenant Architecture
 
-**Objective:** Implement the fundamental backend services for user authentication, authorization (RBAC), user management, company setup, and accounting period management.
+### 2.1 Tenant Isolation Strategy
+- **Database Level**: Row-level security with company_id foreign keys
+- **Application Level**: Middleware-enforced tenant context
+- **API Level**: Tenant-aware authentication and authorization
+- **UI Level**: Company selector and context switching
 
-**Key Requirements Addressed:** REQ-SYS-UM-, REQ-SYS-RBAC-, REQ-SYS-COMP-, REQ-SYS-PERIOD-
+### 2.2 Multi-Tenant Features
+- **Company Management**
+  - Multiple companies per deployment
+  - Company-specific configurations
+  - Inter-company transactions (Phase 13)
+  - Consolidated reporting (Phase 13)
 
-[Continue with Phase 1 details as in original document...]
+- **User Access**
+  - Users assigned to specific companies
+  - Superadmin access across companies
+  - Company-specific role permissions
+  - Cross-company user management
 
----
+- **Data Isolation**
+  - Automatic company_id filtering
+  - Tenant-aware queries
+  - Secure data boundaries
+  - Audit trails per company
 
-## Phase 2: Core System Frontend Foundation
-
-**Objective:** Build the frontend infrastructure, including authentication UI, the new three-tier intent-based navigation system, administrative interfaces for core entities, and client-side RBAC enforcement.
-
-**Key Requirements Addressed:** REQ-SYS-UM-, REQ-SYS-RBAC-, REQ-SYS-COMP-, REQ-SYS-PERIOD-, NFR-USABILITY-001/002/003
-
-[Continue with Phase 2 details as in original document...]
-
----
-
-## Phase 3: General Ledger Module
-
-**Objective:** Implement the core General Ledger functionality, including Chart of Accounts management, Journal Entry processing, GL Transaction Types, GL Defaults, and basic GL reports.
-
-**Key Requirements Addressed:** REQ-GL-COA-, REQ-GL-JE-, REQ-GL-REPORT-, REQ-CROSS-
-
-[Continue with Phase 3 details as in original document...]
-
----
-
-## Phase 4: Accounts Receivable Module
-
-**Objective:** Implement comprehensive Accounts Receivable functionality, including customer management, sales representative setup, AR transaction types, AR defaults, processing of AR transactions, AR allocations, and key AR reports.
-
-**Key Requirements Addressed:** REQ-AR-CUST-, REQ-AR-TT-, REQ-AR-TP-, REQ-AR-ALLOC-, REQ-AR-AGE-, REQ-AR-REPORT-
-
-[Continue with Phase 4 details from vinea cheat code 2.txt...]
+### 2.3 Tenant Onboarding
+- Self-service company creation
+- Template-based setup
+- Default chart of accounts
+- Industry-specific configurations
 
 ---
 
-## Phase 5: Accounts Payable Module
+## 3. Technology Stack
 
-**Objective:** Implement comprehensive Accounts Payable functionality, including supplier management, AP transaction types, AP defaults, processing of AP transactions, AP allocations, and key AP reports.
+### 3.1 Backend Technologies
+```yaml
+Framework: FastAPI
+Language: Python 3.12+
+ORM: SQLAlchemy with Alembic
+Database: PostgreSQL 15+
+Authentication: JWT with refresh tokens
+Security: Bcrypt, CORS, Rate limiting
+API Documentation: OpenAPI/Swagger
+Dependency Management: Poetry
+Testing: Pytest, Coverage
+Linting: Black, isort, mypy, ruff
+```
 
-**Key Requirements Addressed:** REQ-AP-SUPP-, REQ-AP-TT-, REQ-AP-TP-, REQ-AP-ALLOC-, REQ-AP-AGE-, REQ-AP-REPORT-
+### 3.2 Frontend Technologies
+```yaml
+Framework: Next.js 14+ (App Router)
+Language: TypeScript 5+
+UI Library: React 18+
+Styling: Tailwind CSS 3+
+State Management: Zustand
+Data Fetching: Tanstack React Query
+Forms: React Hook Form + Zod
+Charts: Recharts
+Icons: Lucide React
+Testing: Jest, React Testing Library
+E2E Testing: Playwright
+```
 
-[Continue with Phase 5 details from vinea cheat code 2.txt...]
-
----
-
-## Phase 6: Inventory Management Module
-
-**Objective:** Implement comprehensive Inventory Management functionality, including item master data, warehouses, inventory transaction types, units of measure, variable barcodes, inventory defaults, inventory adjustments, and core inventory reports.
-
-**Key Requirements Addressed:** REQ-INV-ITEM-, REQ-INV-TT-, REQ-INV-PROC-, REQ-INV-REPORT-
-
-[Continue with Phase 6 details from vinea cheat code 2.txt...]
-
----
-
-## Phase 7: Order Entry Module
-
-**Objective:** Implement core Order Entry functionality, including Sales Orders, Purchase Orders, and Goods Received Vouchers with critical integration points.
-
-**Key Requirements Addressed:** REQ-OE-DT-, REQ-OE-SO-, REQ-OE-PO-, REQ-OE-REPORT-
-
-[Continue with Phase 7 details from vinea cheat code 2.txt...]
-
----
-
-## Phase 8: Advanced Maintenance & Common Features
-
-**Objective:** Implement remaining common setup/maintenance features: Foreign Currency, Tax Types, and Branches.
-
-**Key Requirements Addressed:** software_interface.txt - Common maintenance features
-
-[Continue with Phase 8 details from vinea cheat code 2.txt...]
-
----
-
-## Phase 9: Advanced Reporting & Analytics
-
-**Objective:** Implement comprehensive reporting functionality across all modules, including financial statements, advanced analytics, and customizable report generation.
-
-**Key Requirements Addressed:** REQ-GL-REPORT-ADV, REQ-AR-REPORT-ADV, REQ-AP-REPORT-ADV, REQ-INV-REPORT-ADV
-
-### Instructions for AI:
-
-#### 1. Advanced Financial Reports:
-
-**Backend Models & Services:**
-- Implement Balance Sheet generation service
-- Implement Income Statement generation service
-- Implement Cash Flow Statement generation service
-- Add report caching mechanism for performance
-
-**Frontend Components:**
-- Create interactive Balance Sheet UI with drill-down capabilities
-- Create Income Statement UI with period comparisons
-- Create Cash Flow Statement UI
-- Implement PDF export functionality for all reports
-
-#### 2. Advanced AR/AP Analytics:
-
-**Backend Services:**
-- Customer/Supplier ranking by revenue/spend
-- Payment behavior analysis
-- Credit risk assessment algorithms
-- Implement statement generation with custom templates
-
-**Frontend Components:**
-- Interactive dashboards for AR/AP analytics
-- Customer/Supplier scorecards
-- Payment prediction visualizations
-- Bulk statement generation UI
-
-#### 3. Inventory Analytics:
-
-**Backend Services:**
-- ABC analysis implementation
-- Inventory turnover calculations
-- Slow-moving stock identification
-- Reorder point optimization
-- Stock valuation by multiple methods (FIFO, LIFO, Weighted Average)
-
-**Frontend Components:**
-- Inventory dashboard with KPIs
-- ABC analysis visualization
-- Stock movement heatmaps
-- Reorder point suggestions UI
-
-#### 4. Sales Analytics:
-
-**Backend Services:**
-- Sales trend analysis
-- Product performance metrics
-- Customer segmentation
-- Sales forecasting algorithms
-
-**Frontend Components:**
-- Sales dashboard with charts
-- Product performance reports
-- Customer segmentation UI
-- Forecast visualization
-
-### Definition of Done for Phase 9:
-- All financial statements generating correctly
-- Analytics services providing accurate insights
-- Interactive dashboards functional
-- PDF export working for all reports
-- Performance optimized with caching
+### 3.3 Infrastructure
+```yaml
+Containerization: Docker & Docker Compose
+Orchestration: Kubernetes (production)
+CI/CD: GitHub Actions / GitLab CI
+Monitoring: Prometheus + Grafana
+Logging: ELK Stack
+Cache: Redis
+Message Queue: RabbitMQ (future)
+Object Storage: S3-compatible
+```
 
 ---
 
-## Phase 10: Bill of Materials Module
+## 4. System Architecture
 
-**Objective:** Implement Bill of Materials functionality for manufacturing processes, including BOM setup, manufacturing orders, and material planning.
+### 4.1 High-Level Architecture
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Load Balancer                        │
+└─────────────────┬───────────────────────┬──────────────────┘
+                  │                       │
+        ┌─────────▼─────────┐   ┌────────▼────────┐
+        │   Frontend (Next.js)  │   │  Admin Portal   │
+        └─────────┬─────────┘   └────────┬────────┘
+                  │                       │
+        ┌─────────▼───────────────────────▼────────┐
+        │          API Gateway (Kong/Nginx)        │
+        └─────────┬───────────────────────┬────────┘
+                  │                       │
+        ┌─────────▼─────────┐   ┌────────▼────────┐
+        │  FastAPI Backend  │   │  Worker Services │
+        └─────────┬─────────┘   └────────┬────────┘
+                  │                       │
+        ┌─────────▼───────────────────────▼────────┐
+        │         PostgreSQL (Primary)             │
+        └──────────────────────────────────────────┘
+```
 
-**Key Requirements Addressed:** REQ-BOM-SETUP, REQ-BOM-MFG, REQ-BOM-MRP
+### 4.2 API Design Principles
+- RESTful endpoints with consistent naming
+- Pagination for all list endpoints
+- Filtering and sorting capabilities
+- Bulk operations support
+- Versioned APIs (/api/v1/)
+- Comprehensive error responses
 
-### Instructions for AI:
-
-#### 1. Backend BOM Models & Schemas:
-
-**Models (app/models/bom.py):**
-- `BillOfMaterials(Base)`: Master BOM definition
-- `BOMComponent(Base)`: Component items and quantities
-- `ManufacturingOrder(Base)`: Production orders
-- `ManufacturingOrderComponent(Base)`: Components used in production
-- `BOMDefaults(Base)`: Module defaults
-
-**Services:**
-- BOM explosion calculation
-- Material requirements planning (MRP)
-- Manufacturing order processing
-- Inventory impact from manufacturing
-- Cost rollup calculations
-
-#### 2. Frontend BOM UIs:
-
-**Setup:**
-- BOM Master maintenance
-- Multi-level BOM viewer
-- Where-used analysis
-
-**Transactions:**
-- Manufacturing order creation
-- Production recording
-- Material issue recording
-- Finished goods receipt
-
-**Reports:**
-- Material requirements planning
-- Production cost analysis
-- Component usage reports
-
-### Definition of Done for Phase 10:
-- Multi-level BOMs functional
-- Manufacturing orders processing correctly
-- Inventory properly updated
-- Cost calculations accurate
-- MRP reports generating
+### 4.3 Database Design
+- Normalized relational structure
+- Tenant isolation via company_id
+- Audit columns (created_at, updated_at, created_by)
+- Soft deletes where appropriate
+- Optimized indexes for performance
 
 ---
 
-## Phase 11: Point of Sale Module
+## 5. Core Modules
 
-**Objective:** Implement Point of Sale functionality for retail operations, including till management, POS transactions, and cash management.
+### 5.1 System Administration
+- **User Management**: CRUD, roles, permissions
+- **Company Management**: Multi-company setup
+- **Role-Based Access Control**: Granular permissions
+- **Audit Logging**: Comprehensive activity tracking
+- **System Configuration**: Global and company settings
 
-**Key Requirements Addressed:** REQ-POS-SETUP, REQ-POS-TRANS, REQ-POS-REPORT
+### 5.2 Financial Modules
 
-### Instructions for AI:
+#### General Ledger (GL)
+- Chart of Accounts (hierarchical)
+- Journal Entry processing
+- GL Transaction Types
+- Financial period management
+- GL posting engine
+- Account reconciliation
 
-#### 1. Backend POS Models & Schemas:
+#### Accounts Receivable (AR)
+- Customer master data
+- Sales representatives
+- AR transactions (invoices, receipts, credit notes)
+- Payment allocations
+- Customer statements
+- Credit management
 
-**Models (app/models/pos.py):**
-- `Till(Base)`: Cash register/till definition
-- `TillSession(Base)`: Opening/closing sessions
-- `POSTransaction(Base)`: Sales and returns
-- `POSTransactionLine(Base)`: Line items
-- `POSPayment(Base)`: Payment methods (cash, card, etc.)
-- `POSDefaults(Base)`: Module defaults
+#### Accounts Payable (AP)
+- Supplier master data
+- AP transactions (bills, payments, debit notes)
+- Payment allocations
+- Supplier statements
+- Payment runs
 
-**Services:**
-- Quick product search
-- Barcode scanning support
+### 5.3 Inventory Management
+- Item master with variants
+- Multiple warehouses
+- Stock movements
+- Inventory counts
+- Costing methods (FIFO, LIFO, Average)
+- Reorder management
+- Barcode support
+
+### 5.4 Order Management
+- Sales Orders (SO)
+- Purchase Orders (PO)
+- Goods Received Vouchers (GRV)
+- Order fulfillment
+- Backorder management
+- Drop shipping
+
+### 5.5 Advanced Features
+- **Multi-Currency**: Exchange rates, forex gains/losses
+- **Tax Management**: Multiple tax types, tax calculations
+- **Branch Management**: Multi-location support
+- **Bill of Materials**: Manufacturing, assembly
+- **Point of Sale**: Retail operations
+- **Document Management**: Attachment support
+
+### 5.6 Reporting & Analytics
+- Financial Reports (Balance Sheet, P&L, Cash Flow)
+- Management Reports
+- Custom Report Builder
+- Dashboard with KPIs
+- Export capabilities (PDF, Excel, CSV)
+
+---
+
+## 6. Development Methodology
+
+### 6.1 Approach
+- **Iterative Development**: Complete phases before proceeding
+- **AI-Assisted Coding**: Clear instructions for AI agents
+- **Test-Driven Development**: Comprehensive test coverage
+- **Documentation First**: Clear specifications before coding
+- **Code Reviews**: Mandatory peer reviews
+
+### 6.2 Quality Standards
+- **Code Coverage**: Minimum 80%
+- **Performance**: Response time < 200ms
+- **Security**: OWASP compliance
+- **Accessibility**: WCAG 2.1 AA compliance
+- **Browser Support**: Chrome, Firefox, Safari, Edge
+
+### 6.3 Development Workflow
+1. Phase planning and requirements
+2. Database design and migrations
+3. Backend API implementation
+4. Frontend UI development
+5. Integration testing
+6. Documentation updates
+7. Phase completion review
+
+---
+
+## 7. Phase-by-Phase Implementation
+
+### Phase 0: Project Initialization & Core Setup
+**Duration**: 1 week  
+**Objectives**:
+- Project structure setup
+- Development environment configuration
+- Docker containerization
+- CI/CD pipeline setup
+
+**Deliverables**:
+- Git repository with proper structure
+- Docker Compose configuration
+- Development scripts
+- Initial documentation
+
+### Phase 1: Core System Backend Foundation
+**Duration**: 2 weeks  
+**Objectives**:
+- Authentication system (JWT)
+- RBAC implementation
+- Multi-tenant infrastructure
+- Company and user management
+
+**Key Features**:
+- User authentication/authorization
+- Role and permission management
+- Company setup and isolation
+- Accounting period management
+- API documentation
+
+### Phase 2: Core System Frontend Foundation
+**Duration**: 2 weeks  
+**Objectives**:
+- Frontend architecture setup
+- Authentication UI
+- Intent-based navigation system
+- Admin interfaces
+
+**Key Features**:
+- Login/logout functionality
+- Three-tier navigation (Maintenance, Transactions, Reports)
+- User management UI
+- Role management with permissions
+- Company selector for multi-tenant
+
+### Phase 3: General Ledger Module
+**Duration**: 3 weeks  
+**Objectives**:
+- Chart of Accounts management
+- Journal Entry processing
+- GL reporting foundation
+
+**Key Features**:
+- Hierarchical COA
+- Journal entry with validation
+- GL transaction types
+- Trial Balance report
+- Account transactions report
+
+### Phase 4: Accounts Receivable Module
+**Duration**: 3 weeks  
+**Objectives**:
+- Customer management
+- AR transaction processing
+- Payment allocation system
+
+**Key Features**:
+- Customer master
+- AR invoices, receipts, credit notes
+- Payment allocations
+- Customer ageing report
+- Customer statements
+
+### Phase 5: Accounts Payable Module
+**Duration**: 3 weeks  
+**Objectives**:
+- Supplier management
+- AP transaction processing
 - Payment processing
-- Till reconciliation
-- Real-time inventory updates
 
-#### 2. Frontend POS Interface:
+**Key Features**:
+- Supplier master
+- AP bills, payments, debit notes
+- Payment allocations
+- Supplier ageing report
+- Supplier statements
 
-**POS Terminal UI:**
-- Touch-optimized interface
-- Product grid/search
-- Shopping cart management
-- Multiple payment methods
-- Receipt printing support
+### Phase 6: Inventory Management Module
+**Duration**: 3 weeks  
+**Objectives**:
+- Item master setup
+- Warehouse management
+- Stock movement tracking
 
-**Till Management:**
-- Till opening/closing
-- Cash counting
-- Float management
-- Session reports
+**Key Features**:
+- Item master with units of measure
+- Multiple warehouses
+- Stock adjustments
+- Inventory counts
+- Valuation reports
+- Barcode support
 
-**Reports:**
-- Daily sales summary
-- Cashier performance
-- Product sales analysis
-- Till reconciliation reports
+### Phase 7: Order Entry Module
+**Duration**: 3 weeks  
+**Objectives**:
+- Sales order processing
+- Purchase order management
+- Goods receipt processing
 
-### Definition of Done for Phase 11:
-- POS terminal fully functional
-- Multiple payment methods working
-- Till management complete
-- Real-time inventory updates
-- All POS reports generating
+**Key Features**:
+- Sales orders with fulfillment
+- Purchase orders
+- Goods Received Vouchers
+- Integration with AR/AP/Inventory
+- Order status tracking
 
----
+### Phase 8: Advanced Maintenance & Common Features
+**Duration**: 2 weeks  
+**Objectives**:
+- Multi-currency setup
+- Tax configuration
+- Branch management
 
-## Phase 12: Cross-Module Integration & Advanced Features
+**Key Features**:
+- Currency management
+- Tax types and rates
+- Branch setup
+- Exchange rate management
 
-**Objective:** Implement advanced cross-module integrations, multi-currency transactions, tax calculations, and inter-branch operations.
+### Phase 9: Advanced Reporting Module
+**Duration**: 3 weeks  
+**Objectives**:
+- Financial statements
+- Management reports
+- Report customization
 
-**Key Requirements Addressed:** REQ-CROSS-CURRENCY, REQ-CROSS-TAX, REQ-CROSS-BRANCH
+**Key Features**:
+- Balance Sheet
+- Income Statement
+- Cash Flow Statement
+- Custom report builder
+- Report scheduling
 
-### Instructions for AI:
+### Phase 10: Bill of Materials Module
+**Duration**: 2 weeks  
+**Objectives**:
+- BOM structure management
+- Manufacturing processes
+- Material planning
 
-#### 1. Multi-Currency Integration:
+**Key Features**:
+- Multi-level BOM
+- Manufacturing orders
+- Material requirements planning
+- Cost rollup
 
-**Backend Enhancements:**
-- Add currency fields to all transaction models
-- Implement exchange rate history tracking
-- Currency conversion services
-- Realized/unrealized forex gain/loss calculations
-- Multi-currency GL posting logic
+### Phase 11: Point of Sale Module
+**Duration**: 3 weeks  
+**Objectives**:
+- POS transaction processing
+- Till management
+- Retail reporting
 
-**Frontend Enhancements:**
-- Currency selectors in all transaction forms
-- Exchange rate maintenance UI
-- Forex gain/loss reports
-- Multi-currency statement generation
+**Key Features**:
+- POS interface
+- Till operations
+- Receipt printing
+- Daily reconciliation
+- Retail analytics
 
-#### 2. Tax Integration:
+### Phase 12: Cross-Module Integration & Polish
+**Duration**: 2 weeks  
+**Objectives**:
+- Full system integration
+- Performance optimization
+- UI/UX improvements
 
-**Backend Enhancements:**
-- Add tax calculation to all transaction types
-- Tax summary generation
-- Tax authority reporting
-- VAT/GST return preparation
+**Key Features**:
+- Inter-module workflows
+- Batch processing
+- Performance tuning
+- UI consistency
 
-**Frontend Enhancements:**
-- Tax configuration per transaction
-- Tax reports and returns
-- Tax reconciliation tools
+### Phase 13: Testing, Documentation & Deployment
+**Duration**: 2 weeks  
+**Objectives**:
+- Comprehensive testing
+- Documentation completion
+- Production deployment
 
-#### 3. Inter-Branch Operations:
-
-**Backend Enhancements:**
-- Branch-wise transaction filtering
-- Inter-branch transfers
-- Branch consolidation logic
-- Branch-wise reporting
-
-**Frontend Enhancements:**
-- Branch selectors in transactions
-- Branch performance dashboards
-- Consolidated reports
-
-#### 4. Advanced Features:
-
-**Implement:**
-- Document approval workflows
-- Email integration for documents
-- Batch processing improvements
-- Advanced search capabilities
-- Audit trail enhancements
-
-### Definition of Done for Phase 12:
-- Multi-currency fully integrated
-- Tax calculations working correctly
-- Inter-branch operations functional
-- All advanced features operational
-- Cross-module data integrity maintained
-
----
-
-## Phase 13: Testing, Deployment & Documentation
-
-**Objective:** Comprehensive testing, production deployment preparation, and complete documentation.
-
-**Key Requirements Addressed:** NFR-QUALITY, NFR-PERFORMANCE, NFR-DOCUMENTATION
-
-### Instructions for AI:
-
-#### 1. Testing Suite:
-
-**Unit Tests:**
-- 80%+ code coverage for backend
-- Component testing for frontend
-- Mock external dependencies
-
-**Integration Tests:**
-- API endpoint testing
-- Cross-module workflow testing
-- Database transaction testing
-
-**E2E Tests:**
-- Complete user workflows
-- Multi-user scenarios
-- Performance testing
-
-#### 2. Deployment Preparation:
-
-**Production Configuration:**
-- Environment-specific configs
-- Secrets management
-- Database migration strategy
-- Backup procedures
-
-**Performance Optimization:**
-- Database indexing
-- Query optimization
-- Caching implementation
-- Load balancing setup
-
-**Security Hardening:**
-- Security audit
-- Penetration testing
-- SSL/TLS configuration
-- API rate limiting
-
-#### 3. Documentation:
-
-**Technical Documentation:**
-- API documentation (OpenAPI/Swagger)
-- Database schema documentation
-- Architecture diagrams
+**Key Features**:
+- E2E testing suite
+- User documentation
+- API documentation
 - Deployment guides
-
-**User Documentation:**
-- User manuals per module
-- Video tutorials
-- Quick start guides
-- FAQ section
-
-**Developer Documentation:**
-- Code style guides
-- Contributing guidelines
-- Development setup guides
-- Troubleshooting guides
-
-### Definition of Done for Phase 13:
-- Test coverage meets targets
-- All tests passing
-- Production deployment successful
-- Documentation complete and accessible
-- Performance benchmarks met
-- Security audit passed
+- Training materials
 
 ---
 
-## Conclusion
+## 8. Non-Functional Requirements
 
-This comprehensive PRD outlines the complete development roadmap for Vinea ERP. Each phase builds upon the previous ones, ensuring a stable and scalable system. The AI should follow these instructions sequentially, confirming completion of each phase before proceeding to the next.
+### 8.1 Performance Requirements
+- **Response Time**: < 200ms for API calls
+- **Page Load**: < 3 seconds
+- **Concurrent Users**: Support 1000+ active users
+- **Data Volume**: Handle 10M+ transactions
+- **Report Generation**: < 30 seconds for standard reports
 
-### Key Success Factors:
-1. **Iterative Development:** Complete each phase fully before moving forward
-2. **Quality Assurance:** Comprehensive testing at every level
-3. **User Experience:** Intent-based navigation and intuitive interfaces
-4. **Scalability:** Architecture designed for growth
-5. **Security:** RBAC and data isolation throughout
-6. **Integration:** Seamless cross-module functionality
+### 8.2 Security Requirements
+- **Authentication**: Multi-factor authentication support
+- **Authorization**: Role-based access control
+- **Encryption**: TLS 1.3 for transport, AES-256 for storage
+- **Audit Trail**: Complete activity logging
+- **Compliance**: GDPR, SOC 2 ready
 
-### Final Notes:
-- Each phase should be completed and tested before proceeding
-- AI must confirm completion of each phase explicitly
-- All features must respect RBAC and multi-company isolation
-- Documentation should be maintained throughout development
-- Performance and security considerations are paramount
+### 8.3 Usability Requirements
+- **Intuitive Navigation**: Intent-based menu structure
+- **Responsive Design**: Mobile and tablet support
+- **Accessibility**: WCAG 2.1 AA compliance
+- **Multi-language**: i18n support
+- **Help System**: Contextual help and documentation
 
-**AI: Begin with Phase 0 and confirm when ready to proceed to Phase 1.**
+### 8.4 Reliability Requirements
+- **Uptime**: 99.9% availability
+- **Backup**: Daily automated backups
+- **Disaster Recovery**: RTO < 4 hours, RPO < 1 hour
+- **Data Integrity**: ACID compliance
+- **Error Handling**: Graceful degradation
+
+---
+
+## 9. Security & Compliance
+
+### 9.1 Security Measures
+- **Access Control**: RBAC with granular permissions
+- **Data Protection**: Encryption at rest and in transit
+- **Session Management**: Secure session handling
+- **Input Validation**: Comprehensive validation
+- **SQL Injection Prevention**: Parameterized queries
+- **XSS Protection**: Content Security Policy
+- **CSRF Protection**: Token-based protection
+
+### 9.2 Compliance Features
+- **Audit Trails**: Complete transaction history
+- **Data Retention**: Configurable retention policies
+- **Privacy Controls**: GDPR compliance tools
+- **Financial Compliance**: Support for various accounting standards
+- **Report Generation**: Compliance report templates
+
+### 9.3 Multi-Tenant Security
+- **Data Isolation**: Strict tenant boundaries
+- **Access Control**: Company-specific permissions
+- **Audit Logging**: Per-tenant audit trails
+- **Backup/Restore**: Tenant-specific operations
+- **Compliance**: Per-tenant compliance settings
+
+---
+
+## 10. Deployment Strategy
+
+### 10.1 Development Environment
+```yaml
+Infrastructure: Docker Compose
+Database: PostgreSQL (single instance)
+Caching: Redis (single instance)
+Monitoring: Basic health checks
+```
+
+### 10.2 Staging Environment
+```yaml
+Infrastructure: Kubernetes (small cluster)
+Database: PostgreSQL (primary-replica)
+Caching: Redis cluster
+Monitoring: Full monitoring stack
+Testing: Automated test suites
+```
+
+### 10.3 Production Environment
+```yaml
+Infrastructure: Kubernetes (multi-zone)
+Database: PostgreSQL (HA cluster)
+Caching: Redis Sentinel
+Load Balancing: Multi-region
+Monitoring: Full observability
+Backup: Automated with replication
+CDN: Global content delivery
+```
+
+### 10.4 Deployment Process
+1. **Continuous Integration**
+   - Automated testing on commit
+   - Code quality checks
+   - Security scanning
+   - Build artifacts
+
+2. **Continuous Deployment**
+   - Staging deployment
+   - Automated testing
+   - Production deployment
+   - Rollback capability
+
+3. **Monitoring & Alerts**
+   - Real-time monitoring
+   - Performance metrics
+   - Error tracking
+   - Alerting system
+
+---
+
+## Appendix A: Development Guidelines
+
+### A.1 Code Standards
+- **Python**: PEP 8 compliance
+- **TypeScript**: ESLint configuration
+- **SQL**: Consistent naming conventions
+- **API**: RESTful best practices
+- **Git**: Conventional commits
+
+### A.2 Documentation Standards
+- **Code Comments**: JSDoc/Python docstrings
+- **API Documentation**: OpenAPI/Swagger
+- **User Guides**: Markdown format
+- **Architecture**: C4 diagrams
+- **Database**: ERD documentation
+
+### A.3 Testing Standards
+- **Unit Tests**: 80% coverage minimum
+- **Integration Tests**: API endpoint coverage
+- **E2E Tests**: Critical user journeys
+- **Performance Tests**: Load testing
+- **Security Tests**: Vulnerability scanning
+
+---
+
+## Appendix B: Glossary
+
+- **AR**: Accounts Receivable
+- **AP**: Accounts Payable
+- **BOM**: Bill of Materials
+- **COA**: Chart of Accounts
+- **GL**: General Ledger
+- **GRV**: Goods Received Voucher
+- **OE**: Order Entry
+- **POS**: Point of Sale
+- **RBAC**: Role-Based Access Control
+- **SO**: Sales Order
+- **PO**: Purchase Order
+
+---
+
+## Version History
+
+- **v1.0** (October 2023): Initial PRD
+- **v2.0** (November 2023): Added detailed phase instructions
+- **v3.0** (December 2024): Enhanced multi-tenant capabilities and comprehensive module coverage
+
+---
+
+**Document Status**: APPROVED FOR DEVELOPMENT  
+**Next Review**: After Phase 3 completion
