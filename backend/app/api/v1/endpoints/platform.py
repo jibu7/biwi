@@ -1231,3 +1231,249 @@ def get_feature_flags(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get feature flags: {str(e)}"
         )
+
+@router.get("/companies/usage")
+def get_companies_usage(
+    db: Session = Depends(get_db),
+    company_id: Optional[int] = Query(None),
+    billing_period: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """
+    Get usage data for all companies or a specific company.
+    """
+    try:
+        # Rollback any pending transaction to start fresh
+        db.rollback()
+        
+        if company_id:
+            # Get usage for specific company
+            company = db.query(Company).filter(Company.id == company_id).first()
+            if not company:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Company not found"
+                )
+            
+            # Get current period stats
+            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+            user_count = db.query(User).filter(
+                User.company_id == company.id,
+                User.is_active == True
+            ).count()
+            
+            active_users_30d = db.query(User).filter(
+                User.company_id == company.id,
+                User.is_active == True,
+                User.last_login >= thirty_days_ago
+            ).count()
+            
+            try:
+                transaction_count = db.query(GLJournalEntry).filter(
+                    GLJournalEntry.company_id == company.id,
+                    GLJournalEntry.created_at >= thirty_days_ago
+                ).count()
+            except Exception:
+                transaction_count = 0
+            
+            # Mock storage usage (in real implementation, this would be calculated)
+            storage_gb = user_count * 0.1  # Estimate 0.1 GB per user
+            
+            # Calculate usage percentages
+            storage_percentage = 0
+            user_percentage = 0
+            
+            if company.storage_limit_gb and company.storage_limit_gb > 0:
+                storage_percentage = min((storage_gb / company.storage_limit_gb) * 100, 100)
+            
+            if company.user_limit and company.user_limit > 0:
+                user_percentage = min((user_count / company.user_limit) * 100, 100)
+            
+            return [{
+                "company": {
+                    "id": company.id,
+                    "name": company.name,
+                    "code": company.code,
+                    "subscription_status": str(company.subscription_status),
+                    "subscription_plan": company.subscription_plan,
+                    "storage_limit_gb": company.storage_limit_gb,
+                    "user_limit": company.user_limit,
+                    "is_active": company.is_active
+                },
+                "usage": {
+                    "storage_gb": round(storage_gb, 2),
+                    "storage_percentage": round(storage_percentage, 1),
+                    "users": user_count,
+                    "user_percentage": round(user_percentage, 1),
+                    "active_users_30d": active_users_30d,
+                    "transactions_30d": transaction_count,
+                    "api_calls_30d": user_count * 10  # Mock API calls
+                },
+                "billing_period": billing_period or datetime.now().strftime("%Y-%m")
+            }]
+        
+        # Get usage for all companies
+        companies = db.query(Company).filter(
+            or_(Company.is_deleted == False, Company.is_deleted.is_(None))
+        ).all()
+        
+        result = []
+        for company in companies:
+            try:
+                # Get current period stats
+                thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+                user_count = db.query(User).filter(
+                    User.company_id == company.id,
+                    User.is_active == True
+                ).count()
+                
+                active_users_30d = db.query(User).filter(
+                    User.company_id == company.id,
+                    User.is_active == True,
+                    User.last_login >= thirty_days_ago
+                ).count()
+                
+                try:
+                    transaction_count = db.query(GLJournalEntry).filter(
+                        GLJournalEntry.company_id == company.id,
+                        GLJournalEntry.created_at >= thirty_days_ago
+                    ).count()
+                except Exception:
+                    transaction_count = 0
+                
+                # Mock storage usage (in real implementation, this would be calculated)
+                storage_gb = user_count * 0.1  # Estimate 0.1 GB per user
+                
+                # Calculate usage percentages
+                storage_percentage = 0
+                user_percentage = 0
+                
+                if company.storage_limit_gb and company.storage_limit_gb > 0:
+                    storage_percentage = min((storage_gb / company.storage_limit_gb) * 100, 100)
+                
+                if company.user_limit and company.user_limit > 0:
+                    user_percentage = min((user_count / company.user_limit) * 100, 100)
+                
+                result.append({
+                    "company": {
+                        "id": company.id,
+                        "name": company.name,
+                        "code": company.code,
+                        "subscription_status": str(company.subscription_status),
+                        "subscription_plan": company.subscription_plan,
+                        "storage_limit_gb": company.storage_limit_gb,
+                        "user_limit": company.user_limit,
+                        "is_active": company.is_active
+                    },
+                    "usage": {
+                        "storage_gb": round(storage_gb, 2),
+                        "storage_percentage": round(storage_percentage, 1),
+                        "users": user_count,
+                        "user_percentage": round(user_percentage, 1),
+                        "active_users_30d": active_users_30d,
+                        "transactions_30d": transaction_count,
+                        "api_calls_30d": user_count * 10  # Mock API calls
+                    },
+                    "billing_period": billing_period or datetime.now().strftime("%Y-%m")
+                })
+                
+            except Exception as e:
+                print(f"Error getting usage for company {company.id}: {e}")
+                # Add company with minimal data if usage calculation fails
+                result.append({
+                    "company": {
+                        "id": company.id,
+                        "name": company.name,
+                        "code": company.code,
+                        "subscription_status": str(company.subscription_status),
+                        "subscription_plan": company.subscription_plan,
+                        "storage_limit_gb": company.storage_limit_gb,
+                        "user_limit": company.user_limit,
+                        "is_active": company.is_active
+                    },
+                    "usage": {
+                        "storage_gb": 0,
+                        "storage_percentage": 0,
+                        "users": 0,
+                        "user_percentage": 0,
+                        "active_users_30d": 0,
+                        "transactions_30d": 0,
+                        "api_calls_30d": 0
+                    },
+                    "billing_period": billing_period or datetime.now().strftime("%Y-%m")
+                })
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error in get_companies_usage: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get usage data: {str(e)}"
+        )
+
+@router.get("/companies/{company_id}/usage/trends")
+def get_company_usage_trends(
+    company_id: int,
+    months: int = Query(6),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_platform_admin),
+) -> Any:
+    """
+    Get usage trends for a specific company over time.
+    """
+    try:
+        # Rollback any pending transaction to start fresh
+        db.rollback()
+        
+        company = db.query(Company).filter(Company.id == company_id).first()
+        if not company:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Company not found"
+            )
+        
+        # Generate mock trend data for the requested months
+        trends = []
+        current_date = datetime.now()
+        
+        for i in range(months):
+            month_date = current_date - timedelta(days=i * 30)
+            period = month_date.strftime("%Y-%m")
+            
+            # Get user count for that period (simplified - just current count)
+            user_count = db.query(User).filter(
+                User.company_id == company.id,
+                User.is_active == True
+            ).count()
+            
+            # Mock some variation in the data
+            storage_gb = max(0.1, user_count * 0.1 * (0.8 + (i * 0.05)))  # Slight growth over time
+            transactions = max(0, user_count * 50 * (1 + (i * 0.1)))  # More transactions over time
+            api_calls = max(0, user_count * 10 * (1 + (i * 0.15)))  # Growing API usage
+            
+            trends.insert(0, {  # Insert at beginning to get chronological order
+                "billing_period": period,
+                "storage_gb": round(storage_gb, 2),
+                "users": user_count,
+                "transactions": int(transactions),
+                "api_calls": int(api_calls)
+            })
+        
+        return {
+            "company_id": company_id,
+            "company_name": company.name,
+            "trends": trends,
+            "months": months
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in get_company_usage_trends: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get usage trends: {str(e)}"
+        )

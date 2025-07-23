@@ -433,5 +433,33 @@ export const platformService = {
       feature: name,
       enabled: Math.random() > 0.5,
     };
+  },
+
+  // Usage tracking endpoints
+  getCompaniesUsage: async (params?: {
+    company_id?: number;
+    billing_period?: string;
+  }) => {
+    try {
+      const response = await platformAxiosInstance.get('/companies/usage', { 
+        params 
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching companies usage:', error);
+      throw new Error(error.response?.data?.detail || 'Failed to fetch companies usage');
+    }
+  },
+
+  getCompanyUsageTrends: async (companyId: number, months: number = 6) => {
+    try {
+      const response = await platformAxiosInstance.get(`/companies/${companyId}/usage/trends`, {
+        params: { months }
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching company usage trends:', error);
+      throw new Error(error.response?.data?.detail || 'Failed to fetch company usage trends');
+    }
   }
 };
