@@ -267,10 +267,12 @@ class PermissionChecker:
         if user.is_superuser or user.user_type == UserType.PLATFORM_ADMIN:
             return user
         
-        # Get user's permissions from all roles
+        # Get user's permissions from all roles using proper query
+        from app.crud.core import get_user_roles
+        user_roles_list = get_user_roles(db, user.id)
+        
         user_permissions = []
-        for user_role in user.roles:
-            role = user_role.role
+        for role in user_roles_list:
             if role and role.permissions:
                 user_permissions.extend(role.permissions)
         
@@ -280,14 +282,14 @@ class PermissionChecker:
                 if permission not in user_permissions:
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Not enough permissions"
+                        detail=f"Missing required permission: {permission}"
                     )
         else:
             # Check if user has AT LEAST ONE required permission (OR logic)
             if not any(permission in user_permissions for permission in self.required_permissions):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Not enough permissions"
+                    detail=f"Missing required permissions. Need one of: {', '.join(self.required_permissions)}"
                 )
         
         return user
@@ -309,10 +311,12 @@ def require_permission(required_permission: str):
         if user.is_superuser or user.user_type == UserType.PLATFORM_ADMIN:
             return user
         
-        # Get user's permissions from all roles
+        # Get user's permissions from all roles using proper query
+        from app.crud.core import get_user_roles
+        user_roles_list = get_user_roles(db, user.id)
+        
         user_permissions = []
-        for user_role in user.roles:
-            role = user_role.role
+        for role in user_roles_list:
             if role and role.permissions:
                 user_permissions.extend(role.permissions)
         
