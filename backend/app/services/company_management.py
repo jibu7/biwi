@@ -250,6 +250,15 @@ class CompanyManagementService:
                 ]
             },
             {
+                "name": "Sales Coordinator",
+                "description": "Access to sales coordination and customer management",
+                "permissions": [
+                    "ar:setup_manage", "ar:transactions_post", "ar:reports_view",
+                    "oe:sales_orders_manage", "oe:reports_view",
+                    "common:setup_currencies", "users:read", "company:read"
+                ]
+            },
+            {
                 "name": "Purchasing Manager",
                 "description": "Access to purchasing and vendor management",
                 "permissions": [

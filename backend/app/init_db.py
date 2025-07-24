@@ -284,6 +284,15 @@ def init_db():
             ]
         },
         {
+            "name": "Sales Coordinator",
+            "description": "Coordinates sales activities and customer management",
+            "permissions": [
+                "ar:setup_manage", "ar:transactions_post", "ar:reports_view",
+                "oe:sales_orders_manage", "oe:reports_view",
+                "common:setup_currencies", "users:read", "company:read"
+            ]
+        },
+        {
             "name": "Clerk",
             "description": "Basic data entry permissions",
             "permissions": [
