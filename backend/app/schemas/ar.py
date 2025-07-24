@@ -194,6 +194,8 @@ class ARDefaultsBase(BaseModel):
     default_receipt_gl_account_id: Optional[int] = None
     default_sales_discount_gl_account_id: Optional[int] = None
     default_bad_debt_gl_account_id: Optional[int] = None
+    default_payment_terms: Optional[str] = None
+    default_credit_limit: Optional[float] = None
 
 class ARDefaultsCreate(ARDefaultsBase):
     pass

@@ -604,7 +604,7 @@ def get_ar_defaults(db: Session, company_id: int) -> Optional[ARDefaults]:
         )\
         .first()
 
-def create_or_update_ar_defaults(db: Session, ar_defaults_data: ARDefaultsCreate, company_id: int) -> ARDefaults:
+def create_or_update_ar_defaults(db: Session, ar_defaults_data: ARDefaultsUpdate, company_id: int) -> ARDefaults:
     db_ar_defaults = get_ar_defaults(db, company_id)
     
     if db_ar_defaults:

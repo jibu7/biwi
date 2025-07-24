@@ -146,6 +146,8 @@ class ARDefaults(Base):
     default_receipt_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     default_sales_discount_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     default_bad_debt_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
+    default_payment_terms = Column(String(100), nullable=True)
+    default_credit_limit = Column(Numeric(15, 2), nullable=True)
     
     # Relationships
     company = relationship("Company")

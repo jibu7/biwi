@@ -459,13 +459,24 @@ def create_ar_allocation(
 @router.get("/defaults", response_model=schemas.ARDefaults)
 def get_ar_defaults(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Get AR defaults for the company"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     ar_defaults = crud.ar.get_ar_defaults(db, current_user.company_id)
     if not ar_defaults:
-        raise HTTPException(status_code=404, detail="AR defaults not found")
+        # Return empty defaults if none exist
+        from app.models.ar import ARDefaults
+        ar_defaults = ARDefaults(
+            id=0,
+            company_id=current_user.company_id,
+            default_ar_control_gl_account_id=None,
+            default_sales_gl_account_id=None,
+            default_receipt_gl_account_id=None,
+            default_sales_discount_gl_account_id=None,
+            default_bad_debt_gl_account_id=None,
+            default_payment_terms=None,
+            default_credit_limit=None
+        )
     
     # Add related data to response
     if ar_defaults.default_ar_control_gl_account:
@@ -483,10 +494,9 @@ def get_ar_defaults(
 def update_ar_defaults(
     ar_defaults_update: schemas.ARDefaultsUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Update AR defaults for the company"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     return crud.ar.create_or_update_ar_defaults(db, ar_defaults_update, current_user.company_id)
 
 # AR Reports endpoints
