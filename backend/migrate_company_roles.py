@@ -70,7 +70,8 @@ def get_expected_default_roles():
             "permissions": [
                 "inv:setup_manage", "inv:transactions_adjust", "inv:reports_view",
                 "oe:purchase_orders_manage", "oe:grv_process", "oe:reports_view",
-                "company:read", "users:read"
+                "ap:setup_manage", "ap:transactions_post", "ap:reports_view",
+                "gl:reports_view", "company:read", "users:read"
             ]
         },
         {

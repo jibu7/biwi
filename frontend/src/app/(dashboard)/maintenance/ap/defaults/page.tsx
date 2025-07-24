@@ -24,7 +24,7 @@ export default function APDefaultsPage() {
 
   const { data: defaults, isLoading } = useQuery({
     queryKey: ['apDefaults'],
-    queryFn: () => apService.getAPDefaults(),
+    queryFn: () => apService.getDefaults(),
   });
 
   const { data: glAccounts = [] } = useQuery({
@@ -54,7 +54,7 @@ export default function APDefaultsPage() {
 
   const updateMutation = useMutation({
     mutationFn: (data: DefaultsFormData) => 
-      apService.updateAPDefaults({
+      apService.updateDefaults({
         default_ap_control_gl_account_id: data.default_ap_control_gl_account_id === null ? undefined : data.default_ap_control_gl_account_id,
         default_expense_gl_account_id: data.default_expense_gl_account_id === null ? undefined : data.default_expense_gl_account_id,
         default_payment_gl_account_id: data.default_payment_gl_account_id === null ? undefined : data.default_payment_gl_account_id,
