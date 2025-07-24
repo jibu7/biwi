@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useParams } from 'next/navigation';
 import { commonService, TaxTypeUpdate } from '@/services/commonService';
+import { glService } from '@/services/glService';
 
 const taxTypeSchema = z.object({
   tax_code: z.string().optional(),
@@ -51,7 +52,12 @@ export default function EditTaxTypePage() {
   const { data: taxType, isLoading } = useQuery({
     queryKey: ['taxType', taxTypeId],
     queryFn: () => commonService.getTaxType(taxTypeId),
-  enabled: taxTypeId > 0,
+    enabled: taxTypeId > 0,
+  });
+
+  const { data: glAccounts } = useQuery({
+    queryKey: ['glAccounts'],
+    queryFn: () => glService.getGLAccounts({ isActive: true }),
   });
 
   const {
@@ -222,6 +228,29 @@ export default function EditTaxTypePage() {
               )}
               <p className="text-xs text-gray-500 mt-1">
                 Enter tax rate as a percentage (e.g., 10.00 for 10%). Negative values are not allowed. High rates above 200% will require confirmation.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                GL Account
+              </label>
+              <select
+                {...register('tax_authority_gl_account_id', { valueAsNumber: true })}
+                className="w-full border border-gray-300 rounded-md px-3 py-2"
+              >
+                <option value="">Select GL Account (Optional)</option>
+                {glAccounts?.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.account_code} - {account.account_name}
+                  </option>
+                ))}
+              </select>
+              {errors.tax_authority_gl_account_id && (
+                <p className="text-red-500 text-sm mt-1">{errors.tax_authority_gl_account_id.message}</p>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Select the GL account where tax amounts will be posted when transactions use this tax type.
               </p>
             </div>
           </div>

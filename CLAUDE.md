@@ -67,6 +67,27 @@ cd frontend && npm run test:e2e                  # Playwright E2E tests
 cd backend && python scripts/run_complete_validation.py
 ```
 
+### Docker Operations
+```bash
+# Check Docker container status
+docker ps
+
+# Start services
+docker-compose -f docker/docker-compose.yml up -d
+
+# Stop services
+docker-compose -f docker/docker-compose.yml down
+
+# View logs
+docker logs Biwi_backend
+docker logs Biwi_frontend
+docker logs Biwi_db
+
+# Execute commands in containers
+docker exec Biwi_backend <command>
+docker exec Biwi_frontend <command>
+```
+
 ### Database Operations
 ```bash
 # Run migrations
@@ -81,8 +102,11 @@ cd backend && ./complete_reset.sh
 # Create platform admin user
 cd backend && poetry run python create_platform_admin.py
 
-# Seed initial data
+# Seed initial data (local)
 cd backend && poetry run python app/init_db.py
+
+# Seed initial data (Docker container)
+docker exec Biwi_backend bash -c "cd /app && PYTHONPATH=/app poetry run python app/init_db.py"
 ```
 
 ### Code Quality

@@ -6,6 +6,7 @@ from app import crud, schemas
 from app.models import core as models
 from app.models import gl as gl_models
 from app.models import ap as ap_models
+from app.models import common as common_models
 from app.core.security import get_password_hash
 from app.core.permissions import ALL_PERMISSIONS_LIST
 
@@ -21,6 +22,8 @@ def create_default_gl_accounts(db: Session, company_id: int):
         # Liabilities
         {"code": "2000", "name": "Accounts Payable", "type": "Liability", "is_control": True},
         {"code": "2100", "name": "Loans Payable", "type": "Liability"},
+        {"code": "2200", "name": "Sales Tax Payable", "type": "Liability"},
+        {"code": "2210", "name": "Purchase Tax Recoverable", "type": "Asset"},
         
         # Equity
         {"code": "3000", "name": "Share Capital", "type": "Equity"},
@@ -156,6 +159,62 @@ def create_default_ap_transaction_types(db: Session, company_id: int):
     crud.ap.create_or_update_ap_defaults(db, defaults_in=ap_defaults_in, company_id=company_id)
     print("Created default AP transaction types and defaults")
 
+def create_default_tax_types(db: Session, company_id: int):
+    """Create default tax types with GL account links"""
+    # Get tax GL accounts
+    sales_tax_account = db.query(gl_models.GLAccount).filter(
+        gl_models.GLAccount.account_code == "2200",
+        gl_models.GLAccount.company_id == company_id
+    ).first()
+    
+    purchase_tax_account = db.query(gl_models.GLAccount).filter(
+        gl_models.GLAccount.account_code == "2210", 
+        gl_models.GLAccount.company_id == company_id
+    ).first()
+    
+    default_tax_types = [
+        {
+            "name": "Sales Tax 18%",
+            "rate_percentage": Decimal('18.00'),
+            "tax_code": "ST18",
+            "tax_nature": "Sales",
+            "tax_authority_gl_account_id": sales_tax_account.id if sales_tax_account else None,
+            "is_active": True
+        },
+        {
+            "name": "Purchase Tax 18%", 
+            "rate_percentage": Decimal('18.00'),
+            "tax_code": "PT18",
+            "tax_nature": "Purchases",
+            "tax_authority_gl_account_id": purchase_tax_account.id if purchase_tax_account else None,
+            "is_active": True
+        },
+        {
+            "name": "Tax Exempt",
+            "rate_percentage": Decimal('0.00'),
+            "tax_code": "EXEMPT",
+            "tax_nature": "Exempt",
+            "tax_authority_gl_account_id": None,
+            "is_active": True
+        }
+    ]
+    
+    for tax_data in default_tax_types:
+        existing = db.query(common_models.TaxType).filter(
+            common_models.TaxType.name == tax_data["name"],
+            common_models.TaxType.company_id == company_id
+        ).first()
+        
+        if not existing:
+            tax_type = common_models.TaxType(
+                company_id=company_id,
+                **tax_data
+            )
+            db.add(tax_type)
+    
+    db.commit()
+    print("Created default tax types with GL account links")
+
 def init_db():
     db = SessionLocal()
     
@@ -250,6 +309,9 @@ def init_db():
     
     # Create default AP transaction types
     create_default_ap_transaction_types(db, company.id)
+    
+    # Create default tax types
+    create_default_tax_types(db, company.id)
     
     db.close()
 
