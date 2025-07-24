@@ -22,10 +22,9 @@ async def list_customers(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Get all customers for the company"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     company_id = get_current_tenant_id(request)
     customers = crud.ar.get_customers(db, company_id, skip=skip, limit=limit)
     
@@ -63,10 +62,9 @@ async def get_customer(
     customer_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Get a specific customer"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     company_id = get_current_tenant_id(request)
     customer = crud.ar.get_customer(db, customer_id, company_id)
     if not customer:
@@ -86,10 +84,9 @@ async def update_customer(
     customer_update: schemas.CustomerUpdate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Update a customer"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     company_id = get_current_tenant_id(request)
     
     # Check if customer code already exists (if being updated)
@@ -110,10 +107,9 @@ async def update_customer(
 def delete_customer(
     customer_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Delete a customer"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     
     # Check if customer has transactions
     transactions = crud.ar.get_ar_transactions(db, current_user.company_id, customer_id=customer_id, limit=1)
@@ -134,30 +130,27 @@ def get_sales_representatives(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Get all sales representatives for the company"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     return crud.ar.get_sales_representatives(db, current_user.company_id, skip=skip, limit=limit)
 
 @router.post("/sales-representatives", response_model=schemas.SalesRepresentative)
 def create_sales_representative(
     sales_rep: schemas.SalesRepresentativeCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Create a new sales representative"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     return crud.ar.create_sales_representative(db, sales_rep, current_user.company_id)
 
 @router.get("/sales-representatives/{sales_rep_id}", response_model=schemas.SalesRepresentative)
 def get_sales_representative(
     sales_rep_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Get a specific sales representative"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     sales_rep = crud.ar.get_sales_representative(db, sales_rep_id, current_user.company_id)
     if not sales_rep:
         raise HTTPException(status_code=404, detail="Sales representative not found")
@@ -168,10 +161,9 @@ def update_sales_representative(
     sales_rep_id: int,
     sales_rep_update: schemas.SalesRepresentativeUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Update a sales representative"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     sales_rep = crud.ar.update_sales_representative(db, sales_rep_id, current_user.company_id, sales_rep_update)
     if not sales_rep:
         raise HTTPException(status_code=404, detail="Sales representative not found")
@@ -181,10 +173,9 @@ def update_sales_representative(
 def delete_sales_representative(
     sales_rep_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Delete a sales representative"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     
     # Check if sales rep has customers
     customers = crud.ar.get_customers(db, current_user.company_id)
@@ -206,10 +197,9 @@ def get_ar_transaction_types(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Get all AR transaction types for the company"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     transaction_types = crud.ar.get_ar_transaction_types(db, current_user.company_id, skip=skip, limit=limit)
     
     # Add related data to response
@@ -225,10 +215,9 @@ def get_ar_transaction_types(
 def create_ar_transaction_type(
     transaction_type: schemas.ARTransactionTypeCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Create a new AR transaction type"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     
     # Check if transaction type name already exists
     existing_type = crud.ar.get_ar_transaction_type_by_name(db, transaction_type.name, current_user.company_id)
@@ -244,10 +233,9 @@ def create_ar_transaction_type(
 def get_ar_transaction_type(
     transaction_type_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Get a specific AR transaction type"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     transaction_type = crud.ar.get_ar_transaction_type(db, transaction_type_id, current_user.company_id)
     if not transaction_type:
         raise HTTPException(status_code=404, detail="Transaction type not found")
@@ -265,10 +253,9 @@ def update_ar_transaction_type(
     transaction_type_id: int,
     transaction_type_update: schemas.ARTransactionTypeUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Update an AR transaction type"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     
     # Check if transaction type name already exists (if being updated)
     if transaction_type_update.name:
@@ -288,10 +275,9 @@ def update_ar_transaction_type(
 def delete_ar_transaction_type(
     transaction_type_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_SETUP_MANAGE]))
 ):
     """Delete an AR transaction type"""
-    require_permission(current_user, AR_SETUP_MANAGE)
     
     # Check if transaction type has transactions
     transactions = crud.ar.get_ar_transactions(db, current_user.company_id)
