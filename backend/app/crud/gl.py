@@ -266,3 +266,39 @@ def calculate_trial_balance(
             })
     
     return trial_balance
+
+# GL Defaults CRUD operations
+def get_gl_defaults(db: Session, company_id: int) -> Optional[models.GLDefaults]:
+    """Get GL defaults for a company"""
+    return db.query(models.GLDefaults).filter(
+        models.GLDefaults.company_id == company_id
+    ).first()
+
+def create_or_update_gl_defaults(
+    db: Session, 
+    defaults: schemas.GLDefaultsCreate, 
+    company_id: int
+) -> models.GLDefaults:
+    """Create or update GL defaults for a company"""
+    # Check if defaults already exist
+    existing = get_gl_defaults(db, company_id)
+    
+    if existing:
+        # Update existing defaults
+        update_data = defaults.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(existing, field, value)
+        db.add(existing)
+        db.commit()
+        db.refresh(existing)
+        return existing
+    else:
+        # Create new defaults
+        db_defaults = models.GLDefaults(
+            **defaults.model_dump(),
+            company_id=company_id
+        )
+        db.add(db_defaults)
+        db.commit()
+        db.refresh(db_defaults)
+        return db_defaults

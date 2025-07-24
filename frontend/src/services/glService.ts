@@ -1,6 +1,6 @@
 // frontend/src/services/glService.ts
 import axiosInstance from '@/lib/axiosInstance';
-import { GLAccount, GLAccountCreate, GLAccountUpdate, GLJournalEntry, GLJournalEntryCreate } from '@/types/gl';
+import { GLAccount, GLAccountCreate, GLAccountUpdate, GLJournalEntry, GLJournalEntryCreate, GLDefaults, GLDefaultsUpdate } from '@/types/gl';
 
 export const glService = {
   // GL Accounts
@@ -79,5 +79,26 @@ export const glService = {
     } catch (error) {
       return false;
     }
+  },
+
+  // GL Defaults
+  async getGLDefaults(): Promise<GLDefaults> {
+    const response = await axiosInstance.get('/gl/defaults');
+    return response.data;
+  },
+
+  async updateGLDefaults(data: GLDefaultsUpdate): Promise<GLDefaults> {
+    const response = await axiosInstance.put('/gl/defaults', data);
+    return response.data;
+  },
+
+  // Alias for getAccounts to match frontend usage
+  async getGLAccounts(params?: {
+    skip?: number;
+    limit?: number;
+    accountType?: string;
+    isActive?: boolean;
+  }): Promise<GLAccount[]> {
+    return this.getAccounts(params);
   }
 };

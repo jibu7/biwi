@@ -204,3 +204,61 @@ async def validate_account_code(
             }
         }
     return {"valid": False}
+
+# GL Defaults endpoints
+@router.get("/defaults", response_model=schemas.GLDefaults)
+async def get_gl_defaults(
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE])),
+    company_id: int = Depends(get_company_id)
+):
+    """Get GL defaults for the company"""
+    defaults = crud.get_gl_defaults(db, company_id=company_id)
+    if not defaults:
+        # Return empty defaults if none exist
+        return schemas.GLDefaults(
+            id=0,
+            company_id=company_id,
+            retained_earnings_account_id=None,
+            default_cash_account_id=None,
+            default_ar_control_account_id=None,
+            default_ap_control_account_id=None,
+            forex_gain_account_id=None,
+            forex_loss_account_id=None
+        )
+    return defaults
+
+@router.put("/defaults", response_model=schemas.GLDefaults)
+async def update_gl_defaults(
+    *,
+    db: Session = Depends(deps.get_db),
+    defaults_in: schemas.GLDefaultsUpdate,
+    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE])),
+    company_id: int = Depends(get_company_id)
+):
+    """Update GL defaults for the company"""
+    # Validate that any referenced accounts belong to the company
+    account_fields = [
+        'retained_earnings_account_id',
+        'default_cash_account_id', 
+        'default_ar_control_account_id',
+        'default_ap_control_account_id',
+        'forex_gain_account_id',
+        'forex_loss_account_id'
+    ]
+    
+    for field in account_fields:
+        account_id = getattr(defaults_in, field, None)
+        if account_id:
+            account = crud.gl_account.get_with_company_check(
+                db, id=account_id, company_id=company_id
+            )
+            if not account:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Account with ID {account_id} not found or belongs to different company"
+                )
+    
+    return crud.create_or_update_gl_defaults(
+        db=db, defaults=defaults_in, company_id=company_id
+    )

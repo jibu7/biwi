@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { glService } from '@/services/glService';
 
 const accountSchema = z.object({
@@ -26,6 +26,7 @@ interface PageProps {
 
 export default function EditGLAccountPage({ params }: PageProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
 
   useEffect(() => {
@@ -36,13 +37,13 @@ export default function EditGLAccountPage({ params }: PageProps) {
 
   const { data: account, isLoading } = useQuery({
     queryKey: ['glAccount', accountId],
-    queryFn: () => glService.getGLAccount(accountId),
+    queryFn: () => glService.getAccount(accountId),
     enabled: accountId > 0,
   });
 
   const { data: accounts = [] } = useQuery({
-    queryKey: ['glAccounts'],
-    queryFn: () => glService.getGLAccounts(),
+    queryKey: ['gl-accounts'],
+    queryFn: () => glService.getAccounts(),
   });
 
   const {
@@ -63,11 +64,14 @@ export default function EditGLAccountPage({ params }: PageProps) {
 
   const updateMutation = useMutation({
     mutationFn: (data: AccountFormData) => 
-      glService.updateGLAccount(accountId, {
+      glService.updateAccount(accountId, {
         ...data,
         parent_account_id: data.parent_account_id || undefined,
       }),
     onSuccess: () => {
+      // Invalidate the GL accounts cache to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['gl-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['glAccount', accountId] });
       router.push('/maintenance/gl/accounts');
     },
   });

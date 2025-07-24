@@ -3,7 +3,8 @@ from . import core, gl, ar, ap, inventory, oe, common, reporting, bom, pos, plat
 # GL imports
 from .gl import (
     gl_account, create_journal_entry, post_journal_entry_to_gl,
-    get_journal_entries_by_company, calculate_trial_balance
+    get_journal_entries_by_company, calculate_trial_balance,
+    get_gl_defaults, create_or_update_gl_defaults
 )
 
 # Inventory imports

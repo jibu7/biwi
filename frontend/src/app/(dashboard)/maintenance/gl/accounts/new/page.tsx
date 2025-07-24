@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { glService } from '@/services/glService';
 import { usePermissions } from '@/hooks/usePermissions';
 import * as permissions from '@/lib/permissions';
@@ -24,10 +24,11 @@ type AccountFormData = z.infer<typeof accountSchema>;
 
 export default function NewGLAccountPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   
   const { data: accounts = [] } = useQuery({
-    queryKey: ['glAccounts'],
+    queryKey: ['gl-accounts'],
     queryFn: () => glService.getAccounts({ isActive: false }), // Include inactive for full list
   });
 
@@ -50,6 +51,8 @@ export default function NewGLAccountPage() {
   const createMutation = useMutation({
     mutationFn: glService.createAccount,
     onSuccess: () => {
+      // Invalidate the GL accounts cache to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['gl-accounts'] });
       router.push('/maintenance/gl/accounts');
     },
     onError: (error) => {
