@@ -246,7 +246,7 @@ class CompanyManagementService:
                 "permissions": [
                     "ar:setup_manage", "ar:transactions_post", "ar:reports_view",
                     "oe:sales_orders_manage", "oe:reports_view",
-                    "users:read", "company:read"
+                    "common:setup_currencies", "users:read", "company:read"
                 ]
             },
             {
