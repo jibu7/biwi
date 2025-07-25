@@ -117,9 +117,29 @@ class OrderDefaults(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, unique=True)  # ENSURE THIS EXISTS
+    
+    # Status defaults
     default_so_status = Column(String, default="Draft")
     default_po_status = Column(String, default="Draft")
     default_grv_status = Column(String, default="Open")
+    
+    # Document numbering
     next_so_number = Column(Integer, default=1)
     next_po_number = Column(Integer, default=1)
     next_grv_number = Column(Integer, default=1)
+    
+    # General settings
+    default_currency_code = Column(String, default="USD")
+    default_payment_terms = Column(String, nullable=True)
+    default_sales_representative_id = Column(Integer, ForeignKey("sales_representatives.id"), nullable=True)
+    default_warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=True)
+    
+    # Numbering settings
+    auto_generate_order_numbers = Column(Boolean, default=True)
+    sales_order_number_prefix = Column(String, default="SO-")
+    purchase_order_number_prefix = Column(String, default="PO-")
+    grv_number_prefix = Column(String, default="GRV-")
+    
+    # Approval settings
+    require_approval_for_orders = Column(Boolean, default=False)
+    order_approval_limit = Column(Numeric(15, 2), nullable=True)

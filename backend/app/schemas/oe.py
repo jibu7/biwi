@@ -246,23 +246,61 @@ class GoodsReceivedVoucher(GoodsReceivedVoucherBase):
 
 # Order Defaults Schemas
 class OrderDefaultsBase(BaseModel):
+    # Status defaults
     default_so_status: str = "Draft"
     default_po_status: str = "Draft"
     default_grv_status: str = "Open"
+    
+    # Document numbering
     next_so_number: int = 1
     next_po_number: int = 1
     next_grv_number: int = 1
+    
+    # General settings
+    default_currency_code: str = "USD"
+    default_payment_terms: Optional[str] = None
+    default_sales_representative_id: Optional[int] = None
+    default_warehouse_id: Optional[int] = None
+    
+    # Numbering settings
+    auto_generate_order_numbers: bool = True
+    sales_order_number_prefix: str = "SO-"
+    purchase_order_number_prefix: str = "PO-"
+    grv_number_prefix: str = "GRV-"
+    
+    # Approval settings
+    require_approval_for_orders: bool = False
+    order_approval_limit: Optional[float] = None
 
 class OrderDefaultsCreate(OrderDefaultsBase):
     pass
 
 class OrderDefaultsUpdate(BaseModel):
+    # Status defaults
     default_so_status: Optional[str] = None
     default_po_status: Optional[str] = None
     default_grv_status: Optional[str] = None
+    
+    # Document numbering
     next_so_number: Optional[int] = None
     next_po_number: Optional[int] = None
     next_grv_number: Optional[int] = None
+    
+    # General settings
+    default_currency_code: Optional[str] = None
+    default_payment_terms: Optional[str] = None
+    default_sales_representative_id: Optional[int] = None
+    default_warehouse_id: Optional[int] = None
+    
+    # Numbering settings
+    auto_generate_order_numbers: Optional[bool] = None
+    sales_order_number_prefix: Optional[str] = None
+    purchase_order_number_prefix: Optional[str] = None
+    grv_number_prefix: Optional[str] = None
+    
+    # Approval settings
+    require_approval_for_orders: Optional[bool] = None
+    order_approval_limit: Optional[float] = None
 
 class OrderDefaults(OrderDefaultsBase):
     id: int

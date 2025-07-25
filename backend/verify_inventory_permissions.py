@@ -48,30 +48,36 @@ def test_inventory_manager_permissions():
                 db, user.id, user.company_id
             )
             
-            # Check for required OE setup permission
-            has_oe_setup = "oe:setup_manage" in permissions
-            status = "✅" if has_oe_setup else "❌"
+            # Check for required permissions
+            required_permissions = ["oe:setup_manage", "ar:setup_manage", "ar:reports_view"]
+            missing_permissions = [p for p in required_permissions if p not in permissions]
             
-            print(f"  {status} oe:setup_manage permission: {'Present' if has_oe_setup else 'Missing'}")
+            if missing_permissions:
+                print(f"  ❌ Missing permissions: {', '.join(missing_permissions)}")
+                all_passed = False
+            else:
+                print(f"  ✅ All required permissions present")
+            
             print(f"  Total permissions: {len(permissions)}")
             
-            # List some relevant permissions
+            # List relevant permissions by category
             oe_permissions = [p for p in permissions if p.startswith('oe:')]
+            ar_permissions = [p for p in permissions if p.startswith('ar:')]
+            
             if oe_permissions:
                 print(f"  OE permissions: {', '.join(oe_permissions)}")
-            else:
-                print("  No OE permissions found")
-            
-            if not has_oe_setup:
-                all_passed = False
+            if ar_permissions:
+                print(f"  AR permissions: {', '.join(ar_permissions)}")
             
             print()
         
         if all_passed:
-            print("✅ SUCCESS: All Inventory Manager users have oe:setup_manage permission!")
-            print("Users can now access Maintenance > OE Setup > Order Defaults")
+            print("✅ SUCCESS: All Inventory Manager users have the required permissions!")
+            print("Users can now access:")
+            print("  - Maintenance > OE Setup > Order Defaults")
+            print("  - AR functionality including sales representatives")
         else:
-            print("❌ FAILURE: Some Inventory Manager users are missing the required permission")
+            print("❌ FAILURE: Some Inventory Manager users are missing required permissions")
         
         return all_passed
         

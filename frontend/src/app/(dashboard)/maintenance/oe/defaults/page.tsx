@@ -219,7 +219,7 @@ export default function OEDefaultsPage() {
                 <option value="PartiallyInvoiced">PartiallyInvoiced</option>
                 <option value="Invoiced">Invoiced</option>
                 <option value="Closed">Closed</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="Cancelled">Cancelled</option>
               </select>
             </div>
             <div>
@@ -235,7 +235,7 @@ export default function OEDefaultsPage() {
                 <option value="PartiallyReceived">PartiallyReceived</option>
                 <option value="Received">Received</option>
                 <option value="Closed">Closed</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="Cancelled">Cancelled</option>
               </select>
             </div>
             <div>
