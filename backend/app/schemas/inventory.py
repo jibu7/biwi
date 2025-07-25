@@ -7,6 +7,7 @@ from decimal import Decimal
 class UnitOfMeasureBase(BaseModel):
     name: str
     abbreviation: str
+    is_base_unit: bool = False
     conversion_factor_to_base: Decimal = Decimal("1.00")
     is_active: bool = True
 
@@ -16,6 +17,7 @@ class UnitOfMeasureCreate(UnitOfMeasureBase):
 class UnitOfMeasureUpdate(BaseModel):
     name: Optional[str] = None
     abbreviation: Optional[str] = None
+    is_base_unit: Optional[bool] = None
     conversion_factor_to_base: Optional[Decimal] = None
     is_active: Optional[bool] = None
 
@@ -29,6 +31,7 @@ class UnitOfMeasure(UnitOfMeasureBase):
 # Warehouse Schemas
 class WarehouseBase(BaseModel):
     name: str
+    warehouse_code: str
     location: Optional[str] = None
     is_default: bool = False
     is_active: bool = True
@@ -38,6 +41,7 @@ class WarehouseCreate(WarehouseBase):
 
 class WarehouseUpdate(BaseModel):
     name: Optional[str] = None
+    warehouse_code: Optional[str] = None
     location: Optional[str] = None
     is_default: Optional[bool] = None
     is_active: Optional[bool] = None

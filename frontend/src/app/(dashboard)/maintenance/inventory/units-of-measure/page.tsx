@@ -82,6 +82,9 @@ export default function UnitsOfMeasurePage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Abbreviation
               </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Base Unit
+              </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Conversion Factor
               </th>
@@ -102,32 +105,45 @@ export default function UnitsOfMeasurePage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {unit.abbreviation}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                  {unit.is_base_unit ? (
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      Yes
+                    </span>
+                  ) : (
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                      No
+                    </span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">
                   {unit.conversion_factor_to_base}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      unit.is_active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {unit.is_active ? 'Active' : 'Inactive'}
-                  </span>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                  {unit.is_active ? (
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      Active
+                    </span>
+                  ) : (
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                      Inactive
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   {hasPermission(INV_SETUP_MANAGE) && (
-                    <div className="flex justify-end gap-2">
-                      <Link
-                        href={`/maintenance/inventory/units-of-measure/${unit.id}`}
-                        className="text-indigo-600 hover:text-indigo-900"
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        onClick={() => router.push(`/maintenance/inventory/units-of-measure/${unit.id}`)}
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                        title="Edit"
                       >
                         <Edit size={18} />
-                      </Link>
+                      </button>
                       <button
                         onClick={() => handleDelete(unit.id)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-red-600 hover:text-red-800 transition-colors"
+                        title="Delete"
                         disabled={deleteMutation.isPending}
                       >
                         <Trash2 size={18} />
@@ -139,34 +155,15 @@ export default function UnitsOfMeasurePage() {
             ))}
           </tbody>
         </table>
-      </div>
-
-      {filteredUnits.length === 0 && (
-        <div className="text-center py-12">
-          <Package size={48} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No units of measure found</h3>
-          <p className="text-gray-500 mb-4">
-            {searchTerm ? 'Try adjusting your search terms.' : 'Get started by creating your first unit of measure.'}
-          </p>
-          {hasPermission(INV_SETUP_MANAGE) && !searchTerm && (
-            <Link
-              href="/maintenance/inventory/units-of-measure/new"
-              className="inline-flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-            >
-              <Plus size={20} />
-              Add New Unit
-            </Link>
-          )}
-        </div>
-      )}
-
-      <div className="mt-6 bg-blue-50 p-4 rounded-md">
-        <h4 className="text-sm font-medium text-blue-800 mb-2">About Conversion Factors</h4>
-        <p className="text-sm text-blue-700">
-          The conversion factor represents how many of this unit equals one base unit. For example, 
-          if your base unit is "Each" and you have "Dozen", the conversion factor would be 12 
-          (12 each = 1 dozen).
-        </p>
+        {filteredUnits.length === 0 && (
+          <div className="text-center py-12">
+            <Package size={48} className="mx-auto text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No units of measure found</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Get started by creating a new unit of measure.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

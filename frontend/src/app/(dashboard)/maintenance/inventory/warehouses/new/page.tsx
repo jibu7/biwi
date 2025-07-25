@@ -11,6 +11,7 @@ import { WarehouseCreate } from '@/types/inventory';
 
 const warehouseSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
+  warehouse_code: z.string().min(1, 'Warehouse code is required').max(20, 'Warehouse code too long'),
   location: z.string().optional(),
   is_default: z.boolean(),
   is_active: z.boolean(),
@@ -73,6 +74,21 @@ export default function NewWarehousePage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
+            Warehouse Code <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            {...register('warehouse_code')}
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter warehouse code (e.g., WH-MAIN)"
+          />
+          {errors.warehouse_code && (
+            <p className="text-red-500 text-sm mt-1">{errors.warehouse_code.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Location
           </label>
           <input
@@ -113,7 +129,8 @@ export default function NewWarehousePage() {
         <div className="bg-blue-50 p-4 rounded-md">
           <h4 className="text-sm font-medium text-blue-800 mb-2">Information</h4>
           <ul className="text-sm text-blue-700 space-y-1">
-            <li>• The warehouse name must be unique within your company</li>
+            <li>• The warehouse name and code must be unique within your company</li>
+            <li>• Warehouse code should be short and descriptive (e.g., WH-MAIN, CENTRAL-01)</li>
             <li>• Setting as default will make this warehouse the default for new transactions</li>
             <li>• Only one warehouse can be set as default at a time</li>
           </ul>

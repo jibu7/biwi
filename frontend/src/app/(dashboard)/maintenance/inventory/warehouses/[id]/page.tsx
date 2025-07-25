@@ -12,6 +12,7 @@ import { WarehouseUpdate } from '@/types/inventory';
 
 const warehouseSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
+  warehouse_code: z.string().min(1, 'Warehouse code is required').max(20, 'Warehouse code too long'),
   location: z.string().optional(),
   is_default: z.boolean(),
   is_active: z.boolean(),
@@ -54,6 +55,7 @@ export default function EditWarehousePage() {
     if (warehouse) {
       reset({
         name: warehouse.name,
+        warehouse_code: warehouse.warehouse_code,
         location: warehouse.location || '',
         is_default: warehouse.is_default,
         is_active: warehouse.is_active,
@@ -89,6 +91,21 @@ export default function EditWarehousePage() {
           />
           {errors.name && (
             <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Warehouse Code <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            {...register('warehouse_code')}
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter warehouse code (e.g., WH-MAIN)"
+          />
+          {errors.warehouse_code && (
+            <p className="text-red-500 text-sm mt-1">{errors.warehouse_code.message}</p>
           )}
         </div>
 

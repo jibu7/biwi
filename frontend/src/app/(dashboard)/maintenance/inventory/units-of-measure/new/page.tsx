@@ -12,6 +12,7 @@ import { UnitOfMeasureCreate } from '@/types/inventory';
 const unitOfMeasureSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50, 'Name too long'),
   abbreviation: z.string().min(1, 'Abbreviation is required').max(10, 'Abbreviation too long'),
+  is_base_unit: z.boolean(),
   conversion_factor_to_base: z.number().positive('Conversion factor must be positive'),
   is_active: z.boolean(),
 });
@@ -40,6 +41,7 @@ export default function NewUnitOfMeasurePage() {
     defaultValues: {
       conversion_factor_to_base: 1.0,
       is_active: true,
+      is_base_unit: false,
     },
   });
 
@@ -84,6 +86,18 @@ export default function NewUnitOfMeasurePage() {
           {errors.abbreviation && (
             <p className="text-red-500 text-sm mt-1">{errors.abbreviation.message}</p>
           )}
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="is_base_unit"
+            {...register('is_base_unit')}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="is_base_unit" className="ml-2 block text-sm text-gray-900">
+            Is Base Unit
+          </label>
         </div>
 
         <div>

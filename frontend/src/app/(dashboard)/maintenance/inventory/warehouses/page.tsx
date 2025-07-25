@@ -31,6 +31,7 @@ export default function WarehousesPage() {
   const filteredWarehouses = warehouses.filter(
     (warehouse) =>
       warehouse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      warehouse.warehouse_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (warehouse.location && warehouse.location.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -65,7 +66,7 @@ export default function WarehousesPage() {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Search by name or location..."
+          placeholder="Search by name, code, or location..."
           className="w-full md:w-96 px-4 py-2 border rounded-md"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -78,7 +79,10 @@ export default function WarehousesPage() {
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2">
                 <MapPin size={20} className="text-blue-500" />
-                <h3 className="text-lg font-semibold">{warehouse.name}</h3>
+                <div>
+                  <h3 className="text-lg font-semibold">{warehouse.name}</h3>
+                  <p className="text-sm text-gray-500">Code: {warehouse.warehouse_code}</p>
+                </div>
                 {warehouse.is_default && (
                   <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                     Default

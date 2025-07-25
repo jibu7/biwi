@@ -4,6 +4,7 @@ export interface UnitOfMeasure {
   company_id: number;
   name: string;
   abbreviation: string;
+  is_base_unit: boolean;
   conversion_factor_to_base: number;
   is_active: boolean;
 }
@@ -11,13 +12,15 @@ export interface UnitOfMeasure {
 export interface UnitOfMeasureCreate {
   name: string;
   abbreviation: string;
-  conversion_factor_to_base?: number;
+  is_base_unit: boolean;
+  conversion_factor_to_base: number;
   is_active?: boolean;
 }
 
 export interface UnitOfMeasureUpdate {
   name?: string;
   abbreviation?: string;
+  is_base_unit?: boolean;
   conversion_factor_to_base?: number;
   is_active?: boolean;
 }
@@ -27,6 +30,7 @@ export interface Warehouse {
   id: number;
   company_id: number;
   name: string;
+  warehouse_code: string;
   location?: string;
   is_default: boolean;
   is_active: boolean;
@@ -34,6 +38,7 @@ export interface Warehouse {
 
 export interface WarehouseCreate {
   name: string;
+  warehouse_code: string;
   location?: string;
   is_default?: boolean;
   is_active?: boolean;
@@ -41,6 +46,7 @@ export interface WarehouseCreate {
 
 export interface WarehouseUpdate {
   name?: string;
+  warehouse_code?: string;
   location?: string;
   is_default?: boolean;
   is_active?: boolean;

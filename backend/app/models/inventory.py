@@ -9,6 +9,7 @@ class UnitOfMeasure(Base):
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)  # ENSURE THIS EXISTS
     name = Column(String, nullable=False)
     abbreviation = Column(String, nullable=False)
+    is_base_unit = Column(Boolean, default=False, nullable=False)
     conversion_factor_to_base = Column(Numeric, default=1)
     is_active = Column(Boolean, default=True)
     
@@ -16,6 +17,7 @@ class UnitOfMeasure(Base):
         UniqueConstraint('name', 'company_id', name='uq_uom_name_company'),
         UniqueConstraint('abbreviation', 'company_id', name='uq_uom_abbrev_company'),
         Index('ix_uom_company', 'company_id'),
+        Index('ix_company_base_unit', 'company_id', 'is_base_unit', unique=True, postgresql_where=Column('is_base_unit')),
     )
 
 class Warehouse(Base):
@@ -24,13 +26,16 @@ class Warehouse(Base):
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)  # ENSURE THIS EXISTS
     name = Column(String, nullable=False)
+    warehouse_code = Column(String, nullable=False, index=True)
     location = Column(String, nullable=True)
     is_default = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     
     __table_args__ = (
         UniqueConstraint('name', 'company_id', name='uq_warehouse_name_company'),
+        UniqueConstraint('warehouse_code', 'company_id', name='uq_warehouse_code_company'),
         Index('ix_warehouse_company', 'company_id'),
+        Index('ix_warehouse_company_code', 'company_id', 'warehouse_code'),
     )
 
 class InventoryItem(Base):

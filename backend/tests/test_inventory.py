@@ -178,6 +178,7 @@ class TestInventorySetup:
         """Test creating a warehouse"""
         warehouse_data = {
             "name": "Main Warehouse",
+            "warehouse_code": "WH-MAIN",
             "location": "123 Main St",
             "is_default": True,
             "is_active": True
@@ -192,7 +193,64 @@ class TestInventorySetup:
         assert response.status_code == 200
         data = response.json()
         assert data["name"] == "Main Warehouse"
+        assert data["warehouse_code"] == "WH-MAIN"
         assert data["is_default"] == True
+
+    def test_warehouse_code_uniqueness_within_company(self, test_client, auth_headers):
+        """Test that warehouse_code must be unique within a company"""
+        warehouse_data_1 = {
+            "name": "Warehouse One",
+            "warehouse_code": "WH-001",
+            "location": "Location 1",
+            "is_default": False,
+            "is_active": True
+        }
+        
+        warehouse_data_2 = {
+            "name": "Warehouse Two", 
+            "warehouse_code": "WH-001",  # Same code - should fail
+            "location": "Location 2",
+            "is_default": False,
+            "is_active": True
+        }
+        
+        # Create first warehouse - should succeed
+        response1 = test_client.post(
+            "/api/v1/inventory/warehouses",
+            json=warehouse_data_1,
+            headers=auth_headers
+        )
+        assert response1.status_code == 200
+        
+        # Create second warehouse with same code - should fail
+        response2 = test_client.post(
+            "/api/v1/inventory/warehouses", 
+            json=warehouse_data_2,
+            headers=auth_headers
+        )
+        assert response2.status_code == 400
+        assert "warehouse_code" in response2.json()["detail"].lower()
+
+    def test_warehouse_code_required(self, test_client, auth_headers):
+        """Test that warehouse_code is required"""
+        warehouse_data = {
+            "name": "Test Warehouse",
+            "location": "Test Location",
+            "is_default": False,
+            "is_active": True
+            # Missing warehouse_code
+        }
+        
+        response = test_client.post(
+            "/api/v1/inventory/warehouses",
+            json=warehouse_data,
+            headers=auth_headers
+        )
+        
+        assert response.status_code == 422
+        error_detail = response.json()["detail"][0]
+        assert error_detail["loc"] == ["body", "warehouse_code"]
+        assert error_detail["type"] == "missing"
     
     def test_create_inventory_item(self, test_client, auth_headers, db_session, test_company, test_gl_accounts):
         """Test creating an inventory item"""

@@ -13,6 +13,7 @@ import { UnitOfMeasureUpdate } from '@/types/inventory';
 const unitOfMeasureSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50, 'Name too long'),
   abbreviation: z.string().min(1, 'Abbreviation is required').max(10, 'Abbreviation too long'),
+  is_base_unit: z.boolean(),
   conversion_factor_to_base: z.number().positive('Conversion factor must be positive'),
   is_active: z.boolean(),
 });
@@ -64,6 +65,7 @@ export default function EditUnitOfMeasurePage({ params }: PageProps) {
       reset({
         name: unit.name,
         abbreviation: unit.abbreviation,
+        is_base_unit: unit.is_base_unit,
         conversion_factor_to_base: unit.conversion_factor_to_base,
         is_active: unit.is_active,
       });
@@ -116,6 +118,29 @@ export default function EditUnitOfMeasurePage({ params }: PageProps) {
           )}
         </div>
 
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            {...register('is_active')}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label className="ml-2 block text-sm text-gray-900">
+            Active
+          </label>
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="is_base_unit"
+            {...register('is_base_unit')}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="is_base_unit" className="ml-2 block text-sm text-gray-900">
+            Is Base Unit
+          </label>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Conversion Factor to Base <span className="text-red-500">*</span>
@@ -133,17 +158,6 @@ export default function EditUnitOfMeasurePage({ params }: PageProps) {
           <p className="text-gray-500 text-sm mt-1">
             How many of this unit equals one base unit
           </p>
-        </div>
-
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            {...register('is_active')}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label className="ml-2 block text-sm text-gray-900">
-            Active
-          </label>
         </div>
 
         <div className="bg-amber-50 p-4 rounded-md">
