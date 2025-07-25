@@ -3,23 +3,40 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import { Plus, Calendar, FileText } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, Calendar, FileText, CheckCircle } from 'lucide-react';
 import { glService } from '@/services/glService';
 
 export default function JournalEntriesPage() {
+  const queryClient = useQueryClient();
   const [dateRange, setDateRange] = useState({
-    start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+    start_date: '2024-01-01', // Start from 2024 to catch the manual example
     end_date: new Date().toISOString().split('T')[0],
   });
 
-  const { data: journalEntries = [], isLoading } = useQuery({
+  const { data: journalEntries = [], isLoading, error } = useQuery({
     queryKey: ['journalEntries', dateRange],
     queryFn: () => glService.getJournalEntries(dateRange),
   });
 
+  const postMutation = useMutation({
+    mutationFn: glService.postJournalEntry,
+    onSuccess: () => {
+      // Refetch journal entries to show updated status
+      queryClient.invalidateQueries({ queryKey: ['journalEntries'] });
+    },
+    onError: (error) => {
+      console.error('Error posting journal entry:', error);
+      alert('Error posting journal entry. Please try again.');
+    },
+  });
+
   if (isLoading) {
     return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-600">Error loading journal entries: {error.message}</div>;
   }
 
   return (
@@ -71,7 +88,7 @@ export default function JournalEntriesPage() {
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <ul className="divide-y divide-gray-200">
             {journalEntries.map((entry) => {
-              const totalAmount = entry.lines.reduce((sum, line) => sum + line.debit_amount, 0);
+              const totalAmount = entry.lines.reduce((sum, line) => sum + (parseFloat(line.debit_amount) || 0), 0);
               
               return (
                 <li key={entry.id}>
@@ -111,16 +128,28 @@ export default function JournalEntriesPage() {
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-col items-end">
-                        <p className="text-sm font-medium text-gray-900">
-                          {new Intl.NumberFormat('en-US', {
-                            style: 'currency',
-                            currency: 'USD',
-                          }).format(totalAmount)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {entry.lines.length} lines
-                        </p>
+                      <div className="flex flex-col items-end space-y-2">
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-900">
+                            {new Intl.NumberFormat('en-US', {
+                              style: 'currency',
+                              currency: 'USD',
+                            }).format(totalAmount)}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {entry.lines.length} lines
+                          </p>
+                        </div>
+                        {entry.status === 'Draft' && (
+                          <button
+                            onClick={() => postMutation.mutate(entry.id)}
+                            disabled={postMutation.isPending}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 disabled:opacity-50"
+                          >
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            {postMutation.isPending ? 'Posting...' : 'Post'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

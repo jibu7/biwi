@@ -55,11 +55,16 @@ export const glService = {
   async getJournalEntries(params?: {
     skip?: number;
     limit?: number;
-    startDate?: string;
-    endDate?: string;
+    start_date?: string;
+    end_date?: string;
     status?: string;
   }): Promise<GLJournalEntry[]> {
     const response = await axiosInstance.get('/gl/journal-entries', { params });
+    return response.data;
+  },
+
+  async postJournalEntry(journalEntryId: number): Promise<any> {
+    const response = await axiosInstance.post(`/gl/journal-entries/${journalEntryId}/post`);
     return response.data;
   },
 

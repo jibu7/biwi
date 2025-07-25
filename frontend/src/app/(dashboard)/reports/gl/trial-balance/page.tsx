@@ -9,22 +9,16 @@ import { glService } from '@/services/glService';
 export default function TrialBalancePage() {
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const { data: trialBalance = [], isLoading, error } = useQuery({
+  const { data: trialBalanceData, isLoading, error } = useQuery({
     queryKey: ['trialBalance', endDate],
     queryFn: () => glService.getTrialBalance(endDate),
     enabled: !!endDate,
   });
 
-  // Safely calculate totals - ensure trialBalance is an array
-  const safeTrialBalance = Array.isArray(trialBalance) ? trialBalance : [];
-  const totalDebit = safeTrialBalance.reduce((sum, item) => {
-    const debitBalance = parseFloat(String(item.debit_balance || '0'));
-    return sum + (isNaN(debitBalance) ? 0 : debitBalance);
-  }, 0);
-  const totalCredit = safeTrialBalance.reduce((sum, item) => {
-    const creditBalance = parseFloat(String(item.credit_balance || '0'));
-    return sum + (isNaN(creditBalance) ? 0 : creditBalance);
-  }, 0);
+  // Extract accounts array from the response
+  const safeTrialBalance = trialBalanceData?.accounts || [];
+  const totalDebit = trialBalanceData?.total_debit || 0;
+  const totalCredit = trialBalanceData?.total_credit || 0;
 
   const handleExport = () => {
     // Implement CSV export functionality
@@ -33,8 +27,8 @@ export default function TrialBalancePage() {
       ...safeTrialBalance.map(item => [
         item.account_code,
         item.account_name,
-        (item.debit_balance || 0).toString(),
-        (item.credit_balance || 0).toString(),
+        (item.debit || 0).toString(),
+        (item.credit || 0).toString(),
       ]),
       ['', 'TOTALS', totalDebit.toString(), totalCredit.toString()],
     ].map(row => row.join(',')).join('\n');
@@ -129,19 +123,19 @@ export default function TrialBalancePage() {
                           {item.account_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                          {(item.debit_balance || 0) > 0 ? (
+                          {(item.debit || 0) > 0 ? (
                             new Intl.NumberFormat('en-US', {
                               style: 'currency',
                               currency: 'USD',
-                            }).format(item.debit_balance || 0)
+                            }).format(item.debit || 0)
                           ) : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                          {(item.credit_balance || 0) > 0 ? (
+                          {(item.credit || 0) > 0 ? (
                             new Intl.NumberFormat('en-US', {
                               style: 'currency',
                               currency: 'USD',
-                            }).format(item.credit_balance || 0)
+                            }).format(item.credit || 0)
                           ) : '-'}
                         </td>
                       </tr>

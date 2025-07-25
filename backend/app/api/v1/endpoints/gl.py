@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Header
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 from typing import List, Optional
 from datetime import date
 from app import crud, models, schemas
@@ -147,6 +148,50 @@ async def list_journal_entries(
         end_date=end_date,
         status=status
     )
+
+@router.post("/journal-entries/{journal_entry_id}/post")
+async def post_journal_entry(
+    *,
+    db: Session = Depends(deps.get_db),
+    journal_entry_id: int,
+    current_user: models.User = Depends(PermissionChecker([GL_JOURNAL_POST])),
+    company_id: int = Depends(get_company_id)
+):
+    """Post a draft journal entry to GL"""
+    # Get the journal entry and verify it belongs to the company
+    journal_entry = db.query(models.GLJournalEntry).filter(
+        models.GLJournalEntry.id == journal_entry_id,
+        models.GLJournalEntry.company_id == company_id
+    ).first()
+    
+    if not journal_entry:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Journal entry not found"
+        )
+    
+    if journal_entry.status != "Draft":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Can only post draft entries. Current status: {journal_entry.status}"
+        )
+    
+    # Update status to Posted and set posting date
+    journal_entry.status = "Posted"
+    journal_entry.posting_date = func.now()
+    
+    # Post to GL (update account balances)
+    from app.crud.gl import post_journal_entry_to_gl
+    post_journal_entry_to_gl(db, journal_entry)
+    
+    db.commit()
+    db.refresh(journal_entry)
+    
+    return {
+        "success": True,
+        "message": "Journal entry posted successfully",
+        "journal_entry": journal_entry
+    }
 
 # Reports
 @router.get("/reports/trial-balance")

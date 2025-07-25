@@ -12,18 +12,19 @@ import { glService } from '@/services/glService';
 const journalLineSchema = z.object({
   gl_account_id: z.number().min(1, 'Account is required'),
   description: z.string().optional(),
-  debit_amount: z.number().min(0),
-  credit_amount: z.number().min(0),
+  debit_amount: z.number().min(0).optional().transform(val => val || 0),
+  credit_amount: z.number().min(0).optional().transform(val => val || 0),
 });
 
 const journalEntrySchema = z.object({
   entry_date: z.string().min(1, 'Date is required'),
   reference: z.string().optional(),
   description: z.string().optional(),
+  status: z.string().optional().default('Draft'),
   lines: z.array(journalLineSchema).min(2, 'At least two lines required'),
 }).refine((data) => {
-  const totalDebit = data.lines.reduce((sum, line) => sum + line.debit_amount, 0);
-  const totalCredit = data.lines.reduce((sum, line) => sum + line.credit_amount, 0);
+  const totalDebit = data.lines.reduce((sum, line) => sum + (line.debit_amount || 0), 0);
+  const totalCredit = data.lines.reduce((sum, line) => sum + (line.credit_amount || 0), 0);
   return Math.abs(totalDebit - totalCredit) < 0.01;
 }, {
   message: 'Journal entry must balance',
@@ -50,9 +51,10 @@ export default function NewJournalEntryPage() {
     resolver: zodResolver(journalEntrySchema),
     defaultValues: {
       entry_date: new Date().toISOString().split('T')[0],
+      status: 'Draft',
       lines: [
-        { gl_account_id: 0, description: '', debit_amount: 0, credit_amount: 0 },
-        { gl_account_id: 0, description: '', debit_amount: 0, credit_amount: 0 },
+        { gl_account_id: 0, description: '', debit_amount: undefined, credit_amount: undefined },
+        { gl_account_id: 0, description: '', debit_amount: undefined, credit_amount: undefined },
       ],
     },
   });
@@ -87,7 +89,7 @@ export default function NewJournalEntryPage() {
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium mb-4">Entry Details</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Date
@@ -123,6 +125,19 @@ export default function NewJournalEntryPage() {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Status
+              </label>
+              <select
+                {...register('status')}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              >
+                <option value="Draft">Draft</option>
+                <option value="Posted">Posted</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -131,7 +146,7 @@ export default function NewJournalEntryPage() {
             <h2 className="text-lg font-medium">Journal Lines</h2>
             <button
               type="button"
-              onClick={() => append({ gl_account_id: 0, description: '', debit_amount: 0, credit_amount: 0 })}
+              onClick={() => append({ gl_account_id: 0, description: '', debit_amount: undefined, credit_amount: undefined })}
               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -189,8 +204,9 @@ export default function NewJournalEntryPage() {
                       <input
                         type="number"
                         step="0.01"
+                        placeholder="0.00"
                         {...register(`lines.${index}.debit_amount` as const, {
-                          valueAsNumber: true,
+                          setValueAs: (value) => value === '' || value === undefined ? undefined : parseFloat(value) || 0,
                         })}
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-right"
                       />
@@ -199,8 +215,9 @@ export default function NewJournalEntryPage() {
                       <input
                         type="number"
                         step="0.01"
+                        placeholder="0.00"
                         {...register(`lines.${index}.credit_amount` as const, {
-                          valueAsNumber: true,
+                          setValueAs: (value) => value === '' || value === undefined ? undefined : parseFloat(value) || 0,
                         })}
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-right"
                       />

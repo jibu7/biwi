@@ -145,13 +145,16 @@ def create_journal_entry(
         )
     
     # Create journal entry
+    from datetime import datetime
     db_entry = models.GLJournalEntry(
         company_id=company_id,
         entry_date=entry_in.entry_date,
         reference=entry_in.reference,
         description=entry_in.description,
         posted_by_user_id=user_id,
-        status=entry_in.status or "Draft"
+        status=entry_in.status or "Draft",
+        created_at=func.now(),
+        updated_at=func.now()
     )
     db.add(db_entry)
     db.flush()  # Get the ID without committing
