@@ -272,7 +272,7 @@ class CompanyManagementService:
                 "description": "Access to inventory management features",
                 "permissions": [
                     "inv:setup_manage", "inv:transactions_adjust", "inv:reports_view",
-                    "oe:purchase_orders_manage", "oe:grv_process", "oe:reports_view",
+                    "oe:setup_manage", "oe:purchase_orders_manage", "oe:grv_process", "oe:reports_view",
                     "ap:setup_manage", "ap:transactions_post", "ap:reports_view",
                     "gl:reports_view", "company:read", "users:read"
                 ]
