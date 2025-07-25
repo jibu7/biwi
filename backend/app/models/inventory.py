@@ -53,6 +53,11 @@ class InventoryItem(Base):
     selling_price = Column(Numeric, default=0.00)
     is_active = Column(Boolean, default=True)
     
+    # Inventory Management
+    notes = Column(Text, nullable=True)
+    reorder_level = Column(Numeric, nullable=True)
+    reorder_quantity = Column(Numeric, nullable=True)
+    
     # GL Integration - must be from same company
     default_inventory_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     default_cogs_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
