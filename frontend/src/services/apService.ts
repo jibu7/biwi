@@ -18,15 +18,15 @@ import {
 } from '@/types/ap';
 
 class APService {
-  private getCompanyId(): number {
+  private getCompanyId = (): number => {
     const { selectedCompanyId } = useAuthStore.getState();
     if (!selectedCompanyId) {
       throw new Error('No company selected');
     }
     return selectedCompanyId;
-  }
+  };
 
-  async getSuppliers(includeInactive = false, skip = 0, limit = 100): Promise<Supplier[]> {
+  getSuppliers = async (includeInactive = false, skip = 0, limit = 100): Promise<Supplier[]> => {
     const response = await axiosInstance.get('/ap/suppliers', {
       params: { include_inactive: includeInactive, skip, limit },
       headers: {
@@ -34,69 +34,69 @@ class APService {
       }
     });
     return response.data;
-  }
+  };
 
-  async getSupplier(id: number): Promise<Supplier> {
+  getSupplier = async (id: number): Promise<Supplier> => {
     const response = await axiosInstance.get(`/ap/suppliers/${id}`, {
       headers: {
         'X-Tenant-ID': this.getCompanyId().toString()
       }
     });
     return response.data;
-  }
+  };
 
-  async createSupplier(data: SupplierCreate): Promise<Supplier> {
+  createSupplier = async (data: SupplierCreate): Promise<Supplier> => {
     const response = await axiosInstance.post('/ap/suppliers', data, {
       headers: {
         'X-Tenant-ID': this.getCompanyId().toString()
       }
     });
     return response.data;
-  }
+  };
 
-  async updateSupplier(id: number, data: SupplierUpdate): Promise<Supplier> {
+  updateSupplier = async (id: number, data: SupplierUpdate): Promise<Supplier> => {
     const response = await axiosInstance.put(`/ap/suppliers/${id}`, data, {
       headers: {
         'X-Tenant-ID': this.getCompanyId().toString()
       }
     });
     return response.data;
-  }
+  };
 
-  async deleteSupplier(id: number): Promise<Supplier> {
+  deleteSupplier = async (id: number): Promise<Supplier> => {
     const response = await axiosInstance.delete(`/ap/suppliers/${id}`, {
       headers: {
         'X-Tenant-ID': this.getCompanyId().toString()
       }
     });
     return response.data;
-  }
+  };
 
-  async getAPTransactionTypes(): Promise<APTransactionType[]> {
+  getAPTransactionTypes = async (): Promise<APTransactionType[]> => {
     const response = await axiosInstance.get('/ap/transaction-types', {
       headers: {
         'X-Tenant-ID': this.getCompanyId().toString()
       }
     });
     return response.data;
-  }
+  };
 
-  async createAPTransactionType(data: APTransactionTypeCreate): Promise<APTransactionType> {
+  createAPTransactionType = async (data: APTransactionTypeCreate): Promise<APTransactionType> => {
     const response = await axiosInstance.post('/ap/transaction-types', data, {
       headers: {
         'X-Tenant-ID': this.getCompanyId().toString()
       }
     });
     return response.data;
-  }
+  };
 
-  async getAPTransactions(params?: {
+  getAPTransactions = async (params?: {
     supplier_id?: number;
     from_date?: string;
     to_date?: string;
     skip?: number;
     limit?: number;
-  }): Promise<APTransaction[]> {
+  }): Promise<APTransaction[]> => {
     const response = await axiosInstance.get('/ap/transactions', {
       params,
       headers: {
@@ -104,18 +104,18 @@ class APService {
       }
     });
     return response.data;
-  }
+  };
 
-  async createAPTransaction(data: APTransactionCreate): Promise<APTransaction> {
+  createAPTransaction = async (data: APTransactionCreate): Promise<APTransaction> => {
     const response = await axiosInstance.post('/ap/transactions', data, {
       headers: {
         'X-Tenant-ID': this.getCompanyId().toString()
       }
     });
     return response.data;
-  }
+  };
 
-  async getSupplierAgeing(asOfDate: string): Promise<SupplierAgeing[]> {
+  getSupplierAgeing = async (asOfDate: string): Promise<SupplierAgeing[]> => {
     const response = await axiosInstance.get('/ap/reports/ageing', {
       params: { as_of_date: asOfDate },
       headers: {
@@ -123,13 +123,13 @@ class APService {
       }
     });
     return response.data;
-  }
+  };
 
-  async getSupplierStatement(
+  getSupplierStatement = async (
     supplierId: number,
     fromDate: string,
     toDate: string
-  ): Promise<SupplierStatement[]> {
+  ): Promise<SupplierStatement[]> => {
     const response = await axiosInstance.get(`/ap/reports/supplier-statement/${supplierId}`, {
       params: { from_date: fromDate, to_date: toDate },
       headers: {
@@ -137,34 +137,34 @@ class APService {
       }
     });
     return response.data;
-  }
+  };
 
-  async createAllocation(data: APAllocationCreate): Promise<APAllocation> {
+  createAllocation = async (data: APAllocationCreate): Promise<APAllocation> => {
     const response = await axiosInstance.post('/ap/allocations', data, {
       headers: {
         'X-Tenant-ID': this.getCompanyId().toString()
       }
     });
     return response.data;
-  }
+  };
 
-  async getDefaults(): Promise<APDefaults> {
+  getDefaults = async (): Promise<APDefaults> => {
     const response = await axiosInstance.get('/ap/defaults', {
       headers: {
         'X-Tenant-ID': this.getCompanyId().toString()
       }
     });
     return response.data;
-  }
+  };
 
-  async updateDefaults(data: APDefaultsUpdate): Promise<APDefaults> {
+  updateDefaults = async (data: APDefaultsUpdate): Promise<APDefaults> => {
     const response = await axiosInstance.put('/ap/defaults', data, {
       headers: {
         'X-Tenant-ID': this.getCompanyId().toString()
       }
     });
     return response.data;
-  }
+  };
 }
 
 export const apService = new APService();

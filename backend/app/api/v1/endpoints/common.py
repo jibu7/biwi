@@ -26,7 +26,7 @@ async def read_currencies(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([COMMON_SETUP_CURRENCIES]))
+    current_user: models.User = Depends(get_current_active_user)
 ):
     return crud_common.get_currencies_by_company(
         db=db, company_id=current_user.company_id, skip=skip, limit=limit
@@ -37,7 +37,7 @@ async def read_currencies(
 async def read_currency(
     currency_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([COMMON_SETUP_CURRENCIES]))
+    current_user: models.User = Depends(get_current_active_user)
 ):
     currency = crud_common.get_currency(db=db, currency_id=currency_id, company_id=current_user.company_id)
     if currency is None:
@@ -73,7 +73,7 @@ async def delete_currency(
 @router.get("/currencies/base", response_model=schemas.Currency)
 async def read_base_currency(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([COMMON_SETUP_CURRENCIES]))
+    current_user: models.User = Depends(get_current_active_user)
 ):
     """Get the base currency for the company"""
     currency = crud_common.get_base_currency(db, current_user.company_id)
