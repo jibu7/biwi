@@ -39,6 +39,11 @@ export default function GRVsPage() {
     queryFn: () => apService.getSuppliers(),
   });
 
+  const { data: apTransactionTypes = [] } = useQuery({
+    queryKey: ['ap-transaction-types'],
+    queryFn: () => apService.getAPTransactionTypes(),
+  });
+
   const convertToAPInvoiceMutation = useMutation({
     mutationFn: ({ id, details }: { id: number; details: any }) => grvService.convertToAPInvoice(id, details),
     onSuccess: (data) => {
@@ -371,6 +376,7 @@ export default function GRVsPage() {
       {showConvertModal && selectedGRV && (
         <ConvertToAPInvoiceModal
           grv={selectedGRV}
+          apTransactionTypes={apTransactionTypes}
           onSubmit={(details) => convertToAPInvoiceMutation.mutate({ id: selectedGRV.id, details })}
           onCancel={() => {
             setShowConvertModal(false);
@@ -386,11 +392,13 @@ export default function GRVsPage() {
 // Convert to AP Invoice Modal Component
 function ConvertToAPInvoiceModal({ 
   grv, 
+  apTransactionTypes,
   onSubmit, 
   onCancel, 
   isLoading 
 }: { 
   grv: any; 
+  apTransactionTypes: any[];
   onSubmit: (details: any) => void; 
   onCancel: () => void; 
   isLoading: boolean;
@@ -410,8 +418,15 @@ function ConvertToAPInvoiceModal({
       return;
     }
     
+    // Find the Supplier Invoice transaction type
+    const supplierInvoiceType = apTransactionTypes.find(type => type.base_type === 'Supplier Invoice');
+    if (!supplierInvoiceType) {
+      alert('No Supplier Invoice transaction type found. Please contact your administrator.');
+      return;
+    }
+
     onSubmit({
-      ap_transaction_type_id: 1, // Supplier Invoice
+      ap_transaction_type_id: supplierInvoiceType.id,
       supplier_id: grv.supplier_id,
       transaction_date: invoiceDate,
       due_date: dueDate,

@@ -2,6 +2,7 @@
 
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, Filter } from 'lucide-react';
 import { apService } from '@/services/apService';
@@ -9,6 +10,7 @@ import { DataTable, Column } from '@/components/ui/data-table';
 import { cn } from '@/lib/utils';
 
 export default function APTransactionsListPage() {
+  const router = useRouter();
   const [filters, setFilters] = useState({
     supplier_id: '',
     transaction_type_id: '',
@@ -114,10 +116,10 @@ export default function APTransactionsListPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              // Navigate to transaction detail view
-              console.log('View transaction:', row.original.id);
+              router.push(`/transactions/ap/list/${row.original.id}`);
             }}
             className="text-blue-600 hover:text-blue-900"
+            title="View transaction details"
           >
             <Eye className="h-4 w-4" />
           </button>

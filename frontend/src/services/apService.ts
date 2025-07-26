@@ -106,6 +106,15 @@ class APService {
     return response.data;
   };
 
+  getAPTransaction = async (id: number): Promise<APTransaction> => {
+    const response = await axiosInstance.get(`/ap/transactions/${id}`, {
+      headers: {
+        'X-Tenant-ID': this.getCompanyId().toString()
+      }
+    });
+    return response.data;
+  };
+
   createAPTransaction = async (data: APTransactionCreate): Promise<APTransaction> => {
     const response = await axiosInstance.post('/ap/transactions', data, {
       headers: {

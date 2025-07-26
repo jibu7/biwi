@@ -489,7 +489,7 @@ def convert_grv_to_ap_invoice(
     )
     
     ap_invoice = crud_ap.create_ap_transaction(
-        db, ap_transaction_data, company_id
+        db, ap_transaction_data, company_id, user_id
     )
     
     # Update GRV status
