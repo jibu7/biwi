@@ -39,7 +39,8 @@ export const useAuthStore = create<AuthState>()(
           formData.append('username', email);
           formData.append('password', password);
           
-          const response = await fetch('/api/v1/auth/login', {
+          const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
+          const response = await fetch(`${backendUrl}/auth/login`, {
             method: 'POST',
             body: formData,
           });
@@ -51,7 +52,7 @@ export const useAuthStore = create<AuthState>()(
           const data = await response.json();
           
           // Get user details
-          const userResponse = await fetch('/api/v1/auth/me', {
+          const userResponse = await fetch(`${backendUrl}/auth/me`, {
             headers: {
               'Authorization': `Bearer ${data.access_token}`,
             },
@@ -93,8 +94,9 @@ export const useAuthStore = create<AuthState>()(
             (payload as FormData).append('password', password);
           }
           
+          const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
           const response = await fetch(
-            otpCode ? '/api/v1/platform/auth/login-mfa' : '/api/v1/platform/auth/login',
+            otpCode ? `${backendUrl}/platform/auth/login-mfa` : `${backendUrl}/platform/auth/login`,
             {
               method: 'POST',
               headers,
@@ -110,7 +112,7 @@ export const useAuthStore = create<AuthState>()(
           const data = await response.json();
           
           // Get user details
-          const userResponse = await fetch('/api/v1/auth/me', {
+          const userResponse = await fetch(`${backendUrl}/auth/me`, {
             headers: {
               'Authorization': `Bearer ${data.access_token}`,
             },
@@ -160,7 +162,8 @@ export const useAuthStore = create<AuthState>()(
         if (!token) return;
         
         try {
-          const response = await fetch('/api/v1/auth/me', {
+          const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
+          const response = await fetch(`${backendUrl}/auth/me`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },
@@ -189,7 +192,8 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           // Validate token by calling /me endpoint
-          const response = await fetch('/api/v1/auth/me', {
+          const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
+          const response = await fetch(`${backendUrl}/auth/me`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },

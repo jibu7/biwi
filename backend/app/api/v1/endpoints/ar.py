@@ -304,10 +304,9 @@ async def get_ar_transactions(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get AR transactions with optional filtering"""
-    require_permission(current_user, AR_TRANSACTIONS_POST)
     company_id = get_current_tenant_id(request)
     transactions = crud.ar.get_ar_transactions(
         db, company_id, customer_id, from_date, to_date, base_type, skip, limit
@@ -337,10 +336,9 @@ async def create_ar_transaction(
 def get_ar_transaction(
     transaction_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get a specific AR transaction"""
-    require_permission(current_user, AR_TRANSACTIONS_POST)
     transaction = crud.ar.get_ar_transaction(db, transaction_id, current_user.company_id)
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -358,10 +356,9 @@ def update_ar_transaction(
     transaction_id: int,
     transaction_update: schemas.ARTransactionUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_TRANSACTIONS_POST]))
 ):
     """Update an AR transaction"""
-    require_permission(current_user, AR_TRANSACTIONS_POST)
     
     # Check if transaction is already posted
     existing_transaction = crud.ar.get_ar_transaction(db, transaction_id, current_user.company_id)
@@ -380,10 +377,9 @@ def update_ar_transaction(
 def post_ar_transaction(
     transaction_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_TRANSACTIONS_POST]))
 ):
     """Post an AR transaction to GL"""
-    require_permission(current_user, AR_TRANSACTIONS_POST)
     
     try:
         transaction = crud.ar.post_ar_transaction_to_gl(db, transaction_id, current_user.company_id, current_user.id)
@@ -398,10 +394,9 @@ def post_ar_transaction(
 def create_ar_payment(
     payment_in: schemas.ARPaymentCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_TRANSACTIONS_POST]))
 ):
     """Create an AR payment with forex support"""
-    require_permission(current_user, AR_TRANSACTIONS_POST)
     return crud.ar.process_ar_payment_with_forex(
         db, payment_in, current_user.company_id, current_user.id
     )
@@ -413,10 +408,9 @@ def get_ar_allocations(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get AR allocations"""
-    require_permission(current_user, AR_TRANSACTIONS_POST)
     allocations = crud.ar.get_ar_allocations(db, current_user.company_id, customer_id, skip, limit)
     
     # Add related data to response
@@ -435,10 +429,9 @@ def get_ar_allocations(
 def create_ar_allocation(
     allocation: schemas.ARAllocationCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_TRANSACTIONS_POST]))
 ):
     """Create a new AR allocation"""
-    require_permission(current_user, AR_TRANSACTIONS_POST)
     return crud.ar.create_ar_allocation(db, allocation, current_user.company_id)
 
 # AR Defaults endpoints
@@ -490,10 +483,9 @@ def update_ar_defaults(
 def get_customer_aging_report(
     as_of_date: date,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get customer aging report"""
-    require_permission(current_user, AR_REPORTS_VIEW)
     aging_data = ar_new.get_customer_aging_report(db, current_user.company_id, as_of_date)
     # Convert to frontend-compatible format
     return [schemas.CustomerAgingReportItem.from_customer_ageing(item) for item in aging_data]
@@ -504,10 +496,9 @@ def get_customer_statement(
     from_date: date,
     to_date: date,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get customer statement"""
-    require_permission(current_user, AR_REPORTS_VIEW)
     return crud.ar.get_customer_statement(db, current_user.company_id, customer_id, from_date, to_date)
 
 # Write-off endpoints
@@ -518,10 +509,9 @@ def get_writeoffs(
     customer_id: Optional[int] = None,
     status: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get write-offs with optional filters"""
-    require_permission(current_user, AR_REPORTS_VIEW)
     return ar_new.get_ar_writeoffs(
         db, current_user.company_id, skip=skip, limit=limit, 
         customer_id=customer_id, status=status
@@ -531,10 +521,9 @@ def get_writeoffs(
 def get_writeoff(
     writeoff_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get a specific write-off"""
-    require_permission(current_user, AR_REPORTS_VIEW)
     writeoff = ar_new.get_ar_writeoff(db, writeoff_id, current_user.company_id)
     if not writeoff:
         raise HTTPException(status_code=404, detail="Write-off not found")
@@ -544,10 +533,9 @@ def get_writeoff(
 def create_writeoff(
     writeoff: schemas.ARWriteOffCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_TRANSACTIONS_POST]))
 ):
     """Create a new write-off request"""
-    require_permission(current_user, AR_TRANSACTIONS_POST)
     
     try:
         return ar_new.create_ar_writeoff(
@@ -561,10 +549,9 @@ def update_writeoff(
     writeoff_id: int,
     writeoff_update: schemas.ARWriteOffUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_TRANSACTIONS_POST]))
 ):
     """Update a write-off (only if in Draft status)"""
-    require_permission(current_user, AR_TRANSACTIONS_POST)
     
     try:
         writeoff = ar_new.update_ar_writeoff(
@@ -581,10 +568,9 @@ def approve_writeoff(
     writeoff_id: int,
     approval: schemas.ARWriteOffApproval,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_WRITEOFF_APPROVE]))
 ):
-    """Approve or reject a write-off"""
-    require_permission(current_user, AR_WRITEOFF_APPROVE)  # New permission
+    """Approve or reject a write-off"""  # New permission
     
     try:
         return ar_new.approve_ar_writeoff(
@@ -597,10 +583,9 @@ def approve_writeoff(
 def delete_writeoff(
     writeoff_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_TRANSACTIONS_POST]))
 ):
     """Delete a write-off (only if in Draft status)"""
-    require_permission(current_user, AR_TRANSACTIONS_POST)
     
     try:
         success = ar_new.delete_ar_writeoff(db, writeoff_id, current_user.company_id)
@@ -615,10 +600,9 @@ def delete_writeoff(
 def get_customer_analytics(
     customer_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get customer with write-off analytics and credit analysis"""
-    require_permission(current_user, AR_REPORTS_VIEW)
     
     try:
         return ar_new.get_customer_with_analytics(db, customer_id, current_user.company_id)
@@ -629,10 +613,9 @@ def get_customer_analytics(
 def get_customer_writeoff_summary(
     customer_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get write-off summary for a customer"""
-    require_permission(current_user, AR_REPORTS_VIEW)
     
     return ar_new.get_customer_writeoff_summary(db, customer_id, current_user.company_id)
 
@@ -640,10 +623,9 @@ def get_customer_writeoff_summary(
 def get_customer_credit_analysis(
     customer_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get credit analysis for a customer"""
-    require_permission(current_user, AR_REPORTS_VIEW)
     
     return ar_new.get_customer_credit_analysis(db, customer_id, current_user.company_id)
 
@@ -653,20 +635,18 @@ def get_bad_debt_expense_report(
     start_date: date,
     end_date: date,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get bad debt expense report for P&L"""
-    require_permission(current_user, AR_REPORTS_VIEW)
     return ar_new.get_bad_debt_expense_report(db, current_user.company_id, start_date, end_date)
 
 @router.get("/reports/aging-with-writeoffs", response_model=List[schemas.ARAgingWithWriteoffs])
 def get_ar_aging_with_writeoffs(
     as_of_date: date,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get AR aging report including write-off analysis"""
-    require_permission(current_user, AR_REPORTS_VIEW)
     return ar_new.get_ar_aging_with_writeoffs(db, current_user.company_id, as_of_date)
 
 @router.get("/reports/writeoff-recoveries", response_model=List[schemas.WriteOffRecovery])
@@ -674,8 +654,7 @@ def get_writeoff_recoveries(
     start_date: date,
     end_date: date,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
 ):
     """Get write-off recovery tracking"""
-    require_permission(current_user, AR_REPORTS_VIEW)
     return ar_new.get_writeoff_recoveries(db, current_user.company_id, start_date, end_date)
