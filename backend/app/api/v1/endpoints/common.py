@@ -97,7 +97,7 @@ async def read_tax_types(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([COMMON_SETUP_TAXES]))
+    current_user: models.User = Depends(get_current_active_user)
 ):
     return crud_common.get_tax_types_by_company(
         db=db, company_id=current_user.company_id, skip=skip, limit=limit

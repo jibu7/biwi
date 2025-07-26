@@ -57,14 +57,25 @@ def create_sales_order(
         
         # Handle optional fields safely
         discount_percentage = line_data.discount_percentage or Decimal(0)
-        tax_amount = getattr(line_data, 'tax_amount', None) or Decimal(0)
         
-        line_total = (
+        # Calculate line subtotal (before tax)
+        line_subtotal = (
             line_data.quantity_ordered * 
             line_data.unit_price * 
-            (1 - discount_percentage / 100) + 
-            tax_amount
+            (1 - discount_percentage / 100)
         )
+        
+        # Calculate tax amount if tax type is specified
+        tax_amount = Decimal(0)
+        if hasattr(line_data, 'tax_type_id') and line_data.tax_type_id:
+            from app.crud.tax_calculator import TaxCalculator
+            tax_calc = TaxCalculator.calculate_tax_for_line(
+                db, line_subtotal, line_data.tax_type_id, company_id
+            )
+            tax_amount = tax_calc.get("tax_amount", Decimal(0))
+        
+        # Total line amount includes tax
+        line_total = line_subtotal + tax_amount
         
         line = models.SalesOrderLine(
             sales_order_id=db_so.id,

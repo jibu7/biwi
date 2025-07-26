@@ -11,6 +11,7 @@ import { Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { salesOrderService } from '@/services/oeService';
 import { customerService, salesRepService } from '@/services/arService';
 import { getInventoryItems } from '@/services/inventoryService';
+import { commonService, TaxType } from '@/services/commonService';
 import { SalesOrderCreate } from '@/types/oe';
 
 const salesOrderLineSchema = z.object({
@@ -18,6 +19,7 @@ const salesOrderLineSchema = z.object({
   quantity: z.number().min(0.01, 'Quantity must be greater than 0'),
   unit_price: z.number().min(0, 'Unit price must be non-negative'),
   discount_percentage: z.number().min(0).max(100).optional(),
+  tax_type_id: z.number().optional(),
   notes: z.string().optional(),
 });
 
@@ -51,6 +53,11 @@ export default function NewSalesOrderPage() {
     queryFn: () => getInventoryItems(),
   });
 
+  const { data: taxTypes = [] } = useQuery({
+    queryKey: ['taxTypes'],
+    queryFn: () => commonService.getTaxTypes(),
+  });
+
   const {
     register,
     control,
@@ -62,7 +69,7 @@ export default function NewSalesOrderPage() {
     resolver: zodResolver(salesOrderSchema),
     defaultValues: {
       order_date: new Date().toISOString().split('T')[0],
-      lines: [{ item_id: 0, quantity: 1, unit_price: 0, discount_percentage: 0, notes: '' }],
+      lines: [{ item_id: 0, quantity: 1, unit_price: 0, discount_percentage: 0, tax_type_id: 0, notes: '' }],
     },
   });
 
@@ -78,11 +85,21 @@ export default function NewSalesOrderPage() {
     const subtotal = line.quantity * line.unit_price;
     const discountAmount = subtotal * (line.discount_percentage || 0) / 100;
     const lineTotal = subtotal - discountAmount;
-    return { subtotal, discountAmount, lineTotal };
+    
+    // Calculate tax
+    let taxAmount = 0;
+    if (line.tax_type_id) {
+      const taxType = taxTypes.find(t => t.id === line.tax_type_id);
+      if (taxType && taxType.rate_percentage) {
+        taxAmount = lineTotal * (taxType.rate_percentage / 100);
+      }
+    }
+    
+    return { subtotal, discountAmount, lineTotal, taxAmount, totalWithTax: lineTotal + taxAmount };
   });
 
   const orderSubtotal = lineCalculations.reduce((sum, calc) => sum + calc.lineTotal, 0);
-  const taxAmount = 0; // Tax calculation will be handled by backend based on configured tax types
+  const taxAmount = lineCalculations.reduce((sum, calc) => sum + calc.taxAmount, 0);
   const orderTotal = orderSubtotal + taxAmount;
 
   const createMutation = useMutation({
@@ -110,6 +127,7 @@ export default function NewSalesOrderPage() {
           quantity_ordered: line.quantity,
           unit_price: line.unit_price,
           discount_percentage: line.discount_percentage || 0,
+          tax_type_id: line.tax_type_id || undefined,
         })),
       };
       
@@ -120,7 +138,7 @@ export default function NewSalesOrderPage() {
   };
 
   const addLine = () => {
-    append({ item_id: 0, quantity: 1, unit_price: 0, discount_percentage: 0, notes: '' });
+    append({ item_id: 0, quantity: 1, unit_price: 0, discount_percentage: 0, tax_type_id: 0, notes: '' });
   };
 
   const removeLine = (index: number) => {
@@ -268,6 +286,9 @@ export default function NewSalesOrderPage() {
                     Discount %
                   </th>
                   <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-2">
+                    Tax Type
+                  </th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-2">
                     Line Total
                   </th>
                   <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider py-2">
@@ -332,8 +353,26 @@ export default function NewSalesOrderPage() {
                       />
                     </td>
                     <td className="py-2 pr-2">
+                      <select
+                        {...register(`lines.${index}.tax_type_id`, { valueAsNumber: true })}
+                        className="block w-full min-w-[120px] rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                      >
+                        <option value={0}>No Tax</option>
+                        {taxTypes.filter(tt => tt.tax_nature === 'Sales' && tt.is_active).map((taxType) => (
+                          <option key={taxType.id} value={taxType.id}>
+                            {taxType.name} ({taxType.rate_percentage}%)
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-2 pr-2">
                       <div className="text-sm font-medium text-gray-900 min-w-[100px]">
-                        ${lineCalculations[index]?.lineTotal.toFixed(2) || '0.00'}
+                        ${lineCalculations[index]?.totalWithTax.toFixed(2) || '0.00'}
+                        {lineCalculations[index]?.taxAmount > 0 && (
+                          <div className="text-xs text-gray-500">
+                            (incl. ${lineCalculations[index]?.taxAmount.toFixed(2)} tax)
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="py-2 pr-2">

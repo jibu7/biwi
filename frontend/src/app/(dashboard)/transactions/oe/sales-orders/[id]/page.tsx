@@ -115,10 +115,10 @@ export default function SalesOrderDetailPage({ params }: PageProps) {
           <div className="flex items-center gap-3">
             {getStatusBadge(salesOrder.status)}
             
-            {salesOrder.status === 'CONFIRMED' && (
+            {(salesOrder.status === 'CONFIRMED' || salesOrder.status === 'Open') && (
               <button
                 onClick={handleConvertToInvoice}
-                disabled={convertToInvoiceMutation.isPending || salesOrder.status !== 'CONFIRMED'}
+                disabled={convertToInvoiceMutation.isPending || (salesOrder.status !== 'CONFIRMED' && salesOrder.status !== 'Open')}
                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
               >
                 <FileText className="h-4 w-4 mr-2" />
@@ -234,6 +234,9 @@ export default function SalesOrderDetailPage({ params }: PageProps) {
                   Discount
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tax
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Line Total
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -262,6 +265,9 @@ export default function SalesOrderDetailPage({ params }: PageProps) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {line.discount_percentage}%
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {line.tax_amount ? safeCurrency(line.tax_amount) : 'No Tax'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {safeCurrency(line.line_total)}

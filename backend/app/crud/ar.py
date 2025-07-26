@@ -259,10 +259,11 @@ def create_ar_transaction(
         document_number = f"{next_number:06d}"  # 6-digit padded number
 
     # Get exchange rate if currency specified
-    if ar_transaction_in.currency_id:
+    currency_id = getattr(ar_transaction_in, 'currency_id', None)
+    if currency_id:
         exchange_rate = ForexService.get_exchange_rate(
             db, 
-            ar_transaction_in.currency_id,
+            currency_id,
             ar_transaction_in.transaction_date,
             company_id
         )
@@ -289,7 +290,7 @@ def create_ar_transaction(
         due_date=ar_transaction_in.due_date,
         reference=ar_transaction_in.reference,
         document_number=document_number,
-        currency_id=ar_transaction_in.currency_id,
+        currency_id=currency_id,
         exchange_rate=exchange_rate,
         foreign_currency_amount=foreign_currency_amount,
         base_currency_amount=base_currency_amount,

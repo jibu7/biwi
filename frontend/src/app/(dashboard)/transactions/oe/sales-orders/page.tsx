@@ -64,6 +64,7 @@ export default function SalesOrdersPage() {
   const getStatusBadge = (status: string) => {
     const statusStyles = {
       'DRAFT': 'bg-gray-100 text-gray-800',
+      'Open': 'bg-blue-100 text-blue-800',
       'CONFIRMED': 'bg-blue-100 text-blue-800',
       'INVOICED': 'bg-green-100 text-green-800',
       'CANCELLED': 'bg-red-100 text-red-800',
@@ -144,6 +145,7 @@ export default function SalesOrdersPage() {
             >
               <option value="">All Statuses</option>
               <option value="DRAFT">Draft</option>
+              <option value="Open">Open</option>
               <option value="CONFIRMED">Confirmed</option>
               <option value="INVOICED">Invoiced</option>
               <option value="CANCELLED">Cancelled</option>
@@ -237,7 +239,7 @@ export default function SalesOrdersPage() {
                         {/* Convert button: only for confirmed orders, disabled when pending or not confirmed */}
                         <button
                           onClick={() => handleConvertToInvoice(order.id)}
-                          disabled={convertToInvoiceMutation.isPending || order.status !== 'CONFIRMED'}
+                          disabled={convertToInvoiceMutation.isPending || (order.status !== 'CONFIRMED' && order.status !== 'Open')}
                           className="text-green-600 hover:text-green-900 disabled:opacity-50"
                           title="Convert to Invoice"
                         >
@@ -277,8 +279,8 @@ export default function SalesOrdersPage() {
             color: 'text-gray-600',
           },
           {
-            label: 'Confirmed Orders',
-            value: filteredSalesOrders.filter(o => o.status === 'CONFIRMED').length,
+            label: 'Open/Confirmed Orders',
+            value: filteredSalesOrders.filter(o => o.status === 'CONFIRMED' || o.status === 'Open').length,
             color: 'text-blue-600',
           },
           {
