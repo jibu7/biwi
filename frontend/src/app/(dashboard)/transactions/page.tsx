@@ -16,7 +16,7 @@ import * as permissions from '@/lib/permissions';
 export default function TransactionsPage() {
   const { hasPermission } = usePermissions();
 
-  const transactionModules = [
+  const transactionModules: any[] = [
     {
       title: 'General Ledger',
       description: 'Create and manage journal entries for your general ledger',
@@ -59,14 +59,21 @@ export default function TransactionsPage() {
       icon: ShoppingCart,
       href: '/transactions/oe',
       color: 'bg-indigo-500',
-      requiredPermission: permissions.OE_SALES_ORDERS_MANAGE,
+      anyOfPermissions: [
+        permissions.OE_SALES_ORDERS_MANAGE,
+        permissions.OE_PURCHASE_ORDERS_MANAGE,
+        permissions.OE_GRV_PROCESS
+      ],
       items: ['Sales Orders', 'Purchase Orders', 'Goods Received Vouchers']
     }
   ];
 
-  const accessibleModules = transactionModules.filter(module => 
-    !module.requiredPermission || hasPermission(module.requiredPermission)
-  );
+  const accessibleModules = transactionModules.filter(module => {
+    if (module.anyOfPermissions) {
+      return module.anyOfPermissions.some((p: string) => hasPermission(p));
+    }
+    return !module.requiredPermission || hasPermission(module.requiredPermission);
+  });
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -98,7 +105,7 @@ export default function TransactionsPage() {
               <div className="text-xs text-gray-500">
                 <span className="font-medium">Includes:</span>
                 <ul className="mt-1 space-y-1">
-                  {module.items.map((item, index) => (
+                  {module.items.map((item: string, index: number) => (
                     <li key={index} className="flex items-center">
                       <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
                       {item}
