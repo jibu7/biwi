@@ -178,44 +178,7 @@ export default function NewPurchaseOrderPage() {
         <h1 className="text-2xl font-bold text-gray-900">New Purchase Order</h1>
       </div>
 
-      {/* Procurement Process Guide */}
-      <div className="rounded-lg border p-4 bg-blue-50">
-        <div className="flex items-start space-x-3">
-          <div className="flex-shrink-0">
-            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-              <AlertTriangle className="h-3 w-3 text-blue-600" />
-            </div>
-          </div>
-          <div className="text-sm">
-            <p className="font-medium text-blue-900">Step 4.1: Create Purchase Order - Inventory Replenishment</p>
-            <div className="text-blue-800 mt-1 space-y-1">
-              <p><strong>Purpose:</strong> Order inventory from suppliers when stock is low</p>
-              <p><strong>Process:</strong> Fill in supplier details → Add line items → Save → Status becomes "Open"</p>
-              <p><strong>Next Steps:</strong> After saving → Receive goods (GRV) → Convert to AP Invoice</p>
-            </div>
-            <div className="mt-2 flex space-x-4 text-xs">
-              <div className="flex items-center space-x-1">
-                <Package className="h-3 w-3 text-blue-600" />
-                <span>Current: Create PO</span>
-              </div>
-              <div className="flex items-center space-x-1 opacity-50">
-                <Truck className="h-3 w-3" />
-                <span>Next: Receive Goods</span>
-              </div>
-              <div className="flex items-center space-x-1 opacity-50">
-                <CreditCard className="h-3 w-3" />
-                <span>Last: AP Invoice</span>
-              </div>
-            </div>
-            <div className="mt-2 p-2 bg-blue-100 rounded-md">
-              <p className="text-xs font-semibold text-blue-900">💡 Example:</p>
-              <p className="text-xs text-blue-800">
-                Supplier: Tech Suppliers Inc | Item: Laptop Intel i3 | Qty: 5 | Unit Cost: $299 | Total: $1,495
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Header Information */}

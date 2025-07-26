@@ -83,31 +83,7 @@ export default function PurchaseOrdersPage() {
         </Link>
       </div>
 
-      {/* Procurement Workflow Guide */}
-      <div className="rounded-lg border p-4 bg-blue-50">
-        <div className="flex items-start space-x-3">
-          <div className="flex-shrink-0">
-            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-              <AlertTriangle className="h-3 w-3 text-blue-600" />
-            </div>
-          </div>
-          <div className="text-sm">
-            <p className="font-medium text-blue-900">Complete Procurement Process - Step 4.1: Create Purchase Orders</p>
-            <div className="text-blue-800 mt-1 space-y-1">
-              <p><strong>When to Use:</strong> When inventory reaches reorder level or quantity = 0</p>
-              <p><strong>Process:</strong> Create PO → Supplier delivers → Receive via GRV → Convert to AP Invoice</p>
-              <p><strong>Next Step:</strong> Click 📦 "Receive Goods" on confirmed orders when delivery arrives</p>
-            </div>
-            <div className="mt-2 p-2 bg-blue-100 rounded-md">
-              <p className="text-xs font-semibold text-blue-900">💡 Example:</p>
-              <p className="text-xs text-blue-800">
-                Laptop stock = 0 → Create PO for 5 laptops ($299 each) → Total: $1,495 → 
-                Status: "Confirmed" → Receive goods → Create GRV → Convert to AP Invoice
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       {/* Filters */}
       <div className="bg-white shadow rounded-lg p-6">
