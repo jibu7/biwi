@@ -283,18 +283,21 @@ async def debug_so_conversion(
 # Purchase Orders
 @router.post("/purchase-orders", response_model=schemas.PurchaseOrder)
 async def create_purchase_order(
+    request: Request,
     po_in: schemas.PurchaseOrderCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
         TenantPermissionChecker([permissions.OE_PURCHASE_ORDERS_MANAGE])
     )
 ):
+    company_id = get_current_tenant_id(request)
     return crud.oe.create_purchase_order(
-        db, po_in, current_user.company_id, current_user.id
+        db, po_in, company_id, current_user.id
     )
 
 @router.get("/purchase-orders", response_model=List[schemas.PurchaseOrder])
 async def list_purchase_orders(
+    request: Request,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -302,21 +305,43 @@ async def list_purchase_orders(
         TenantPermissionChecker([permissions.OE_PURCHASE_ORDERS_MANAGE])
     )
 ):
-    return crud.oe.get_purchase_orders(
-        db, current_user.company_id, skip, limit
+    company_id = get_current_tenant_id(request)
+    purchase_orders = crud.oe.get_purchase_orders(
+        db, company_id, skip, limit
     )
+    
+    # Add supplier names and other computed fields
+    result = []
+    for po in purchase_orders:
+        po_dict = schemas.PurchaseOrder.from_orm(po).dict()
+        supplier = db.query(models.Supplier).filter(
+            models.Supplier.id == po.supplier_id
+        ).first()
+        po_dict['supplier_name'] = supplier.name if supplier else None
+        po_dict['currency_code'] = "USD"  # Default for now
+        po_dict['exchange_rate'] = 1.0
+        po_dict['subtotal'] = po.total_amount
+        po_dict['tax_amount'] = 0  # Calculate if needed
+        po_dict['is_active'] = True
+        po_dict['created_at'] = getattr(po, 'created_at', None)
+        po_dict['updated_at'] = getattr(po, 'updated_at', None)
+        result.append(po_dict)
+    
+    return result
 
 @router.get("/purchase-orders/{po_id}", response_model=schemas.PurchaseOrder)
 async def get_purchase_order(
+    request: Request,
     po_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
         TenantPermissionChecker([permissions.OE_PURCHASE_ORDERS_MANAGE])
     )
 ):
+    company_id = get_current_tenant_id(request)
     po = db.query(models.PurchaseOrder).filter(
         models.PurchaseOrder.id == po_id,
-        models.PurchaseOrder.company_id == current_user.company_id
+        models.PurchaseOrder.company_id == company_id
     ).first()
     if not po:
         raise HTTPException(status_code=404, detail="Purchase Order not found")
@@ -324,6 +349,7 @@ async def get_purchase_order(
 
 @router.put("/purchase-orders/{po_id}", response_model=schemas.PurchaseOrder)
 async def update_purchase_order(
+    request: Request,
     po_id: int,
     po_update: schemas.PurchaseOrderUpdate,
     db: Session = Depends(get_db),
@@ -331,9 +357,10 @@ async def update_purchase_order(
         TenantPermissionChecker([permissions.OE_PURCHASE_ORDERS_MANAGE])
     )
 ):
+    company_id = get_current_tenant_id(request)
     po = db.query(models.PurchaseOrder).filter(
         models.PurchaseOrder.id == po_id,
-        models.PurchaseOrder.company_id == current_user.company_id
+        models.PurchaseOrder.company_id == company_id
     ).first()
     if not po:
         raise HTTPException(status_code=404, detail="Purchase Order not found")

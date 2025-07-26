@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, Trash2, ArrowLeft, AlertTriangle, Package, Truck, CreditCard } from 'lucide-react';
 import { purchaseOrderService } from '@/services/oeService';
@@ -43,6 +43,7 @@ type PurchaseOrderFormData = z.infer<typeof purchaseOrderSchema>;
 
 export default function NewPurchaseOrderPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: suppliers = [] } = useQuery({
@@ -104,8 +105,10 @@ export default function NewPurchaseOrderPage() {
   const createMutation = useMutation({
     mutationFn: purchaseOrderService.create,
     onSuccess: (data) => {
-      toast.success(`Purchase Order ${data.order_number} created successfully`);
-      router.push(`/transactions/oe/purchase-orders/${data.id}`);
+      toast.success(`Purchase Order ${data.document_number || data.order_number || data.id || 'created'} successfully`);
+      // Invalidate purchase orders cache to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+      router.push('/transactions/oe/purchase-orders');
     },
   });
 
@@ -114,7 +117,10 @@ export default function NewPurchaseOrderPage() {
 
   // Calculate totals
   const calculateLineTotal = (line: any) => {
-    const subtotal = line.quantity_ordered * line.unit_price;
+    if (!line || typeof line.quantity_ordered === 'undefined' || typeof line.unit_price === 'undefined') {
+      return 0;
+    }
+    const subtotal = (line.quantity_ordered || 0) * (line.unit_price || 0);
     const discount = subtotal * (line.discount_percentage || 0) / 100;
     return subtotal - discount + (line.tax_amount || 0);
   };
@@ -316,7 +322,7 @@ export default function NewPurchaseOrderPage() {
                         {...register(`lines.${index}.item_id`, { 
                           valueAsNumber: true,
                           onChange: (e) => {
-                            const selectedItem = items.find(item => item.id === parseInt(e.target.value));
+                            const selectedItem = items.find((item: any) => item.id === parseInt(e.target.value));
                             if (selectedItem) {
                               setValue(`lines.${index}.description`, selectedItem.description || selectedItem.item_code);
                               setValue(`lines.${index}.unit_price`, (selectedItem as any).cost_price || 0);
@@ -326,7 +332,7 @@ export default function NewPurchaseOrderPage() {
                         className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       >
                         <option value="">Select item</option>
-                        {items.map((item) => (
+                        {items.map((item: any) => (
                           <option key={item.id} value={item.id}>
                             {item.item_code} - {item.description}
                           </option>
@@ -386,7 +392,7 @@ export default function NewPurchaseOrderPage() {
                       />
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${calculateLineTotal(watchedLines[index]).toFixed(2)}
+                      ${watchedLines[index] ? calculateLineTotal(watchedLines[index]).toFixed(2) : '0.00'}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <input

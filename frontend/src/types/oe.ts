@@ -60,7 +60,8 @@ export interface SalesOrderLineCreate {
 export interface PurchaseOrder {
   id: number;
   company_id: number;
-  order_number: string;
+  document_number: string;
+  order_number?: string; // Keep for backward compatibility
   order_date: string;
   supplier_id: number;
   supplier_reference?: string;

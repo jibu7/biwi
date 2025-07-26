@@ -54,14 +54,15 @@ from .inventory import (
 )
 
 from .oe import (
-    SalesOrder, SalesOrderCreate, SalesOrderUpdate,
+    SalesOrder, SalesOrderCreate, SalesOrderUpdate, SalesOrderWithDetails,
     SalesOrderLine, SalesOrderLineCreate, SalesOrderLineUpdate,
-    PurchaseOrder, PurchaseOrderCreate, PurchaseOrderUpdate,
+    PurchaseOrder, PurchaseOrderCreate, PurchaseOrderUpdate, PurchaseOrderWithDetails,
     PurchaseOrderLine, PurchaseOrderLineCreate, PurchaseOrderLineUpdate,
     PurchaseOrderReport,
-    GoodsReceivedVoucher, GoodsReceivedVoucherCreate, GoodsReceivedVoucherUpdate,
+    GoodsReceivedVoucher, GoodsReceivedVoucherCreate, GoodsReceivedVoucherUpdate, GoodsReceivedVoucherWithDetails,
     GoodsReceivedVoucherLine, GoodsReceivedVoucherLineCreate, GoodsReceivedVoucherLineUpdate,
-    OrderDefaults, OrderDefaultsCreate, OrderDefaultsUpdate
+    OrderDefaults, OrderDefaultsCreate, OrderDefaultsUpdate,
+    ConvertToInvoiceRequest, ConvertToAPInvoiceRequest
 )
 
 from .common import (
@@ -139,13 +140,15 @@ __all__ = [
     "InventoryCountSession", "InventoryCountSessionCreate", "InventoryCountSessionUpdate",
     "InventoryCountLine", "InventoryCountLineUpdate",
     "InventoryValuationItem", "InventoryMovementItem", "StockQuantityItem",
-    "SalesOrder", "SalesOrderCreate", "SalesOrderUpdate",
+    "SalesOrder", "SalesOrderCreate", "SalesOrderUpdate", "SalesOrderWithDetails",
     "SalesOrderLine", "SalesOrderLineCreate", "SalesOrderLineUpdate",
-    "PurchaseOrder", "PurchaseOrderCreate", "PurchaseOrderUpdate",
+    "PurchaseOrder", "PurchaseOrderCreate", "PurchaseOrderUpdate", "PurchaseOrderWithDetails",
     "PurchaseOrderLine", "PurchaseOrderLineCreate", "PurchaseOrderLineUpdate",
-    "GoodsReceivedVoucher", "GoodsReceivedVoucherCreate", "GoodsReceivedVoucherUpdate",
+    "PurchaseOrderReport",
+    "GoodsReceivedVoucher", "GoodsReceivedVoucherCreate", "GoodsReceivedVoucherUpdate", "GoodsReceivedVoucherWithDetails",
     "GoodsReceivedVoucherLine", "GoodsReceivedVoucherLineCreate", "GoodsReceivedVoucherLineUpdate",
     "OrderDefaults", "OrderDefaultsCreate", "OrderDefaultsUpdate",
+    "ConvertToInvoiceRequest", "ConvertToAPInvoiceRequest",
     "Currency", "CurrencyCreate", "CurrencyUpdate",
     "TaxType", "TaxTypeCreate", "TaxTypeUpdate",
     "Branch", "BranchCreate", "BranchUpdate",

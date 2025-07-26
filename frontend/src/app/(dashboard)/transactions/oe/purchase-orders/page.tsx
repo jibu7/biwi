@@ -12,7 +12,8 @@ import {
   Package,
   AlertTriangle,
   Truck,
-  CreditCard
+  CreditCard,
+  RefreshCw
 } from 'lucide-react';
 import { purchaseOrderService } from '@/services/oeService';
 import { apService } from '@/services/apService';
@@ -25,10 +26,11 @@ export default function PurchaseOrdersPage() {
   const [selectedSupplier, setSelectedSupplier] = useState<number | ''>('');
   const [selectedStatus, setSelectedStatus] = useState<string | ''>('');
 
-  const { data: purchaseOrders = [], isLoading } = useQuery({
+  const { data: purchaseOrders = [], isLoading, error, refetch } = useQuery({
     queryKey: ['purchaseOrders'],
     queryFn: () => purchaseOrderService.getAll(),
   });
+
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers'],
@@ -38,7 +40,7 @@ export default function PurchaseOrdersPage() {
   const filteredPurchaseOrders = useMemo(() => {
     return purchaseOrders.filter((order) => {
       const matchesSearch = 
-        (order.order_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.document_number || order.order_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (order.supplier_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (order.supplier_reference || '').toLowerCase().includes(searchTerm.toLowerCase());
       
@@ -52,7 +54,9 @@ export default function PurchaseOrdersPage() {
   const getStatusBadge = (status: string) => {
     const statusStyles = {
       'DRAFT': 'bg-gray-100 text-gray-800',
+      'Draft': 'bg-gray-100 text-gray-800',
       'CONFIRMED': 'bg-blue-100 text-blue-800',
+      'Open': 'bg-blue-100 text-blue-800',
       'RECEIVED': 'bg-yellow-100 text-yellow-800',
       'INVOICED': 'bg-green-100 text-green-800',
       'CANCELLED': 'bg-red-100 text-red-800',
@@ -74,13 +78,22 @@ export default function PurchaseOrdersPage() {
             Manage supplier purchase orders and track deliveries.
           </p>
         </div>
-        <Link
-          href="/transactions/oe/purchase-orders/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Purchase Order
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={() => refetch()}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </button>
+          <Link
+            href="/transactions/oe/purchase-orders/new"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Purchase Order
+          </Link>
+        </div>
       </div>
 
 
@@ -129,7 +142,9 @@ export default function PurchaseOrdersPage() {
             >
               <option value="">All Statuses</option>
               <option value="DRAFT">Draft</option>
+              <option value="Draft">Draft</option>
               <option value="CONFIRMED">Confirmed</option>
+              <option value="Open">Open</option>
               <option value="RECEIVED">Received</option>
               <option value="INVOICED">Invoiced</option>
               <option value="CANCELLED">Cancelled</option>
@@ -171,10 +186,31 @@ export default function PurchaseOrdersPage() {
                     <div className="text-sm text-gray-500">Loading purchase orders...</div>
                   </td>
                 </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="text-sm text-red-600">
+                      Error loading purchase orders: {error.message}
+                      <br />
+                      <button 
+                        onClick={() => refetch()} 
+                        className="mt-2 text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  </td>
+                </tr>
               ) : filteredPurchaseOrders.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
-                    <div className="text-sm text-gray-500">No purchase orders found.</div>
+                    <div className="text-sm text-gray-500">
+                      No purchase orders found.
+                      <br />
+                      <span className="text-xs text-gray-400">
+                        Total records loaded: {purchaseOrders.length}
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -186,7 +222,7 @@ export default function PurchaseOrdersPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {order.order_number || `PO-${order.id}`}
+                          {order.document_number || order.order_number || `PO-${order.id}`}
                         </div>
                         {order.supplier_reference && (
                           <div className="text-sm text-gray-500">
@@ -228,7 +264,7 @@ export default function PurchaseOrdersPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
-                        {order.status === 'CONFIRMED' && (
+                        {(order.status === 'CONFIRMED' || order.status === 'Open') && (
                           <Link
                             href={`/transactions/oe/grvs/new?po_id=${order.id}`}
                             className="text-green-600 hover:text-green-900"
@@ -257,12 +293,12 @@ export default function PurchaseOrdersPage() {
           },
           {
             label: 'Draft Orders',
-            value: filteredPurchaseOrders.filter(o => o.status === 'DRAFT').length,
+            value: filteredPurchaseOrders.filter(o => o.status === 'DRAFT' || o.status === 'Draft').length,
             color: 'text-gray-600',
           },
           {
-            label: 'Confirmed Orders',
-            value: filteredPurchaseOrders.filter(o => o.status === 'CONFIRMED').length,
+            label: 'Open Orders',
+            value: filteredPurchaseOrders.filter(o => o.status === 'CONFIRMED' || o.status === 'Open').length,
             color: 'text-blue-600',
           },
           {

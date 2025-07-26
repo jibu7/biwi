@@ -308,3 +308,37 @@ class OrderDefaults(OrderDefaultsBase):
 
     class Config:
         from_attributes = True
+
+# Additional schemas for API responses
+class ConvertToInvoiceRequest(BaseModel):
+    invoice_date: Optional[date] = None
+    reference: Optional[str] = None
+
+class ConvertToAPInvoiceRequest(BaseModel):
+    invoice_date: date
+    invoice_number: str
+    reference: Optional[str] = None
+
+# Sales Order with details for API responses
+class SalesOrderWithDetails(SalesOrder):
+    customer_name: Optional[str] = None
+    sales_rep_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+# Purchase Order with details for API responses
+class PurchaseOrderWithDetails(PurchaseOrder):
+    supplier_name: Optional[str] = None
+    warehouse_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+# GRV with details for API responses
+class GoodsReceivedVoucherWithDetails(GoodsReceivedVoucher):
+    supplier_name: Optional[str] = None
+    purchase_order_number: Optional[str] = None
+    
+    class Config:
+        from_attributes = True

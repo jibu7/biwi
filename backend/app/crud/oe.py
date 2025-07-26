@@ -556,8 +556,7 @@ def get_purchase_orders(
     from sqlalchemy.orm import joinedload
     
     query = db.query(models.PurchaseOrder).options(
-        joinedload(models.PurchaseOrder.supplier),
-        joinedload(models.PurchaseOrder.lines).joinedload(models.PurchaseOrderLine.item)
+        joinedload(models.PurchaseOrder.lines)
     ).filter(
         models.PurchaseOrder.company_id == company_id
     )

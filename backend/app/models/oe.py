@@ -20,6 +20,13 @@ class SalesOrder(Base):
     sales_representative_id = Column(Integer, ForeignKey("sales_representatives.id"), nullable=True)
     ar_invoice_id = Column(Integer, ForeignKey("ar_transactions.id"), nullable=True)
     
+    # Relationships
+    company = relationship("Company", backref="sales_orders")
+    customer = relationship("Customer", backref="sales_orders")
+    sales_representative = relationship("SalesRepresentative", backref="sales_orders")
+    ar_invoice = relationship("ARTransaction", backref="sales_order_source")
+    lines = relationship("SalesOrderLine", back_populates="sales_order", cascade="all, delete-orphan")
+    
     __table_args__ = (
         UniqueConstraint('document_number', 'company_id', name='uq_so_doc_number_company'),
         Index('ix_so_company_customer', 'company_id', 'customer_id'),
@@ -41,6 +48,11 @@ class SalesOrderLine(Base):
     tax_type_id = Column(Integer, ForeignKey("tax_types.id"), nullable=True)
     tax_amount = Column(Numeric, default=0.00)
     line_total = Column(Numeric, nullable=False)
+    
+    # Relationships
+    sales_order = relationship("SalesOrder", back_populates="lines")
+    item = relationship("InventoryItem", backref="sales_order_lines")
+    tax_type = relationship("TaxType", backref="sales_order_lines")
 
 class PurchaseOrder(Base):
     __tablename__ = "purchase_orders"
@@ -56,6 +68,13 @@ class PurchaseOrder(Base):
     total_amount = Column(Numeric, default=0.00)
     notes = Column(String, nullable=True)
     delivery_address_warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=False)
+    
+    # Relationships
+    company = relationship("Company", backref="purchase_orders")
+    supplier = relationship("Supplier", backref="purchase_orders")
+    warehouse = relationship("Warehouse", backref="purchase_orders")
+    lines = relationship("PurchaseOrderLine", back_populates="purchase_order", cascade="all, delete-orphan")
+    grvs = relationship("GoodsReceivedVoucher", back_populates="purchase_order")
     
     __table_args__ = (
         UniqueConstraint('document_number', 'company_id', name='uq_po_doc_number_company'),
@@ -79,6 +98,11 @@ class PurchaseOrderLine(Base):
     tax_amount = Column(Numeric, default=0.00)
     line_total = Column(Numeric, nullable=False)
 
+    # Relationships
+    purchase_order = relationship("PurchaseOrder", back_populates="lines")
+    item = relationship("InventoryItem", backref="purchase_order_lines")
+    tax_type = relationship("TaxType", backref="purchase_order_lines")
+
 class GoodsReceivedVoucher(Base):
     __tablename__ = "goods_received_vouchers"
     
@@ -92,6 +116,13 @@ class GoodsReceivedVoucher(Base):
     status = Column(String, nullable=False)
     notes = Column(String, nullable=True)
     ap_invoice_id = Column(Integer, ForeignKey("ap_transactions.id"), nullable=True)
+    
+    # Relationships
+    company = relationship("Company", backref="grvs")
+    purchase_order = relationship("PurchaseOrder", back_populates="grvs")
+    supplier = relationship("Supplier", backref="grvs")
+    ap_invoice = relationship("APTransaction", backref="grv_source")
+    lines = relationship("GoodsReceivedVoucherLine", back_populates="grv", cascade="all, delete-orphan")
     
     __table_args__ = (
         UniqueConstraint('document_number', 'company_id', name='uq_grv_doc_number_company'),
@@ -111,6 +142,11 @@ class GoodsReceivedVoucherLine(Base):
     quantity_received = Column(Numeric, nullable=False)
     unit_cost = Column(Numeric, nullable=False)
     line_total = Column(Numeric, nullable=False)
+    
+    # Relationships
+    grv = relationship("GoodsReceivedVoucher", back_populates="lines")
+    purchase_order_line = relationship("PurchaseOrderLine", backref="grv_lines")
+    item = relationship("InventoryItem", backref="grv_lines")
 
 class OrderDefaults(Base):
     __tablename__ = "order_defaults"
