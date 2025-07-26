@@ -403,6 +403,52 @@ def create_grv(
             else:
                 po.status = "PartiallyReceived"
     
+    # Calculate total GRV value for GL posting
+    total_grv_value = sum(line.line_total for line in db_grv.lines) if db_grv.lines else 0
+    
+    # Post to GL if there are items and total value > 0
+    if total_grv_value > 0:
+        # Get inventory defaults for GL accounts
+        inv_defaults = db.query(models.InventoryDefaults).filter(
+            models.InventoryDefaults.company_id == company_id
+        ).first()
+        
+        if inv_defaults and inv_defaults.default_inventory_gl_account_id and inv_defaults.default_grv_clearing_gl_account_id:
+            # Create GL journal entry for GRV
+            from app.schemas.gl import GLJournalEntryCreate, GLJournalEntryLineCreate
+            from datetime import date
+            
+            lines = [
+                # Debit Inventory Account
+                GLJournalEntryLineCreate(
+                    gl_account_id=inv_defaults.default_inventory_gl_account_id,
+                    description=f"Inventory received - {db_grv.document_number}",
+                    debit_amount=total_grv_value,
+                    credit_amount=0
+                ),
+                # Credit GRV Clearing Account
+                GLJournalEntryLineCreate(
+                    gl_account_id=inv_defaults.default_grv_clearing_gl_account_id,
+                    description=f"GRV clearing - {db_grv.document_number}",
+                    debit_amount=0,
+                    credit_amount=total_grv_value
+                )
+            ]
+            
+            gl_entry_data = GLJournalEntryCreate(
+                entry_date=db_grv.grv_date,
+                reference=f"GRV-{db_grv.document_number}",
+                description=f"Goods received from {supplier.name}",
+                status="Posted",
+                lines=lines
+            )
+            
+            # Create and post GL entry
+            gl_entry = crud_gl.create_gl_journal_entry(db, gl_entry_data, company_id, user_id)
+            
+            # Link GL entry to GRV (if we had a field for it)
+            # db_grv.linked_gl_journal_entry_id = gl_entry.id
+
     # Increment GRV number
     defaults.next_grv_number += 1
     

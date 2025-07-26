@@ -157,6 +157,7 @@ class InventoryDefaults(Base):
     default_cogs_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     default_sales_revenue_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     default_inventory_adjustment_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
+    default_grv_clearing_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
 
 class InventoryCountSession(Base):
     __tablename__ = "inventory_count_sessions"

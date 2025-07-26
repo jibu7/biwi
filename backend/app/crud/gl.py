@@ -305,3 +305,13 @@ def create_or_update_gl_defaults(
         db.commit()
         db.refresh(db_defaults)
         return db_defaults
+
+# Alias for compatibility with other modules
+def create_gl_journal_entry(
+    db: Session, 
+    entry_in: schemas.GLJournalEntryCreate, 
+    company_id: int, 
+    user_id: int
+) -> models.GLJournalEntry:
+    """Alias for create_journal_entry to maintain compatibility"""
+    return create_journal_entry(db, entry_in, company_id, user_id)

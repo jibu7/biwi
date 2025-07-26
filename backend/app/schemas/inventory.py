@@ -220,6 +220,7 @@ class InventoryDefaultsBase(BaseModel):
     default_cogs_gl_account_id: Optional[int] = None
     default_sales_revenue_gl_account_id: Optional[int] = None
     default_inventory_adjustment_gl_account_id: Optional[int] = None
+    default_grv_clearing_gl_account_id: Optional[int] = None
 
 class InventoryDefaultsCreate(InventoryDefaultsBase):
     pass
