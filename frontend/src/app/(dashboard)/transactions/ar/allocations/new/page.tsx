@@ -251,33 +251,7 @@ export default function NewAllocationPage() {
         </div>
       </div>
 
-      {/* Process Guide */}
-      <div className="rounded-lg border p-4 bg-blue-50">
-        <div className="flex items-start space-x-3">
-          <div className="flex-shrink-0">
-            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-              <AlertTriangle className="h-3 w-3 text-blue-600" />
-            </div>
-          </div>
-          <div className="text-sm">
-            <p className="font-medium text-blue-900">Allocation Process Guide:</p>
-            <div className="text-blue-800 mt-1 space-y-1">
-              <p><strong>Step 1:</strong> Select a customer to see their outstanding transactions</p>
-              <p><strong>Step 2:</strong> View outstanding invoices (what customer owes you)</p>
-              <p><strong>Step 3:</strong> View available receipts/credits (what customer paid you)</p>
-              <p><strong>Step 4:</strong> Match receipts to specific invoices to mark them as paid</p>
-            </div>
-            <div className="mt-2 p-2 bg-blue-100 rounded-md">
-              <p className="text-xs font-semibold text-blue-900">💡 Example:</p>
-              <p className="text-xs text-blue-800">
-                Customer John Smith has Invoice INV-001 ($400) and Receipt RCP-001 ($400).
-                <br />Create allocation: Receipt RCP-001 → Invoice INV-001 for $400
-                <br />Result: Invoice is marked "Paid", customer balance becomes $0
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      // ...existing code...
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

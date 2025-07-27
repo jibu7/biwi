@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Save, FileText, Calendar, User, DollarSign, CreditCard, BookOpen } from 'lucide-react';
 import Link from 'next/link';
-import { ARTransactionCreate } from '@/types/ar';
+import { ARTransactionCreate, Customer, ARTransactionType } from '@/types/ar';
 import { arTransactionService, customerService, arTransactionTypeService } from '@/services/arService';
 import { usePermissions } from '@/hooks/usePermissions';
 import { AR_TRANSACTIONS_POST } from '@/lib/permissions';
@@ -35,17 +35,17 @@ export default function NewReceiptPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
 
-  const { data: customers = [], isLoading: loadingCustomers } = useQuery({
+  const { data: customers = [], isLoading: loadingCustomers } = useQuery<Customer[], Error>({
     queryKey: ['customers'],
-    queryFn: customerService.getAll,
+    queryFn: () => customerService.getAll(),
   });
 
-  const { data: transactionTypes = [], isLoading: loadingTypes } = useQuery({
+  const { data: transactionTypes = [], isLoading: loadingTypes } = useQuery<ARTransactionType[], Error>({
     queryKey: ['ar-transaction-types'],
-    queryFn: arTransactionTypeService.getAll,
+    queryFn: () => arTransactionTypeService.getAll(),
   });
 
-  const receiptTypes = transactionTypes.filter(type => type.base_type === 'Receipt' && type.is_active);
+  const receiptTypes = (transactionTypes || []).filter((type: ARTransactionType) => type.base_type === 'Receipt' && type.is_active);
 
   const {
     register,
@@ -341,63 +341,7 @@ export default function NewReceiptPage() {
           </div>
         </div>
 
-        {/* Information Panel */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* GL Impact Preview */}
-          <div className="rounded-lg border p-4 bg-green-50">
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                  <BookOpen className="h-3 w-3 text-green-600" />
-                </div>
-              </div>
-              <div className="text-sm">
-                <p className="font-medium text-green-900">General Ledger Impact:</p>
-                <p className="text-green-800 mt-1">
-                  When posted, this receipt will create the following GL entries:
-                </p>
-                <div className="mt-2 space-y-1 text-xs font-mono">
-                  <div className="flex justify-between">
-                    <span>Debit: 1000 - Bank Account</span>
-                    <span>$XXX.XX</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Credit: 1100 - Accounts Receivable</span>
-                    <span>$XXX.XX</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Process Note */}
-          <div className="rounded-lg border p-4 bg-blue-50">
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                  <FileText className="h-3 w-3 text-blue-600" />
-                </div>
-              </div>
-              <div className="text-sm">
-                <p className="font-medium text-blue-900">Next Steps:</p>
-                <ul className="text-blue-800 mt-1 space-y-1">
-                  <li>• Receipt will be created in Draft status</li>
-                  <li>• Post the receipt to update GL accounts</li>
-                  <li>• <strong>Allocate to outstanding invoices</strong> to mark them as paid</li>
-                  <li>• Unallocated amounts remain as customer credits</li>
-                </ul>
-                <div className="mt-2 p-2 bg-blue-100 rounded-md">
-                  <p className="text-xs font-semibold text-blue-900">⚠️ Important:</p>
-                  <p className="text-xs text-blue-800">
-                    After posting, use <strong>Transactions → AR → Allocations</strong> to 
-                    match this payment to specific invoices. Without allocation, the customer 
-                    will still show outstanding balances!
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        // ...existing code...
 
         {/* Actions */}
         <div className="flex justify-end space-x-4">
