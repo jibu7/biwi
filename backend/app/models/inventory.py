@@ -169,6 +169,9 @@ class InventoryCountSession(Base):
     status = Column(String, nullable=False)  # "Open", "Counting", "Review", "Completed"
     notes = Column(String, nullable=True)
     
+    # Relationships
+    warehouse = relationship("Warehouse")
+    
     __table_args__ = (
         Index('ix_count_session_company', 'company_id'),
     )

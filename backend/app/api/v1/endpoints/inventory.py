@@ -391,16 +391,6 @@ async def process_count_variances(
     crud.process_inventory_count_variances(db, session_id, current_user.company_id, current_user.id)
     return {"detail": "Count variances processed"}
 
-@router.get("/counts/sessions", response_model=List[schemas.InventoryCountSession])
-async def list_inventory_count_sessions(
-    warehouse_id: Optional[int] = None,
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(TenantPermissionChecker([permissions.INV_TRANSACTIONS_ADJUST, permissions.INV_REPORTS_VIEW]))
-):
-    return crud.get_inventory_count_sessions(db, current_user.company_id, warehouse_id, skip, limit)
-
 # Inventory Transaction endpoints
 @router.get("/transactions", response_model=List[schemas.InventoryTransaction])
 async def list_inventory_transactions(

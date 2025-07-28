@@ -195,33 +195,33 @@ class InventoryService {
 
   // Count functions - tenant isolation handled by axiosInstance
   async startInventoryCount(data: InventoryCountSessionCreate): Promise<InventoryCountSession> {
-    const response = await axiosInstance.post('/inventory/count-sessions', data);
+    const response = await axiosInstance.post('/inventory/counts/sessions', data);
     return response.data;
   }
 
   async getInventoryCountSession(id: number): Promise<InventoryCountSession> {
-    const response = await axiosInstance.get(`/inventory/count-sessions/${id}`);
+    const response = await axiosInstance.get(`/inventory/counts/sessions/${id}`);
     return response.data;
   }
 
   async getInventoryCountSessions(skip = 0, limit = 100): Promise<InventoryCountSession[]> {
-    const response = await axiosInstance.get('/inventory/count-sessions', {
+    const response = await axiosInstance.get('/inventory/counts/sessions', {
       params: { skip, limit }
     });
     return response.data;
   }
 
   async getInventoryCountLines(sessionId: number): Promise<InventoryCountLine[]> {
-    const response = await axiosInstance.get(`/inventory/count-sessions/${sessionId}/lines`);
+    const response = await axiosInstance.get(`/inventory/counts/sessions/${sessionId}/lines`);
     return response.data;
   }
 
   async recordCountedQuantities(sessionId: number, updates: InventoryCountLineUpdate[]): Promise<void> {
-    await axiosInstance.put(`/inventory/count-sessions/${sessionId}/lines`, updates);
+    await axiosInstance.put(`/inventory/counts/sessions/${sessionId}/lines`, updates);
   }
 
   async processCountVariances(sessionId: number): Promise<InventoryTransaction[]> {
-    const response = await axiosInstance.post(`/inventory/count-sessions/${sessionId}/process`, {});
+    const response = await axiosInstance.post(`/inventory/counts/sessions/${sessionId}/process-variances`, {});
     return response.data;
   }
 

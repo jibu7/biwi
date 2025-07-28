@@ -18,7 +18,7 @@ export default function InventoryCountSessionsPage() {
 
   const { data: countSessions = [], isLoading, error } = useQuery({
     queryKey: ['inventory-count-sessions'],
-    queryFn: getInventoryCountSessions,
+    queryFn: () => getInventoryCountSessions(),
   });
 
   const filteredSessions = countSessions.filter((session: any) =>
@@ -164,15 +164,6 @@ export default function InventoryCountSessionsPage() {
         </div>
       )}
 
-      <div className="mt-6 bg-blue-50 p-4 rounded-md">
-        <h4 className="text-sm font-medium text-blue-800 mb-2">Inventory Count Process</h4>
-        <div className="text-sm text-blue-700 space-y-1">
-          <div><strong>Open:</strong> Count session is created, system quantities are captured</div>
-          <div><strong>Counting:</strong> Physical counts are being recorded</div>
-          <div><strong>Review:</strong> Variances are being reviewed before processing</div>
-          <div><strong>Completed:</strong> Count processed, adjustments posted</div>
-        </div>
-      </div>
     </div>
   );
 }
