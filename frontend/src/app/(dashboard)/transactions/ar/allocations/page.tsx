@@ -47,7 +47,7 @@ export default function ARAllocationsPage() {
   };
 
   const getTotalAllocated = (allocation: ARAllocation) => {
-    return allocation.lines.reduce((sum, line) => sum + line.allocated_amount, 0);
+    return allocation.lines.reduce((sum, line) => sum + (typeof line.allocated_amount === 'number' && !isNaN(line.allocated_amount) ? line.allocated_amount : Number(line.allocated_amount) || 0), 0);
   };
 
   if (!hasPermission(AR_REPORTS_VIEW)) {
@@ -126,33 +126,6 @@ export default function ARAllocationsPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full rounded-md border border-gray-300 bg-white px-10 py-2 text-sm ring-offset-background placeholder:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
-        </div>
-      </div>
-
-      {/* Information Panel */}
-      <div className="rounded-lg border p-4 bg-amber-50">
-        <div className="flex items-start space-x-3">
-          <div className="flex-shrink-0">
-            <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center">
-              <ArrowUpDown className="h-3 w-3 text-amber-600" />
-            </div>
-          </div>
-          <div className="text-sm">
-            <p className="font-medium text-amber-900">Why Allocations Are Critical:</p>
-            <div className="text-amber-800 mt-1 space-y-1">
-              <p>• <strong>Invoices create debits</strong> (customer owes you money)</p>
-              <p>• <strong>Receipts create credits</strong> (customer paid you money)</p>
-              <p>• <strong>Without allocation:</strong> System shows customer still owes money even after payment!</p>
-              <p>• <strong>With allocation:</strong> Payment is matched to specific invoices, marking them as paid</p>
-            </div>
-            <div className="mt-2 p-2 bg-amber-100 rounded-md">
-              <p className="text-xs font-semibold text-amber-900">Example:</p>
-              <p className="text-xs text-amber-800">
-                Invoice INV-001 ($400) + Receipt RCP-001 ($400) → Without allocation: Customer balance = $400 
-                <br />Invoice INV-001 ($400) ↔ Receipt RCP-001 ($400) → With allocation: Customer balance = $0
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -277,23 +250,6 @@ export default function ARAllocationsPage() {
       )}
 
       {/* Info Box */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <div className="flex items-start space-x-3">
-          <div className="flex-shrink-0">
-            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-              <FileText className="h-3 w-3 text-blue-600" />
-            </div>
-          </div>
-          <div className="text-sm">
-            <p className="font-medium text-blue-900">About AR Allocations</p>
-            <p className="text-blue-800 mt-1">
-              Allocations match receipts and credit notes to outstanding invoices. This process reduces the open amount 
-              on both transactions and helps track which payments apply to which invoices. Once allocated, the amounts 
-              are no longer available for further allocation.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

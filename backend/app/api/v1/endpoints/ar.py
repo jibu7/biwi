@@ -318,6 +318,7 @@ async def get_ar_transactions(
             transaction.customer_name = transaction.customer.name
         if transaction.ar_transaction_type:
             transaction.ar_transaction_type_name = transaction.ar_transaction_type.name
+            transaction.ar_transaction_type_base_type = transaction.ar_transaction_type.base_type
     
     return transactions
 
@@ -433,6 +434,43 @@ def create_ar_allocation(
 ):
     """Create a new AR allocation"""
     return crud.ar.create_ar_allocation(db, allocation, current_user.company_id)
+
+@router.get("/allocations/{allocation_id}", response_model=schemas.ARAllocation)
+def get_ar_allocation(
+    allocation_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(PermissionChecker([AR_REPORTS_VIEW]))
+):
+    """Get a specific AR allocation"""
+    allocation = crud.ar.get_ar_allocation(db, allocation_id, current_user.company_id)
+    if not allocation:
+        raise HTTPException(status_code=404, detail="Allocation not found")
+    
+    # Add related data to response
+    if allocation.customer:
+        allocation.customer_name = allocation.customer.name
+    
+    # Add transaction document numbers to lines
+    for line in allocation.lines:
+        if line.debit_transaction:
+            line.debit_transaction_document_number = line.debit_transaction.document_number
+        if line.credit_transaction:
+            line.credit_transaction_document_number = line.credit_transaction.document_number
+    
+    return allocation
+
+@router.delete("/allocations/{allocation_id}")
+def delete_ar_allocation(
+    allocation_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(PermissionChecker([AR_TRANSACTIONS_POST]))
+):
+    """Delete a specific AR allocation"""
+    allocation = crud.ar.get_ar_allocation(db, allocation_id, current_user.company_id)
+    if not allocation:
+        raise HTTPException(status_code=404, detail="Allocation not found")
+    
+    return crud.ar.delete_ar_allocation(db, allocation_id, current_user.company_id)
 
 # AR Defaults endpoints
 @router.get("/defaults", response_model=schemas.ARDefaults)

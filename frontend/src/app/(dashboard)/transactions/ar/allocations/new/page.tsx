@@ -69,7 +69,7 @@ export default function NewAllocationPage() {
   );
 
   const availableCredits = customerTransactions.filter(t => 
-    (t.ar_transaction_type_name?.includes('Receipt') || t.ar_transaction_type_name?.includes('Credit')) && 
+    (t.ar_transaction_type_base_type === 'Receipt' || t.ar_transaction_type_base_type === 'Credit Note') && 
     t.open_amount > 0 && 
     t.status === 'Posted'
   );
@@ -233,7 +233,7 @@ export default function NewAllocationPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+    {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Link
@@ -250,8 +250,6 @@ export default function NewAllocationPage() {
           </div>
         </div>
       </div>
-
-      // ...existing code...
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -427,7 +425,7 @@ export default function NewAllocationPage() {
                   <div className="flex justify-between font-medium text-sm">
                     <span>Total Outstanding:</span>
                     <span className="text-red-600">
-                      {formatCurrency(outstandingDebits.reduce((sum, t) => sum + t.open_amount, 0))}
+                      {formatCurrency(outstandingDebits.reduce((sum, t) => sum + (typeof t.open_amount === 'number' && !isNaN(t.open_amount) ? t.open_amount : Number(t.open_amount) || 0), 0))}
                     </span>
                   </div>
                 </div>
@@ -450,7 +448,7 @@ export default function NewAllocationPage() {
                   <div className="flex justify-between font-medium text-sm">
                     <span>Total Available:</span>
                     <span className="text-green-600">
-                      {formatCurrency(availableCredits.reduce((sum, t) => sum + t.open_amount, 0))}
+                      {formatCurrency(availableCredits.reduce((sum, t) => sum + (typeof t.open_amount === 'number' && !isNaN(t.open_amount) ? t.open_amount : Number(t.open_amount) || 0), 0))}
                     </span>
                   </div>
                 </div>

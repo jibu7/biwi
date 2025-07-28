@@ -593,6 +593,44 @@ def create_ar_allocation(db: Session, allocation: ARAllocationCreate, company_id
     db.refresh(db_allocation)
     return db_allocation
 
+def get_ar_allocation(db: Session, allocation_id: int, company_id: int) -> Optional[ARAllocation]:
+    return db.query(ARAllocation)\
+        .filter(ARAllocation.id == allocation_id)\
+        .filter(ARAllocation.company_id == company_id)\
+        .first()
+
+def delete_ar_allocation(db: Session, allocation_id: int, company_id: int) -> bool:
+    # Get the allocation first to reverse the allocations
+    allocation = get_ar_allocation(db, allocation_id, company_id)
+    if not allocation:
+        return False
+    
+    # Reverse the allocations by adding back the allocated amounts
+    for line in allocation.lines:
+        debit_transaction = db.query(ARTransaction).filter(ARTransaction.id == line.debit_transaction_id).first()
+        credit_transaction = db.query(ARTransaction).filter(ARTransaction.id == line.credit_transaction_id).first()
+        
+        if debit_transaction:
+            debit_transaction.open_amount += line.allocated_amount
+            # Update status based on open amount
+            if debit_transaction.open_amount >= debit_transaction.total_amount:
+                debit_transaction.status = "Posted"
+            else:
+                debit_transaction.status = "PartiallyPaid"
+        
+        if credit_transaction:
+            credit_transaction.open_amount += line.allocated_amount
+            # Update status based on open amount
+            if credit_transaction.open_amount >= credit_transaction.total_amount:
+                credit_transaction.status = "Posted"
+            else:
+                credit_transaction.status = "PartiallyPaid"
+    
+    # Delete the allocation (cascade will delete lines)
+    db.delete(allocation)
+    db.commit()
+    return True
+
 # AR Defaults CRUD
 def get_ar_defaults(db: Session, company_id: int) -> Optional[ARDefaults]:
     return db.query(ARDefaults)\

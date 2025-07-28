@@ -125,6 +125,7 @@ export interface ARTransaction {
   status: 'Draft' | 'Posted' | 'Paid' | 'PartiallyPaid';
   customer_name?: string;
   ar_transaction_type_name?: string;
+  ar_transaction_type_base_type?: string;
 }
 
 export interface ARTransactionCreate {

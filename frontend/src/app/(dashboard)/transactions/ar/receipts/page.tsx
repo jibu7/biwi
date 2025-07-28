@@ -347,10 +347,16 @@ export default function ARReceiptsPage() {
             </span>
             <div className="flex space-x-6">
               <span>
-                Total Receipts: {formatCurrency(filteredReceipts.reduce((sum, rec) => sum + rec.total_amount, 0))}
+                Total Receipts: {formatCurrency(filteredReceipts.reduce((sum, rec) => {
+                  const amt = Number(rec.total_amount);
+                  return sum + (isNaN(amt) ? 0 : amt);
+                }, 0))}
               </span>
               <span>
-                Unallocated: {formatCurrency(filteredReceipts.reduce((sum, rec) => sum + rec.open_amount, 0))}
+                Unallocated: {formatCurrency(filteredReceipts.reduce((sum, rec) => {
+                  const amt = Number(rec.open_amount);
+                  return sum + (isNaN(amt) ? 0 : amt);
+                }, 0))}
               </span>
             </div>
           </div>

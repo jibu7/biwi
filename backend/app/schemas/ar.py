@@ -143,6 +143,7 @@ class ARTransaction(ARTransactionBase):
     linked_gl_journal_entry_id: Optional[int] = None
     customer_name: Optional[str] = None
     ar_transaction_type_name: Optional[str] = None
+    ar_transaction_type_base_type: Optional[str] = None
     
     class Config:
         from_attributes = True
