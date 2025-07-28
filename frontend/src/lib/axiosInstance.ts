@@ -14,9 +14,9 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Add company context header for superadmins
+    // Add company context header for platform admin impersonation
     if (selectedCompanyId) {
-      config.headers['X-Company-ID'] = selectedCompanyId;
+      config.headers['X-Target-Company-ID'] = selectedCompanyId;
     }
     
     return config;

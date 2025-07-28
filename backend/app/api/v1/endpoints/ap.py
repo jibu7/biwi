@@ -92,7 +92,7 @@ def create_ap_transaction_type(
     """Create new AP transaction type"""
     return crud.ap.create_ap_transaction_type(db, trans_type=type_in, company_id=current_user.company_id)
 
-@router.get("/transaction-types", response_model=List[schemas.APTransactionType], dependencies=[Depends(PermissionChecker([AP_SETUP_MANAGE]))])
+@router.get("/transaction-types", response_model=List[schemas.APTransactionType], dependencies=[Depends(PermissionChecker([AP_SETUP_MANAGE, AP_TRANSACTIONS_POST]))])
 def read_ap_transaction_types(
     db: Session = Depends(get_db),
     skip: int = 0,
