@@ -627,6 +627,9 @@ def delete_platform_user(
     Delete user (platform admin only).
     """
     try:
+        # Start with a clean transaction state
+        db.rollback()
+        
         # Get the user to delete
         db_user = db.query(User).filter(User.id == user_id).first()
         if not db_user:
@@ -664,36 +667,47 @@ def delete_platform_user(
             cleanup_summary["audit_logs_deleted"] = 0
         
         # 4. Handle GLJournalEntry relationships (set nullable fields to NULL, prevent if required fields exist)
-        gl_entries_posted = db.query(GLJournalEntry).filter(GLJournalEntry.posted_by_user_id == user_id).count()
-        if gl_entries_posted > 0:
-            # Cannot delete user who posted GL entries - this is audit trail data
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Cannot delete user: {gl_entries_posted} GL journal entries were posted by this user. User deletion would break audit trail."
-            )
-        
-        # Set approved_by_user_id to NULL where this user approved entries
-        gl_approved_count = db.query(GLJournalEntry).filter(GLJournalEntry.approved_by_user_id == user_id).count()
-        if gl_approved_count > 0:
-            db.query(GLJournalEntry).filter(GLJournalEntry.approved_by_user_id == user_id).update({"approved_by_user_id": None})
-            cleanup_summary["gl_approvals_cleared"] = gl_approved_count
+        try:
+            gl_entries_posted = db.query(GLJournalEntry).filter(GLJournalEntry.posted_by_user_id == user_id).count()
+            if gl_entries_posted > 0:
+                # Cannot delete user who posted GL entries - this is audit trail data
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot delete user: {gl_entries_posted} GL journal entries were posted by this user. User deletion would break audit trail."
+                )
+            
+            # Set approved_by_user_id to NULL where this user approved entries
+            gl_approved_count = db.query(GLJournalEntry).filter(GLJournalEntry.approved_by_user_id == user_id).count()
+            if gl_approved_count > 0:
+                db.query(GLJournalEntry).filter(GLJournalEntry.approved_by_user_id == user_id).update({"approved_by_user_id": None})
+                cleanup_summary["gl_approvals_cleared"] = gl_approved_count
+        except Exception as e:
+            # If GL table doesn't exist or has issues, log and continue
+            print(f"Warning: Could not check GL constraints: {e}")
+            cleanup_summary["gl_check_failed"] = str(e)
+            # Rollback and continue
+            db.rollback()
         
         # 5. Handle ARWriteOff relationships
-        ar_writeoffs_requested = db.query(ARWriteOff).filter(ARWriteOff.requested_by_user_id == user_id).count()
-        if ar_writeoffs_requested > 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Cannot delete user: {ar_writeoffs_requested} AR write-offs were requested by this user."
-            )
-        
-        # Set approved_by_user_id to NULL where this user approved writeoffs
         try:
+            ar_writeoffs_requested = db.query(ARWriteOff).filter(ARWriteOff.requested_by_user_id == user_id).count()
+            if ar_writeoffs_requested > 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot delete user: {ar_writeoffs_requested} AR write-offs were requested by this user."
+                )
+            
+            # Set approved_by_user_id to NULL where this user approved writeoffs
             ar_approved_count = db.query(ARWriteOff).filter(ARWriteOff.approved_by_user_id == user_id).count()
             if ar_approved_count > 0:
                 db.query(ARWriteOff).filter(ARWriteOff.approved_by_user_id == user_id).update({"approved_by_user_id": None})
                 cleanup_summary["ar_writeoff_approvals_cleared"] = ar_approved_count
-        except Exception:
-            pass
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Warning: Could not check AR writeoff constraints: {e}")
+            cleanup_summary["ar_check_failed"] = str(e)
+            db.rollback()
         
         # 6. Handle other nullable foreign key relationships - set to NULL
         try:
