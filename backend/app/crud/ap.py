@@ -261,14 +261,100 @@ def delete_ap_transaction(db: Session, transaction_id: int, company_id: int) -> 
 
 def post_ap_transaction_to_gl(db: Session, transaction_id: int, company_id: int) -> Optional[models.APTransaction]:
     """Post AP transaction to GL and update the status"""
+    from . import gl as gl_crud
+    from app.models import gl as gl_models
+    
     db_transaction = get_ap_transaction(db, transaction_id, company_id)
-    if db_transaction and not db_transaction.is_posted_to_gl:
-        # Here you would implement the GL posting logic
-        # For now, just mark as posted
-        db_transaction.is_posted_to_gl = True
-        db_transaction.status = "Posted"
-        db.commit()
-        db.refresh(db_transaction)
+    if not db_transaction or db_transaction.is_posted_to_gl:
+        return db_transaction
+    
+    # Get AP defaults for GL account mapping
+    ap_defaults = db.query(models.APDefaults).filter(
+        models.APDefaults.company_id == company_id
+    ).first()
+    
+    if not ap_defaults:
+        raise ValueError("AP defaults not configured for company")
+    
+    # Create GL journal entry based on transaction type
+    journal_lines = []
+    
+    # Determine transaction type from the AP transaction type base_type
+    transaction_type = db_transaction.ap_transaction_type.base_type if db_transaction.ap_transaction_type else "Supplier Invoice"
+    
+    if transaction_type == "Supplier Invoice":
+        # AP Invoice: Debit Expense Account, Credit AP Control Account
+        journal_lines = [
+            {
+                "gl_account_id": ap_defaults.default_expense_gl_account_id or ap_defaults.default_ap_control_gl_account_id,
+                "description": f"AP Invoice - {db_transaction.supplier.name if db_transaction.supplier else 'Unknown'}",
+                "debit_amount": db_transaction.total_amount,
+                "credit_amount": 0
+            },
+            {
+                "gl_account_id": ap_defaults.default_ap_control_gl_account_id,
+                "description": f"AP Invoice - {db_transaction.supplier.name if db_transaction.supplier else 'Unknown'}",
+                "debit_amount": 0,
+                "credit_amount": db_transaction.total_amount
+            }
+        ]
+    elif transaction_type == "Payment":
+        # AP Payment: Debit AP Control Account, Credit Cash Account
+        journal_lines = [
+            {
+                "gl_account_id": ap_defaults.default_ap_control_gl_account_id,
+                "description": f"AP Payment - {db_transaction.supplier.name if db_transaction.supplier else 'Unknown'}",
+                "debit_amount": db_transaction.total_amount,
+                "credit_amount": 0
+            },
+            {
+                "gl_account_id": ap_defaults.default_payment_gl_account_id,
+                "description": f"AP Payment - {db_transaction.supplier.name if db_transaction.supplier else 'Unknown'}",
+                "debit_amount": 0,
+                "credit_amount": db_transaction.total_amount
+            }
+        ]
+    elif transaction_type == "Debit Note":
+        # AP Debit Note: Debit AP Control Account, Credit Expense Account
+        journal_lines = [
+            {
+                "gl_account_id": ap_defaults.default_ap_control_gl_account_id,
+                "description": f"AP Debit Note - {db_transaction.supplier.name if db_transaction.supplier else 'Unknown'}",
+                "debit_amount": db_transaction.total_amount,
+                "credit_amount": 0
+            },
+            {
+                "gl_account_id": ap_defaults.default_expense_gl_account_id or ap_defaults.default_ap_control_gl_account_id,
+                "description": f"AP Debit Note - {db_transaction.supplier.name if db_transaction.supplier else 'Unknown'}",
+                "debit_amount": 0,
+                "credit_amount": db_transaction.total_amount
+            }
+        ]
+    else:
+        raise ValueError(f"Unsupported AP transaction type: {transaction_type}")
+    
+    # Create GL journal entry
+    journal_entry_data = {
+        "company_id": company_id,
+        "entry_date": db_transaction.transaction_date,
+        "reference": f"AP-{transaction_type}-{db_transaction.id}",
+        "description": f"AP {transaction_type} - {db_transaction.reference or 'No description'}",
+        "posted_by_user_id": 1,  # TODO: Get from context
+        "status": "Posted",
+        "lines": journal_lines
+    }
+    
+    # Create the journal entry
+    gl_journal_entry = gl_crud.create_journal_entry(db, journal_entry_data)
+    
+    # Link the GL entry to the AP transaction
+    db_transaction.linked_gl_journal_entry_id = gl_journal_entry.id
+    db_transaction.is_posted_to_gl = True
+    db_transaction.status = "Posted"
+    
+    db.commit()
+    db.refresh(db_transaction)
+    
     return db_transaction
 
 # AP Allocation CRUD

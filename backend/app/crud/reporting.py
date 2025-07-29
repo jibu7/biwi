@@ -105,10 +105,33 @@ def generate_income_statement(
     
     company = db.query(models.Company).filter(models.Company.id == company_id).first()
     
-    accounts_query = db.query(models.GLAccount).filter(
+    # Optimized query: get all account balances in one database query
+    account_balances = db.query(
+        models.GLAccount.id,
+        models.GLAccount.account_code,
+        models.GLAccount.account_name,
+        models.GLAccount.account_type,
+        func.coalesce(func.sum(models.GLJournalEntryLine.debit_amount), 0).label('total_debits'),
+        func.coalesce(func.sum(models.GLJournalEntryLine.credit_amount), 0).label('total_credits')
+    ).join(
+        models.GLJournalEntryLine, 
+        models.GLAccount.id == models.GLJournalEntryLine.gl_account_id
+    ).join(
+        models.GLJournalEntry,
+        models.GLJournalEntryLine.journal_entry_id == models.GLJournalEntry.id
+    ).filter(
         models.GLAccount.company_id == company_id,
-        models.GLAccount.is_active == True
-    ).order_by(models.GLAccount.account_code)
+        models.GLAccount.is_active == True,
+        models.GLAccount.account_type.in_(["Income", "Revenue", "Expense", "Expenses"]),
+        models.GLJournalEntry.status == "Posted",
+        models.GLJournalEntry.entry_date >= start_date,
+        models.GLJournalEntry.entry_date <= end_date
+    ).group_by(
+        models.GLAccount.id,
+        models.GLAccount.account_code,
+        models.GLAccount.account_name,
+        models.GLAccount.account_type
+    ).order_by(models.GLAccount.account_code).all()
     
     revenue = []
     expenses = []
@@ -116,24 +139,39 @@ def generate_income_statement(
     total_revenue = Decimal('0.00')
     total_expenses = Decimal('0.00')
     
-    for account in accounts_query:
-        # Calculate balance for the period
-        balance = calculate_account_balance_for_period(db, account.id, start_date, end_date)
+    for account_data in account_balances:
+        # Calculate net balance (debits - credits)
+        balance = Decimal(str(account_data.total_debits - account_data.total_credits))
         
         if balance != 0:
-            line = schemas.FinancialStatementLine(
-                account_code=account.account_code,
-                account_name=account.account_name,
-                amount=balance,
-                level=0
-            )
-            
-            if account.account_type in ["Income", "Revenue"]:
-                revenue.append(line)
-                total_revenue += balance
-            elif account.account_type in ["Expense", "Expenses"]:
-                expenses.append(line)
-                total_expenses += balance
+            # For Income accounts, credit balance (negative) should be shown as positive revenue
+            # For Expense accounts, debit balance (positive) should be shown as positive expense
+            if account_data.account_type in ["Income", "Revenue"]:
+                display_balance = -balance  # Flip sign for income accounts
+                if display_balance != 0:
+                    line = schemas.FinancialStatementLine(
+                        account_code=account_data.account_code,
+                        account_name=account_data.account_name,
+                        amount=display_balance,
+                        level=0,
+                        is_total=False,
+                        is_subtotal=False
+                    )
+                    revenue.append(line)
+                    total_revenue += display_balance
+            elif account_data.account_type in ["Expense", "Expenses"]:
+                display_balance = balance  # Keep positive for expenses
+                if display_balance != 0:
+                    line = schemas.FinancialStatementLine(
+                        account_code=account_data.account_code,
+                        account_name=account_data.account_name,
+                        amount=display_balance,
+                        level=0,
+                        is_total=False,
+                        is_subtotal=False
+                    )
+                    expenses.append(line)
+                    total_expenses += display_balance
     
     net_income = total_revenue - total_expenses
     

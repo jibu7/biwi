@@ -332,7 +332,7 @@ export default function InventoryCountSessionPage() {
                         <AlertCircle className="h-5 w-5 text-yellow-500 mx-auto" />
                       )}
                     </td>
-                    {hasPermission(INV_TRANSACTIONS_ADJUST) && session.status === 'Open' && (
+                    {hasPermission(INV_TRANSACTIONS_ADJUST) && (session.status === 'Open' || session.status === 'Counting') && (
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {isEditing ? (
                           <div className="flex justify-end gap-2">

@@ -185,3 +185,6 @@ class InventoryCountLine(Base):
     system_quantity = Column(Numeric, nullable=False)
     counted_quantity = Column(Numeric, nullable=True)
     variance_quantity = Column(Numeric, default=0.00)
+    
+    # Relationships
+    item = relationship("InventoryItem")

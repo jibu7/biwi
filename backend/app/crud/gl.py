@@ -230,7 +230,7 @@ def calculate_trial_balance(
     end_date: date,
     only_active: bool = True
 ) -> List[Dict]:
-    """Calculate trial balance ensuring company isolation"""
+    """Calculate trial balance ensuring company isolation using current_balance"""
     query = db.query(
         models.GLAccount.account_code,
         models.GLAccount.account_name,

@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
     auth, users, companies, roles, accounting_periods,
-    gl, ar, ap, inventory, oe, common, company_management
+    gl, ar, ap, inventory, oe, common, company_management, reporting
 )
 from app.api.v1.endpoints import platform_auth, platform  # Platform endpoints
 
@@ -25,6 +25,7 @@ api_router.include_router(ap.router, prefix="/ap", tags=["accounts-payable"])
 api_router.include_router(inventory.router, prefix="/inventory", tags=["inventory"])
 api_router.include_router(oe.router, prefix="/oe", tags=["order-entry"])
 api_router.include_router(common.router, prefix="/common", tags=["common"])
+api_router.include_router(reporting.router, prefix="/reporting", tags=["reporting"])
 
 # Platform endpoints - MUST be registered
 api_router.include_router(platform_auth.router, prefix="/platform/auth", tags=["platform-auth"])

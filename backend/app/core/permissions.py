@@ -264,7 +264,7 @@ class PermissionChecker:
         user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db)
     ):
-        if user.is_superuser or user.user_type == UserType.PLATFORM_ADMIN:
+        if user.is_superuser or (hasattr(user, 'user_type') and user.user_type == UserType.PLATFORM_ADMIN):
             return user
         
         # Get user's permissions from all roles using proper query
