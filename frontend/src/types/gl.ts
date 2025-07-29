@@ -65,6 +65,7 @@ export interface GLTransactionType {
   description?: string;
   default_debit_account_id?: number;
   default_credit_account_id?: number;
+  default_tax_control_account_id?: number;  // NEW
   is_active: boolean;
 }
 
@@ -73,6 +74,7 @@ export interface GLTransactionTypeCreate {
   description?: string;
   default_debit_account_id?: number;
   default_credit_account_id?: number;
+  default_tax_control_account_id?: number;
   is_active?: boolean;
 }
 
@@ -81,6 +83,7 @@ export interface GLTransactionTypeUpdate {
   description?: string;
   default_debit_account_id?: number;
   default_credit_account_id?: number;
+  default_tax_control_account_id?: number;
   is_active?: boolean;
 }
 

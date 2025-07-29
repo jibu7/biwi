@@ -15,6 +15,7 @@ const transactionTypeSchema = z.object({
   description: z.string().optional(),
   default_debit_account_id: z.number().nullable().optional(),
   default_credit_account_id: z.number().nullable().optional(),
+  default_tax_control_account_id: z.number().optional().nullable(),  // NEW
   is_active: z.boolean(),
 });
 
@@ -24,12 +25,12 @@ export default function EditTransactionTypePage() {
   const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
-  const id = resolvedParams ? Number(resolvedParams.id) : 0;
+  const id = Number(params.id);
 
   const { data: transactionType } = useQuery({
     queryKey: ['glTransactionType', id],
     queryFn: () => glService.getGLTransactionType(id),
-  enabled: id > 0,
+  enabled: !!id,
   });
 
   const { data: accounts = [] } = useQuery({
@@ -46,16 +47,18 @@ export default function EditTransactionTypePage() {
     resolver: zodResolver(transactionTypeSchema),
   });
 
-  // Reset form when data loads
-  if (transactionType && !errors.name) {
-    reset({
-      name: transactionType.name,
-      description: transactionType.description || '',
-      default_debit_account_id: transactionType.default_debit_account_id || null,
-      default_credit_account_id: transactionType.default_credit_account_id || null,
-      is_active: transactionType.is_active,
-    });
-  }
+  useEffect(() => {
+    if (transactionType) {
+      reset({
+        name: transactionType.name,
+        description: transactionType.description || '',
+        default_debit_account_id: transactionType.default_debit_account_id || null,
+        default_credit_account_id: transactionType.default_credit_account_id || null,
+        default_tax_control_account_id: transactionType.default_tax_control_account_id || null,
+        is_active: transactionType.is_active,
+      });
+    }
+  }, [transactionType, reset]);
 
   const updateMutation = useMutation({
     mutationFn: (data: GLTransactionTypeUpdate) => glService.updateGLTransactionType(id, data),
@@ -71,6 +74,7 @@ export default function EditTransactionTypePage() {
       ...data,
       default_debit_account_id: data.default_debit_account_id || undefined,
       default_credit_account_id: data.default_credit_account_id || undefined,
+      default_tax_control_account_id: data.default_tax_control_account_id || undefined,
     };
     await updateMutation.mutateAsync(submitData);
   };
@@ -147,6 +151,23 @@ export default function EditTransactionTypePage() {
               </select>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Default Tax Control Account
+              </label>
+              <select
+                {...register('default_tax_control_account_id', { valueAsNumber: true })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              >
+                <option value="">Select Account</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.account_code} - {account.account_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -179,4 +200,3 @@ export default function EditTransactionTypePage() {
       </form>
     </div>
   );
-}

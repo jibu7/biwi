@@ -10,7 +10,7 @@ from .gl import (
     GLAccount, GLAccountCreate, GLAccountUpdate,
     GLJournalEntry, GLJournalEntryCreate, GLJournalEntryUpdate,
     GLJournalEntryLine, GLJournalEntryLineCreate, GLJournalEntryLineUpdate,
-    GLTransactionType, GLTransactionTypeCreate, GLTransactionTypeUpdate,
+    GLTransactionTypeRead, GLTransactionTypeCreate, GLTransactionTypeUpdate,
     GLDefaults, GLDefaultsCreate, GLDefaultsUpdate,
     TrialBalance, TrialBalanceItem, AccountTransaction
 )
@@ -108,7 +108,7 @@ __all__ = [
     "GLAccount", "GLAccountCreate", "GLAccountUpdate",
     "GLJournalEntry", "GLJournalEntryCreate", "GLJournalEntryUpdate",
     "GLJournalEntryLine", "GLJournalEntryLineCreate", "GLJournalEntryLineUpdate",
-    "GLTransactionType", "GLTransactionTypeCreate", "GLTransactionTypeUpdate",
+    "GLTransactionTypeRead", "GLTransactionTypeCreate", "GLTransactionTypeUpdate",
     "GLDefaults", "GLDefaultsCreate", "GLDefaultsUpdate",
     "TrialBalance", "TrialBalanceItem", "AccountTransaction",
     "Customer", "CustomerCreate", "CustomerUpdate",

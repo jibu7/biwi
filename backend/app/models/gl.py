@@ -91,16 +91,17 @@ class GLTransactionType(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    name = Column(String, nullable=False)
+    name = Column(String, index=True, nullable=False)
     description = Column(String, nullable=True)
     default_debit_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     default_credit_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
+    default_tax_control_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)  # NEW
     is_active = Column(Boolean, default=True)
     
-    # Relationships
-    company = relationship("Company")
+    # Add relationships
     default_debit_account = relationship("GLAccount", foreign_keys=[default_debit_account_id])
     default_credit_account = relationship("GLAccount", foreign_keys=[default_credit_account_id])
+    default_tax_control_account = relationship("GLAccount", foreign_keys=[default_tax_control_account_id])  # NEW
     
     __table_args__ = (
         UniqueConstraint('name', 'company_id', name='uq_gltransactiontype_name_company'),

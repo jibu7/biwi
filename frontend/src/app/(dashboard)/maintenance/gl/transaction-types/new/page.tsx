@@ -1,76 +1,68 @@
-'use client';
+"use client";
 
-
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { glService } from '@/services/glService';
-import { GLTransactionTypeCreate } from '@/types/gl';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useRouter } from "next/navigation";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { glService } from "@/services/glService";
 
 const transactionTypeSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  default_debit_account_id: z.number().nullable().optional(),
-  default_credit_account_id: z.number().nullable().optional(),
-  is_active: z.boolean(),
+  default_debit_account_id: z.number().optional().nullable(),
+  default_credit_account_id: z.number().optional().nullable(),
+  default_tax_control_account_id: z.number().optional().nullable(),  // NEW
+  is_active: z.boolean().default(true),
 });
 
 type TransactionTypeFormData = z.infer<typeof transactionTypeSchema>;
 
 export default function NewTransactionTypePage() {
   const router = useRouter();
-
-  const { data: accounts = [] } = useQuery({
-    queryKey: ['glAccounts'],
-    queryFn: () => glService.getGLAccounts(),
-  });
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<TransactionTypeFormData>({
+  
+  const { register, handleSubmit, formState: { errors } } = useForm<TransactionTypeFormData>({
     resolver: zodResolver(transactionTypeSchema),
     defaultValues: {
       is_active: true,
     },
   });
 
+  // Fetch accounts for dropdowns
+  const { data: accounts } = useQuery({
+    queryKey: ["gl-accounts"],
+    queryFn: () => glService.getAccounts(),
+  });
+
   const createMutation = useMutation({
-    mutationFn: glService.createGLTransactionType,
+    mutationFn: glService.createTransactionType,
     onSuccess: () => {
-      router.push('/maintenance/gl/transaction-types');
+      router.push("/maintenance/gl/transaction-types");
     },
   });
 
-  const onSubmit = async (data: TransactionTypeFormData) => {
-    const submitData: GLTransactionTypeCreate = {
-      ...data,
-      default_debit_account_id: data.default_debit_account_id || undefined,
-      default_credit_account_id: data.default_credit_account_id || undefined,
-    };
-    await createMutation.mutateAsync(submitData);
+  const onSubmit = (data: TransactionTypeFormData) => {
+    createMutation.mutate(data);
   };
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">New Transaction Type</h1>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <div className="container mx-auto py-6">
+      <h1 className="text-2xl font-bold mb-6">New Transaction Type</h1>
+      
+      <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-6">
         <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium mb-4">Transaction Type Details</h2>
+          <h2 className="text-lg font-semibold mb-4">Transaction Type Details</h2>
           
-          <div className="grid grid-cols-1 gap-6">
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Name *
               </label>
               <input
                 type="text"
-                {...register('name')}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                {...register("name")}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
@@ -78,26 +70,26 @@ export default function NewTransactionTypePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
               <textarea
-                {...register('description')}
+                {...register("description")}
                 rows={3}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Default Debit Account
               </label>
               <select
-                {...register('default_debit_account_id', { valueAsNumber: true })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                {...register("default_debit_account_id", { valueAsNumber: true })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
               >
                 <option value="">Select Account</option>
-                {accounts.map((account) => (
+                {accounts?.map((account) => (
                   <option key={account.id} value={account.id}>
                     {account.account_code} - {account.account_name}
                   </option>
@@ -106,29 +98,50 @@ export default function NewTransactionTypePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Default Credit Account
               </label>
               <select
-                {...register('default_credit_account_id', { valueAsNumber: true })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                {...register("default_credit_account_id", { valueAsNumber: true })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
               >
                 <option value="">Select Account</option>
-                {accounts.map((account) => (
+                {accounts?.map((account) => (
                   <option key={account.id} value={account.id}>
                     {account.account_code} - {account.account_name}
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* NEW: Tax Control Account Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Default Tax Control Account
+              </label>
+              <select
+                {...register("default_tax_control_account_id", { valueAsNumber: true })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              >
+                <option value="">Select Account</option>
+                {accounts?.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.account_code} - {account.account_name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-sm text-gray-500">
+                VAT/TVA control account for tax transactions
+              </p>
             </div>
 
             <div className="flex items-center">
               <input
                 type="checkbox"
-                {...register('is_active')}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                {...register("is_active")}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
               />
-              <label className="ml-2 block text-sm text-gray-900">
+              <label className="ml-2 text-sm font-medium text-gray-700">
                 Active
               </label>
             </div>
@@ -141,11 +154,11 @@ export default function NewTransactionTypePage() {
             disabled={createMutation.isPending}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            {createMutation.isPending ? 'Creating...' : 'Create Transaction Type'}
+            Create Transaction Type
           </button>
           <button
             type="button"
-            onClick={() => router.push('/maintenance/gl/transaction-types')}
+            onClick={() => router.push("/maintenance/gl/transaction-types")}
             className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
           >
             Cancel

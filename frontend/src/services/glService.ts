@@ -1,6 +1,6 @@
 // frontend/src/services/glService.ts
 import axiosInstance from '@/lib/axiosInstance';
-import { GLAccount, GLAccountCreate, GLAccountUpdate, GLJournalEntry, GLJournalEntryCreate, GLDefaults, GLDefaultsUpdate } from '@/types/gl';
+import { GLAccount, GLAccountCreate, GLAccountUpdate, GLJournalEntry, GLJournalEntryCreate, GLDefaults, GLDefaultsUpdate, GLTransactionType, GLTransactionTypeCreate, GLTransactionTypeUpdate } from '@/types/gl';
 
 export const glService = {
   // GL Accounts
@@ -105,5 +105,55 @@ export const glService = {
     isActive?: boolean;
   }): Promise<GLAccount[]> {
     return this.getAccounts(params);
+  },
+
+  // GL Transaction Types
+  async getTransactionTypes(params?: {
+    skip?: number;
+    limit?: number;
+    isActive?: boolean;
+  }): Promise<GLTransactionType[]> {
+    const response = await axiosInstance.get('/gl/transaction-types', { params });
+    return response.data;
+  },
+
+  async getTransactionType(id: number): Promise<GLTransactionType> {
+    const response = await axiosInstance.get(`/gl/transaction-types/${id}`);
+    return response.data;
+  },
+
+  async createTransactionType(data: GLTransactionTypeCreate): Promise<GLTransactionType> {
+    const response = await axiosInstance.post('/gl/transaction-types', data);
+    return response.data;
+  },
+
+  async updateTransactionType(id: number, data: GLTransactionTypeUpdate): Promise<GLTransactionType> {
+    const response = await axiosInstance.put(`/gl/transaction-types/${id}`, data);
+    return response.data;
+  },
+
+  async deleteTransactionType(id: number): Promise<void> {
+    await axiosInstance.delete(`/gl/transaction-types/${id}`);
+  },
+
+  // Aliases for transaction types to match frontend usage
+  async getGLTransactionTypes(params?: {
+    skip?: number;
+    limit?: number;
+    isActive?: boolean;
+  }): Promise<GLTransactionType[]> {
+    return this.getTransactionTypes(params);
+  },
+
+  async deleteGLTransactionType(id: number): Promise<void> {
+    return this.deleteTransactionType(id);
+  },
+
+  async getGLTransactionType(id: number): Promise<GLTransactionType> {
+    return this.getTransactionType(id);
+  },
+
+  async updateGLTransactionType(id: number, data: GLTransactionTypeUpdate): Promise<GLTransactionType> {
+    return this.updateTransactionType(id, data);
   }
 };

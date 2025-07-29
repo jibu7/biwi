@@ -111,6 +111,7 @@ class GLTransactionTypeBase(BaseModel):
     description: Optional[str] = None
     default_debit_account_id: Optional[int] = None
     default_credit_account_id: Optional[int] = None
+    default_tax_control_account_id: Optional[int] = None  # NEW
     is_active: bool = True
 
 class GLTransactionTypeCreate(GLTransactionTypeBase):
@@ -121,13 +122,12 @@ class GLTransactionTypeUpdate(BaseModel):
     description: Optional[str] = None
     default_debit_account_id: Optional[int] = None
     default_credit_account_id: Optional[int] = None
+    default_tax_control_account_id: Optional[int] = None  # NEW
     is_active: Optional[bool] = None
 
-class GLTransactionType(GLTransactionTypeBase):
+class GLTransactionTypeRead(GLTransactionTypeBase):
     id: int
     company_id: int
-    default_debit_account: Optional[GLAccount] = None
-    default_credit_account: Optional[GLAccount] = None
     
     class Config:
         from_attributes = True

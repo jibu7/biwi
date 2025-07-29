@@ -71,48 +71,40 @@ export default function TransactionTypesPage() {
           />
         </div>
 
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200">
-            {filteredTransactionTypes.map((type) => (
-              <li key={type.id}>
-                <div className="px-4 py-4 flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {type.name}
-                        </p>
-                        {type.description && (
-                          <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            {type.is_active ? 'Active' : 'Inactive'}
-                          </span>
-                        )}
-                      </div>
-                      {type.description && (
-                        <p className="mt-1 text-sm text-gray-500 truncate">
-                          {type.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Link
-                      href={`/maintenance/gl/transaction-types/${type.id}`}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      <Edit className="h-4 w-4" />
+        <div className="bg-white shadow overflow-x-auto sm:rounded-md">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Default Debit Account</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Default Credit Account</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tax Control Account</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredTransactionTypes.map((type) => (
+                <tr key={type.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{type.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{type.description}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{type.default_debit_account?.account_name || '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{type.default_credit_account?.account_name || '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{type.default_tax_control_account?.account_name || '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{type.is_active ? 'Active' : 'Inactive'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <Link href={`/maintenance/gl/transaction-types/${type.id}`} className="text-blue-600 hover:text-blue-900">
+                      <Edit className="h-4 w-4 inline-block" />
                     </Link>
-                    <button
-                      onClick={() => handleDelete(type.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <Trash2 className="h-4 w-4" />
+                    <button onClick={() => handleDelete(type.id)} className="text-red-600 hover:text-red-900 ml-4">
+                      <Trash2 className="h-4 w-4 inline-block" />
                     </button>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           {filteredTransactionTypes.length === 0 && (
             <div className="px-4 py-8 text-center text-gray-500">
               No transaction types found.
