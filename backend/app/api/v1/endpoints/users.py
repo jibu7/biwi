@@ -23,6 +23,41 @@ def create_user(
             detail="The user with this email already exists in the system.",
         )
     user = crud.core.create_user(db, user=user_in, company_id=current_user.company_id)
+    
+    # Auto-assign default role based on user type to prevent 0 permission issues
+    if user and current_user.company_id:
+        from app.models.core import Role, UserRole, UserType
+        
+        # Determine the appropriate default role based on user type
+        default_role_name = None
+        user_type = getattr(user_in, 'user_type', 'company_user')
+        
+        if user_type == UserType.COMPANY_ADMIN.value:
+            default_role_name = "Company Administrator"
+        else:  # Default to company_user
+            default_role_name = "Data Entry Clerk"
+        
+        # Find and assign the default role
+        default_role = db.query(Role).filter(
+            Role.company_id == current_user.company_id,
+            Role.name == default_role_name
+        ).first()
+        
+        if default_role:
+            # Check if role assignment already exists to prevent duplicates
+            existing_assignment = db.query(UserRole).filter(
+                UserRole.user_id == user.id,
+                UserRole.role_id == default_role.id
+            ).first()
+            
+            if not existing_assignment:
+                user_role = UserRole(
+                    user_id=user.id,
+                    role_id=default_role.id
+                )
+                db.add(user_role)
+                db.commit()
+    
     return user
 
 @router.get("/", response_model=List[schemas.User], dependencies=[Depends(PermissionChecker([USER_READ]))])
