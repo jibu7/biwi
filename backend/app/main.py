@@ -32,6 +32,15 @@ app.add_middleware(TenantIsolationMiddleware)
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+@app.on_event("startup")
+async def startup_event():
+    """Run startup fixes"""
+    try:
+        from app.startup_fixes import auto_fix_permissions
+        auto_fix_permissions()
+    except Exception as e:
+        print(f"Startup fixes failed: {e}")
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}

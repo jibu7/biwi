@@ -293,6 +293,31 @@ def init_db():
             ]
         },
         {
+            "name": "Financial Manager",
+            "description": "Complete access to all financial modules and advanced reporting",
+            "permissions": [
+                # Standard financial permissions
+                "gl:setup_manage", "gl:journal_post", "gl:reports_view",
+                "ar:setup_manage", "ar:transactions_post", "ar:reports_view", "ar:writeoff_approve",
+                "ap:setup_manage", "ap:transactions_post", "ap:reports_view",
+                
+                # Advanced reporting permissions (both formats for compatibility)
+                "reporting:financial_statements_view", "reporting:financial_statements",
+                "reporting:gl_advanced_view", "reporting:advanced_gl",
+                "reporting:ar_aging_view", "reporting:advanced_ar",
+                "reporting:ap_aging_view", "reporting:advanced_ap",
+                "reporting:financial_statements_generate",
+                "reporting:templates_manage",
+                "reporting:schedules_manage", 
+                "reporting:bank_reconciliation_manage", "reporting:bank_reconciliation",
+                "reporting:comparative_analysis",
+                "reporting:cash_flow_view",
+                
+                # Basic permissions
+                "company:read", "users:read"
+            ]
+        },
+        {
             "name": "Clerk",
             "description": "Basic data entry permissions",
             "permissions": [

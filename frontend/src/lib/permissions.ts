@@ -53,13 +53,24 @@ export const COMMON_SETUP_CURRENCIES = "common:setup_currencies";
 export const COMMON_SETUP_TAXES = "common:setup_taxes";
 export const COMMON_SETUP_BRANCHES = "common:setup_branches";
 
-// Reporting Permissions
-export const REPORTING_FINANCIAL_STATEMENTS = "reporting:financial_statements";
-export const REPORTING_ADVANCED_GL = "reporting:advanced_gl";
-export const REPORTING_ADVANCED_AR = "reporting:advanced_ar";
-export const REPORTING_ADVANCED_AP = "reporting:advanced_ap";
+// Reporting Permissions  
+export const REPORTING_FINANCIAL_STATEMENTS_VIEW = "reporting:financial_statements_view";
+export const REPORTING_FINANCIAL_STATEMENTS_GENERATE = "reporting:financial_statements_generate";
+export const REPORTING_GL_ADVANCED_VIEW = "reporting:gl_advanced_view";
+export const REPORTING_AR_AGING_VIEW = "reporting:ar_aging_view";
+export const REPORTING_AP_AGING_VIEW = "reporting:ap_aging_view";
 export const REPORTING_TEMPLATES_MANAGE = "reporting:templates_manage";
-export const REPORTING_BANK_RECONCILIATION = "reporting:bank_reconciliation";
+export const REPORTING_SCHEDULES_MANAGE = "reporting:schedules_manage";
+export const REPORTING_BANK_RECONCILIATION_MANAGE = "reporting:bank_reconciliation_manage";
+export const REPORTING_COMPARATIVE_ANALYSIS = "reporting:comparative_analysis";
+export const REPORTING_CASH_FLOW_VIEW = "reporting:cash_flow_view";
+
+// Legacy aliases for backwards compatibility
+export const REPORTING_FINANCIAL_STATEMENTS = REPORTING_FINANCIAL_STATEMENTS_VIEW;
+export const REPORTING_ADVANCED_GL = REPORTING_GL_ADVANCED_VIEW;
+export const REPORTING_ADVANCED_AR = REPORTING_AR_AGING_VIEW;
+export const REPORTING_ADVANCED_AP = REPORTING_AP_AGING_VIEW;
+export const REPORTING_BANK_RECONCILIATION = REPORTING_BANK_RECONCILIATION_MANAGE;
 
 // BOM Permissions
 export const BOM_SETUP_MANAGE = "bom:setup_manage";
