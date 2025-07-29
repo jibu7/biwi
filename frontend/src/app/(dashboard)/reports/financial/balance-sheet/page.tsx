@@ -74,7 +74,9 @@ export default function BalanceSheetPage() {
 
   const handleDrillDown = (accountCode: string) => {
     // Navigate to account transactions detail
-    const url = `/reports/gl/account-transactions?account_code=${accountCode}&as_of_date=${asOfDate}`;
+    // For balance sheet, show transactions from beginning of year to as_of_date
+    const startOfYear = new Date(new Date(asOfDate).getFullYear(), 0, 1).toISOString().split('T')[0];
+    const url = `/reports/gl/account-transactions?account_code=${accountCode}&start_date=${startOfYear}&end_date=${asOfDate}`;
     window.open(url, '_blank');
   };
 

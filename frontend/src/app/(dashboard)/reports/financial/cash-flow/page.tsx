@@ -4,6 +4,7 @@
 import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, subMonths } from 'date-fns';
+import reportingService, { CashFlowData } from '@/services/reportingService';
 import '@/styles/reports.css';
 
 export default function CashFlowPage() {
@@ -12,27 +13,9 @@ export default function CashFlowPage() {
 
   const printRef = useRef<HTMLDivElement>(null);
 
-  // Placeholder query - would need to implement in reportingService
-  const { data: cashFlowData, isLoading, refetch } = useQuery({
+  const { data: cashFlowData, isLoading, refetch } = useQuery<CashFlowData>({
     queryKey: ['cash-flow', startDate, endDate],
-    queryFn: () => Promise.resolve({
-      operating_activities: [
-        { description: 'Net Income', amount: 125000 },
-        { description: 'Depreciation', amount: 15000 },
-        { description: 'Changes in Working Capital', amount: -8000 }
-      ],
-      investing_activities: [
-        { description: 'Equipment Purchases', amount: -25000 },
-        { description: 'Asset Sales', amount: 5000 }
-      ],
-      financing_activities: [
-        { description: 'Loan Proceeds', amount: 50000 },
-        { description: 'Loan Payments', amount: -12000 }
-      ],
-      net_cash_flow: 150000,
-      opening_cash: 75000,
-      closing_cash: 225000
-    }),
+    queryFn: () => reportingService.getCashFlowStatement(startDate, endDate),
     enabled: !!startDate && !!endDate
   });
 
@@ -62,20 +45,22 @@ export default function CashFlowPage() {
     
     csvData.push(['Operating Activities', '', '']);
     cashFlowData.operating_activities.forEach(item => {
-      csvData.push(['', item.description, item.amount.toString()]);
+      csvData.push(['', item.account_name, item.amount.toString()]);
     });
     
     csvData.push(['Investing Activities', '', '']);
     cashFlowData.investing_activities.forEach(item => {
-      csvData.push(['', item.description, item.amount.toString()]);
+      csvData.push(['', item.account_name, item.amount.toString()]);
     });
     
     csvData.push(['Financing Activities', '', '']);
     cashFlowData.financing_activities.forEach(item => {
-      csvData.push(['', item.description, item.amount.toString()]);
+      csvData.push(['', item.account_name, item.amount.toString()]);
     });
     
-    csvData.push(['Net Cash Flow', '', cashFlowData.net_cash_flow.toString()]);
+    csvData.push(['Net Change in Cash', '', cashFlowData.net_change_in_cash.toString()]);
+    csvData.push(['Beginning Cash', '', cashFlowData.beginning_cash.toString()]);
+    csvData.push(['Ending Cash', '', cashFlowData.ending_cash.toString()]);
     
     const csvContent = csvData.map(row => row.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -170,13 +155,13 @@ export default function CashFlowPage() {
                 <div className="ml-4">
                   {cashFlowData.operating_activities.map((item, index) => (
                     <div key={index} className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-900">{item.description}</span>
+                      <span className="text-sm text-gray-900">{item.account_name}</span>
                       <span className="text-sm text-gray-900 font-medium">{formatCurrency(item.amount)}</span>
                     </div>
                   ))}
                   <div className="flex justify-between py-2 font-bold border-t-2 border-gray-300 mt-2">
                     <span>Net Cash from Operating Activities</span>
-                    <span>{formatCurrency(cashFlowData.operating_activities.reduce((sum, item) => sum + item.amount, 0))}</span>
+                    <span>{formatCurrency(cashFlowData.net_cash_from_operating)}</span>
                   </div>
                 </div>
               </div>
@@ -187,13 +172,13 @@ export default function CashFlowPage() {
                 <div className="ml-4">
                   {cashFlowData.investing_activities.map((item, index) => (
                     <div key={index} className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-900">{item.description}</span>
+                      <span className="text-sm text-gray-900">{item.account_name}</span>
                       <span className="text-sm text-gray-900 font-medium">{formatCurrency(item.amount)}</span>
                     </div>
                   ))}
                   <div className="flex justify-between py-2 font-bold border-t-2 border-gray-300 mt-2">
                     <span>Net Cash from Investing Activities</span>
-                    <span>{formatCurrency(cashFlowData.investing_activities.reduce((sum, item) => sum + item.amount, 0))}</span>
+                    <span>{formatCurrency(cashFlowData.net_cash_from_investing)}</span>
                   </div>
                 </div>
               </div>
@@ -204,13 +189,13 @@ export default function CashFlowPage() {
                 <div className="ml-4">
                   {cashFlowData.financing_activities.map((item, index) => (
                     <div key={index} className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-900">{item.description}</span>
+                      <span className="text-sm text-gray-900">{item.account_name}</span>
                       <span className="text-sm text-gray-900 font-medium">{formatCurrency(item.amount)}</span>
                     </div>
                   ))}
                   <div className="flex justify-between py-2 font-bold border-t-2 border-gray-300 mt-2">
                     <span>Net Cash from Financing Activities</span>
-                    <span>{formatCurrency(cashFlowData.financing_activities.reduce((sum, item) => sum + item.amount, 0))}</span>
+                    <span>{formatCurrency(cashFlowData.net_cash_from_financing)}</span>
                   </div>
                 </div>
               </div>
@@ -219,15 +204,15 @@ export default function CashFlowPage() {
               <div className="border-t-2 border-gray-300 pt-4">
                 <div className="flex justify-between py-2">
                   <span className="font-medium">Opening Cash Balance</span>
-                  <span className="font-medium">{formatCurrency(cashFlowData.opening_cash)}</span>
+                  <span className="font-medium">{formatCurrency(cashFlowData.beginning_cash)}</span>
                 </div>
                 <div className="flex justify-between py-2">
-                  <span className="font-medium">Net Cash Flow</span>
-                  <span className="font-medium">{formatCurrency(cashFlowData.net_cash_flow)}</span>
+                  <span className="font-medium">Net Change in Cash</span>
+                  <span className="font-medium">{formatCurrency(cashFlowData.net_change_in_cash)}</span>
                 </div>
                 <div className="flex justify-between py-2 font-bold text-lg border-t border-gray-300">
                   <span>Closing Cash Balance</span>
-                  <span>{formatCurrency(cashFlowData.closing_cash)}</span>
+                  <span>{formatCurrency(cashFlowData.ending_cash)}</span>
                 </div>
               </div>
             </div>

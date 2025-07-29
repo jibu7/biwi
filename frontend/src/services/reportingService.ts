@@ -75,6 +75,21 @@ export interface CashbookTransaction {
   balance: number;
 }
 
+export interface CashFlowData {
+  operating_activities: FinancialStatementLine[];
+  investing_activities: FinancialStatementLine[];
+  financing_activities: FinancialStatementLine[];
+  net_cash_from_operating: number;
+  net_cash_from_investing: number;
+  net_cash_from_financing: number;
+  net_change_in_cash: number;
+  beginning_cash: number;
+  ending_cash: number;
+  start_date: string;
+  end_date: string;
+  company_name: string;
+}
+
 export interface ReportTemplate {
   id: number;
   name: string;
@@ -131,6 +146,15 @@ const reportingService = {
       params.append('comparative_end_date', comparativeEndDate);
     }
     const response = await axiosInstance.get(`/reporting/income-statement?${params}`);
+    return response.data;
+  },
+
+  getCashFlowStatement: async (startDate: string, endDate: string): Promise<CashFlowData> => {
+    const params = new URLSearchParams({ 
+      start_date: startDate, 
+      end_date: endDate 
+    });
+    const response = await axiosInstance.get(`/reporting/cash-flow?${params}`);
     return response.data;
   },
 

@@ -7,7 +7,11 @@ from sqlalchemy import func, and_, or_
 from app.database.database import get_db
 from app.models.core import User, Company, PlatformAuditLog, UserType, SubscriptionStatus, Role, UserRole, AccountingPeriod
 from app.models.gl import GLJournalEntry
-from app.models.ar import ARTransaction
+from app.models.ar import ARTransaction, ARWriteOff
+from app.models.billing import UsageAlert
+from app.models.platform import AuditLog
+from app.models.pos import Till, POSSession, POSCashMovement
+from app.models.reporting import ReportTemplate, BankReconciliation
 from app.schemas.core import Company as CompanySchema, CompanyCreate, CompanyUpdate, CompanyWithStats
 from app.schemas.core import User as UserSchema, UserCreate, UserUpdate
 from app.api.deps import get_current_platform_admin
@@ -638,12 +642,111 @@ def delete_platform_user(
                 detail="Cannot delete platform admin users",
             )
         
-        # Before deleting user, handle audit logs to avoid foreign key constraint issues
-        # Delete audit logs where this user is referenced to prevent constraint violation
-        deleted_audit_count = db.query(PlatformAuditLog).filter(PlatformAuditLog.user_id == user_id).count()
-        db.query(PlatformAuditLog).filter(PlatformAuditLog.user_id == user_id).delete()
+        # Before deleting user, handle all foreign key constraints to avoid violations
+        cleanup_summary = {}
         
-        # Log user deletion
+        # 1. Handle UserRole relationships (cascade delete)
+        user_roles_count = db.query(UserRole).filter(UserRole.user_id == user_id).count()
+        db.query(UserRole).filter(UserRole.user_id == user_id).delete()
+        cleanup_summary["user_roles_deleted"] = user_roles_count
+        
+        # 2. Handle PlatformAuditLog relationships (delete orphaned logs)
+        platform_audit_count = db.query(PlatformAuditLog).filter(PlatformAuditLog.user_id == user_id).count()
+        db.query(PlatformAuditLog).filter(PlatformAuditLog.user_id == user_id).delete()
+        cleanup_summary["platform_audit_logs_deleted"] = platform_audit_count
+        
+        # 3. Handle AuditLog relationships (delete orphaned logs)
+        try:
+            audit_log_count = db.query(AuditLog).filter(AuditLog.user_id == user_id).count()
+            db.query(AuditLog).filter(AuditLog.user_id == user_id).delete()
+            cleanup_summary["audit_logs_deleted"] = audit_log_count
+        except Exception:
+            cleanup_summary["audit_logs_deleted"] = 0
+        
+        # 4. Handle GLJournalEntry relationships (set nullable fields to NULL, prevent if required fields exist)
+        gl_entries_posted = db.query(GLJournalEntry).filter(GLJournalEntry.posted_by_user_id == user_id).count()
+        if gl_entries_posted > 0:
+            # Cannot delete user who posted GL entries - this is audit trail data
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot delete user: {gl_entries_posted} GL journal entries were posted by this user. User deletion would break audit trail."
+            )
+        
+        # Set approved_by_user_id to NULL where this user approved entries
+        gl_approved_count = db.query(GLJournalEntry).filter(GLJournalEntry.approved_by_user_id == user_id).count()
+        if gl_approved_count > 0:
+            db.query(GLJournalEntry).filter(GLJournalEntry.approved_by_user_id == user_id).update({"approved_by_user_id": None})
+            cleanup_summary["gl_approvals_cleared"] = gl_approved_count
+        
+        # 5. Handle ARWriteOff relationships
+        ar_writeoffs_requested = db.query(ARWriteOff).filter(ARWriteOff.requested_by_user_id == user_id).count()
+        if ar_writeoffs_requested > 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot delete user: {ar_writeoffs_requested} AR write-offs were requested by this user."
+            )
+        
+        # Set approved_by_user_id to NULL where this user approved writeoffs
+        try:
+            ar_approved_count = db.query(ARWriteOff).filter(ARWriteOff.approved_by_user_id == user_id).count()
+            if ar_approved_count > 0:
+                db.query(ARWriteOff).filter(ARWriteOff.approved_by_user_id == user_id).update({"approved_by_user_id": None})
+                cleanup_summary["ar_writeoff_approvals_cleared"] = ar_approved_count
+        except Exception:
+            pass
+        
+        # 6. Handle other nullable foreign key relationships - set to NULL
+        try:
+            # UsageAlert.acknowledged_by
+            usage_alerts_count = db.query(UsageAlert).filter(UsageAlert.acknowledged_by == user_id).count()
+            if usage_alerts_count > 0:
+                db.query(UsageAlert).filter(UsageAlert.acknowledged_by == user_id).update({"acknowledged_by": None})
+                cleanup_summary["usage_alerts_cleared"] = usage_alerts_count
+            
+            # Till.default_cashier_id
+            tills_count = db.query(Till).filter(Till.default_cashier_id == user_id).count()  
+            if tills_count > 0:
+                db.query(Till).filter(Till.default_cashier_id == user_id).update({"default_cashier_id": None})
+                cleanup_summary["tills_cleared"] = tills_count
+                
+            # POSCashMovement.authorized_by_id
+            pos_movements_count = db.query(POSCashMovement).filter(POSCashMovement.authorized_by_id == user_id).count()
+            if pos_movements_count > 0:
+                db.query(POSCashMovement).filter(POSCashMovement.authorized_by_id == user_id).update({"authorized_by_id": None})
+                cleanup_summary["pos_movements_cleared"] = pos_movements_count
+        except Exception as e:
+            # Some tables might not exist in all deployments
+            print(f"Warning: Could not clear some optional foreign keys: {e}")
+        
+        # 7. Check for records that prevent deletion (required foreign keys)
+        try:
+            pos_sessions_count = db.query(POSSession).filter(POSSession.cashier_id == user_id).count()
+            if pos_sessions_count > 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot delete user: {pos_sessions_count} POS sessions were operated by this user."
+                )
+            
+            report_templates_count = db.query(ReportTemplate).filter(ReportTemplate.created_by_user_id == user_id).count()
+            if report_templates_count > 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot delete user: {report_templates_count} report templates were created by this user."
+                )
+                
+            bank_reconciliations_count = db.query(BankReconciliation).filter(BankReconciliation.created_by_user_id == user_id).count()
+            if bank_reconciliations_count > 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot delete user: {bank_reconciliations_count} bank reconciliations were created by this user."
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            # Some tables might not exist in all deployments
+            print(f"Warning: Could not check some constraints: {e}")
+        
+        # Log user deletion with cleanup summary
         db.add(PlatformAuditLog(
             user_id=current_user.id,
             company_id=db_user.company_id,
@@ -653,7 +756,7 @@ def delete_platform_user(
             details={
                 "email": db_user.email,
                 "user_type": db_user.user_type,
-                "deleted_audit_logs_count": deleted_audit_count
+                "cleanup_summary": cleanup_summary
             }
         ))
         

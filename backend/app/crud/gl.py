@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func
 from typing import Optional, List, Dict
 from datetime import date
+from decimal import Decimal
 from fastapi import HTTPException, status
 from app import models, schemas
 from app.crud.base import CRUDBase
@@ -315,3 +316,65 @@ def create_gl_journal_entry(
 ) -> models.GLJournalEntry:
     """Alias for create_journal_entry to maintain compatibility"""
     return create_journal_entry(db, entry_in, company_id, user_id)
+
+def get_account_transactions(
+    db: Session,
+    company_id: int,
+    account_id: int,
+    start_date: date,
+    end_date: date
+) -> List[schemas.AccountTransaction]:
+    """Get account transactions for a specific GL account within date range"""
+    
+    # Get journal entry lines for the specified account and date range
+    query = db.query(
+        models.GLJournalEntryLine,
+        models.GLJournalEntry
+    ).join(
+        models.GLJournalEntry,
+        models.GLJournalEntryLine.journal_entry_id == models.GLJournalEntry.id
+    ).filter(
+        models.GLJournalEntryLine.gl_account_id == account_id,
+        models.GLJournalEntry.company_id == company_id,
+        models.GLJournalEntry.entry_date >= start_date,
+        models.GLJournalEntry.entry_date <= end_date,
+        models.GLJournalEntry.status == "Posted"  # Only posted entries
+    ).order_by(
+        models.GLJournalEntry.entry_date.asc(),
+        models.GLJournalEntry.id.asc()
+    )
+    
+    transactions = []
+    running_balance = Decimal('0')
+    
+    # Get the account to determine its type for balance calculation
+    account = db.query(models.GLAccount).filter(
+        models.GLAccount.id == account_id,
+        models.GLAccount.company_id == company_id
+    ).first()
+    
+    if not account:
+        return []
+    
+    for line, entry in query.all():
+        # Calculate running balance based on account type
+        if account.account_type in ["Asset", "Expense"]:
+            # For assets/expenses: debit increases balance, credit decreases
+            running_balance += (line.debit_amount or Decimal('0')) - (line.credit_amount or Decimal('0'))
+        else:
+            # For liabilities/equity/income: credit increases balance, debit decreases
+            running_balance += (line.credit_amount or Decimal('0')) - (line.debit_amount or Decimal('0'))
+        
+        transaction = schemas.AccountTransaction(
+            transaction_date=entry.entry_date,
+            reference_number=entry.reference or f"JE-{entry.id}",
+            description=line.description or entry.description or "",
+            debit_amount=line.debit_amount if line.debit_amount and line.debit_amount > 0 else None,
+            credit_amount=line.credit_amount if line.credit_amount and line.credit_amount > 0 else None,
+            running_balance=running_balance,
+            journal_entry_id=entry.id
+        )
+        
+        transactions.append(transaction)
+    
+    return transactions

@@ -137,13 +137,28 @@ async def create_bank_reconciliation(
         user_id=current_user.id
     )
 
+@router.get("/cash-flow", response_model=schemas.CashFlowData)
+async def get_cash_flow_statement(
+    start_date: date = Query(...),
+    end_date: date = Query(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(PermissionChecker([REPORTING_FINANCIAL_STATEMENTS_VIEW]))
+):
+    """Generate Cash Flow Statement"""
+    return reporting.generate_cash_flow_statement(
+        db=db,
+        company_id=current_user.company_id,
+        start_date=start_date,
+        end_date=end_date
+    )
+
 @router.get("/account-transactions", response_model=List[schemas.AccountTransaction])
 async def get_account_transactions(
     account_code: str = Query(..., description="GL Account Code"),
     start_date: date = Query(..., description="Start date"),
     end_date: date = Query(..., description="End date"),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(PermissionChecker([REPORTING_GL_ADVANCED_VIEW]))
+    current_user: models.User = Depends(PermissionChecker([REPORTING_GL_ADVANCED_VIEW, REPORTING_FINANCIAL_STATEMENTS_VIEW]))
 ):
     """Get account transaction details by account code"""
     # First find the account by code

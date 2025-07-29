@@ -73,9 +73,30 @@ def generate_balance_sheet(
     
     # Add retained earnings to equity if it's not zero
     if retained_earnings != 0:
+        # Try to get the actual retained earnings account from GL defaults
+        from app.crud.gl import get_gl_defaults
+        gl_defaults = get_gl_defaults(db, company_id)
+        
+        if gl_defaults and gl_defaults.retained_earnings_account_id:
+            # Use the configured retained earnings account
+            re_account = db.query(models.GLAccount).filter(
+                models.GLAccount.id == gl_defaults.retained_earnings_account_id,
+                models.GLAccount.company_id == company_id
+            ).first()
+            re_code = re_account.account_code if re_account else "3100"
+            re_name = re_account.account_name if re_account else "Retained Earnings"
+        else:
+            # Fallback: look for a retained earnings account by name or use default
+            re_account = db.query(models.GLAccount).filter(
+                models.GLAccount.company_id == company_id,
+                models.GLAccount.account_name.ilike("%retained%earnings%")
+            ).first()
+            re_code = re_account.account_code if re_account else "3100"
+            re_name = re_account.account_name if re_account else "Retained Earnings"
+        
         retained_earnings_line = schemas.FinancialStatementLine(
-            account_code="3999",
-            account_name="Retained Earnings",
+            account_code=re_code,
+            account_name=re_name,
             amount=retained_earnings,
             level=0
         )
@@ -406,59 +427,26 @@ def generate_cash_flow_statement(
     start_date: date, 
     end_date: date
 ) -> schemas.CashFlowData:
-    """Generate Cash Flow Statement using indirect method"""
+    """Generate Cash Flow Statement using direct method with detailed cash flows"""
     
     company = db.query(models.Company).filter(models.Company.id == company_id).first()
-    
-    # Start with Net Income from Income Statement
-    income_statement = generate_income_statement(db, company_id, start_date, end_date)
-    net_income = income_statement.net_income
     
     operating_activities = []
     investing_activities = []
     financing_activities = []
     
-    # Operating Activities - Start with Net Income
-    operating_activities.append(schemas.FinancialStatementLine(
-        account_code="",
-        account_name="Net Income",
-        amount=net_income,
-        level=0
-    ))
-    
-    # Add back non-cash expenses (depreciation, amortization)
-    depreciation_accounts = db.query(models.GLAccount).filter(
-        models.GLAccount.company_id == company_id,
-        models.GLAccount.account_name.ilike('%depreciation%')
-    ).all()
-    
-    total_depreciation = Decimal('0.00')
-    for account in depreciation_accounts:
-        depreciation = calculate_account_balance_for_period(db, account.id, start_date, end_date)
-        if depreciation != 0:
-            operating_activities.append(schemas.FinancialStatementLine(
-                account_code=account.account_code,
-                account_name=f"Add: {account.account_name}",
-                amount=abs(depreciation),  # Depreciation is typically a credit, so we add it back
-                level=1
-            ))
-            total_depreciation += abs(depreciation)
-    
-    # Changes in working capital (simplified - can be enhanced)
-    # This is a simplified version - in practice, you'd calculate changes in specific accounts
-    
-    net_cash_from_operating = net_income + total_depreciation
-    
-    # Get cash account balances
+    # Get cash accounts - look for cash, bank, checking accounts
     cash_accounts = db.query(models.GLAccount).filter(
         models.GLAccount.company_id == company_id,
         models.GLAccount.account_type == "Asset",
         or_(
             models.GLAccount.account_name.ilike('%cash%'),
-            models.GLAccount.account_name.ilike('%bank%')
+            models.GLAccount.account_name.ilike('%bank%'),
+            models.GLAccount.account_name.ilike('%checking%')
         )
     ).all()
     
+    # Calculate beginning and ending cash balances
     beginning_cash = Decimal('0.00')
     ending_cash = Decimal('0.00')
     
@@ -466,10 +454,102 @@ def generate_cash_flow_statement(
         beginning_cash += calculate_account_balance_as_of_date(db, account.id, start_date - timedelta(days=1))
         ending_cash += calculate_account_balance_as_of_date(db, account.id, end_date)
     
-    # For now, assume no investing or financing activities (can be enhanced)
-    net_cash_from_investing = Decimal('0.00')
-    net_cash_from_financing = Decimal('0.00')
+    # Get all cash transactions for the period
+    cash_transactions = []
+    for cash_account in cash_accounts:
+        account_transactions = db.query(models.GLJournalEntryLine).join(models.GLJournalEntry).filter(
+            models.GLJournalEntryLine.gl_account_id == cash_account.id,
+            models.GLJournalEntry.status == "Posted",
+            models.GLJournalEntry.entry_date >= start_date,
+            models.GLJournalEntry.entry_date <= end_date
+        ).all()
+        cash_transactions.extend(account_transactions)
     
+    # Analyze cash flows by categorizing transactions
+    cash_from_customers = Decimal('0.00')
+    cash_to_suppliers = Decimal('0.00')
+    capital_contributions = Decimal('0.00')
+    
+    for transaction in cash_transactions:
+        journal_entry = transaction.journal_entry
+        
+        # Get the offsetting account(s) in the same journal entry
+        other_lines = db.query(models.GLJournalEntryLine).filter(
+            models.GLJournalEntryLine.journal_entry_id == transaction.journal_entry_id,
+            models.GLJournalEntryLine.id != transaction.id
+        ).all()
+        
+        for other_line in other_lines:
+            other_account = db.query(models.GLAccount).filter(
+                models.GLAccount.id == other_line.gl_account_id
+            ).first()
+            
+            if other_account:
+                account_name_lower = other_account.account_name.lower()
+                
+                # Categorize based on the offsetting account
+                if ('receivable' in account_name_lower or 'ar' in account_name_lower):
+                    # Cash receipt from customers (AR decrease)
+                    if transaction.debit_amount > 0:  # Cash account debited
+                        cash_from_customers += transaction.debit_amount
+                        
+                elif ('payable' in account_name_lower or 'ap' in account_name_lower):
+                    # Cash payment to suppliers (AP decrease)
+                    if transaction.credit_amount > 0:  # Cash account credited
+                        cash_to_suppliers += transaction.credit_amount
+                        
+                elif ('capital' in account_name_lower or 'share' in account_name_lower or 
+                      other_account.account_type == 'Equity'):
+                    # Capital contribution or equity transaction
+                    if transaction.debit_amount > 0:  # Cash account debited
+                        capital_contributions += transaction.debit_amount
+                        
+                elif ('sales' in account_name_lower or 'revenue' in account_name_lower or 
+                      other_account.account_type == 'Income'):
+                    # Direct cash sales
+                    if transaction.debit_amount > 0:  # Cash account debited
+                        cash_from_customers += transaction.debit_amount
+                        
+                elif ('expense' in account_name_lower or 'cost' in account_name_lower or 
+                      other_account.account_type in ['Expense', 'Expenses']):
+                    # Cash payment for expenses (similar to suppliers)
+                    if transaction.credit_amount > 0:  # Cash account credited
+                        cash_to_suppliers += transaction.credit_amount
+    
+    # Build Operating Activities
+    if cash_from_customers > 0:
+        operating_activities.append(schemas.FinancialStatementLine(
+            account_code="",
+            account_name="Cash received from customers",
+            amount=cash_from_customers,
+            level=0
+        ))
+    
+    if cash_to_suppliers > 0:
+        operating_activities.append(schemas.FinancialStatementLine(
+            account_code="",
+            account_name="Cash paid to suppliers",
+            amount=-cash_to_suppliers,  # Negative because it's a cash outflow
+            level=0
+        ))
+    
+    net_cash_from_operating = cash_from_customers - cash_to_suppliers
+    
+    # Build Financing Activities
+    if capital_contributions > 0:
+        financing_activities.append(schemas.FinancialStatementLine(
+            account_code="",
+            account_name="Capital contribution",
+            amount=capital_contributions,
+            level=0
+        ))
+    
+    net_cash_from_financing = capital_contributions
+    
+    # Investing activities (none for this simple case)
+    net_cash_from_investing = Decimal('0.00')
+    
+    # Calculate net change in cash
     net_change_in_cash = ending_cash - beginning_cash
     
     return schemas.CashFlowData(

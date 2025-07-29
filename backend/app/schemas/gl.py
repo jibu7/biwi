@@ -172,9 +172,10 @@ class TrialBalance(BaseModel):
     total_credits: Decimal
 
 class AccountTransaction(BaseModel):
-    date: date
-    reference: str
+    transaction_date: date
+    reference_number: str
     description: str
-    debit_amount: Decimal
-    credit_amount: Decimal
-    balance: Decimal
+    debit_amount: Optional[Decimal] = None
+    credit_amount: Optional[Decimal] = None
+    running_balance: Optional[Decimal] = None
+    journal_entry_id: Optional[int] = None
