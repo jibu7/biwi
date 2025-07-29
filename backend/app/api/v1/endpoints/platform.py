@@ -638,7 +638,12 @@ def delete_platform_user(
                 detail="Cannot delete platform admin users",
             )
         
-        # Log user deletion before deleting
+        # Before deleting user, handle audit logs to avoid foreign key constraint issues
+        # Delete audit logs where this user is referenced to prevent constraint violation
+        deleted_audit_count = db.query(PlatformAuditLog).filter(PlatformAuditLog.user_id == user_id).count()
+        db.query(PlatformAuditLog).filter(PlatformAuditLog.user_id == user_id).delete()
+        
+        # Log user deletion
         db.add(PlatformAuditLog(
             user_id=current_user.id,
             company_id=db_user.company_id,
@@ -647,7 +652,8 @@ def delete_platform_user(
             resource_id=db_user.id,
             details={
                 "email": db_user.email,
-                "user_type": db_user.user_type
+                "user_type": db_user.user_type,
+                "deleted_audit_logs_count": deleted_audit_count
             }
         ))
         
