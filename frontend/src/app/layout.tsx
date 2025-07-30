@@ -8,6 +8,11 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Vinea ERP',
   description: 'Modern Enterprise Resource Planning System',
+  icons: {
+    icon: '/channelzap-logo-011.png',
+    shortcut: '/channelzap-logo-011.png',
+    apple: '/channelzap-logo-011.png',
+  },
 };
 
 export default function RootLayout({

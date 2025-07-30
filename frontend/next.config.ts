@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
         source: '/api/v1/:path*',
         destination: `${process.env.API_BASE_URL || 'http://backend:8000/api/v1'}/:path*`,
       },
+      {
+        source: '/favicon.ico',
+        destination: '/channelzap-logo-011.png',
+      },
     ];
   },
   images: {
