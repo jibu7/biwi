@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
+import { analyticsService, ExecutiveDashboardData, TimeRangeFilter } from '@/services/analyticsService';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -33,109 +35,71 @@ import { cn } from '@/lib/utils';
 
 export default function ExecutiveDashboardPage() {
   const { user, company } = useAuthStore();
-  const [timeRange, setTimeRange] = useState('30d');
-  const [isLoading, setIsLoading] = useState(false);
+  const [timeRange, setTimeRange] = useState<TimeRangeFilter>('30d');
+  
+  // Fetch real analytics data
+  const { 
+    data: dashboardData, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useQuery({
+    queryKey: ['executive-dashboard', timeRange],
+    queryFn: () => analyticsService.getExecutiveDashboard(timeRange),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: 10 * 60 * 1000, // Auto-refresh every 10 minutes
+  });
 
-  // Mock data - in real implementation, this would come from API
-  const kpiData = {
-    totalRevenue: {
-      value: '$2,847,392',
-      change: '+12.5%',
-      changeType: 'positive' as const,
-      trend: [45, 52, 48, 61, 58, 67, 73, 69, 76, 82, 85, 91]
-    },
-    totalExpenses: {
-      value: '$1,923,481',
-      change: '+8.2%',
-      changeType: 'negative' as const,
-      trend: [35, 42, 38, 45, 48, 52, 49, 56, 53, 59, 62, 65]
-    },
-    netProfit: {
-      value: '$923,911',
-      change: '+18.3%',
-      changeType: 'positive' as const,
-      trend: [10, 15, 12, 18, 16, 22, 25, 23, 28, 31, 34, 38]
-    },
-    cashFlow: {
-      value: '$1,234,567',
-      change: '+5.7%',
-      changeType: 'positive' as const,
-      trend: [20, 25, 22, 30, 28, 35, 32, 38, 36, 42, 45, 48]
-    },
-    activeCustomers: {
-      value: '1,847',
-      change: '+24',
-      changeType: 'positive' as const,
-    },
-    pendingOrders: {
-      value: '156',
-      change: '-12',
-      changeType: 'positive' as const,
-    },
-    inventoryValue: {
-      value: '$456,789',
-      change: '+3.2%',
-      changeType: 'positive' as const,
-    },
-    outstandingAR: {
-      value: '$234,567',
-      change: '-8.4%',
-      changeType: 'positive' as const,
-    }
+  // Helper function to determine change type from change string
+  const getChangeType = (change: string): 'positive' | 'negative' | 'neutral' => {
+    if (change.startsWith('+')) return 'positive';
+    if (change.startsWith('-')) return 'negative';
+    return 'neutral';
   };
 
-  const revenueByMonth = [
-    { label: 'Jan', value: 180000 },
-    { label: 'Feb', value: 195000 },
-    { label: 'Mar', value: 210000 },
-    { label: 'Apr', value: 225000 },
-    { label: 'May', value: 240000 },
-    { label: 'Jun', value: 255000 },
-    { label: 'Jul', value: 270000 },
-    { label: 'Aug', value: 285000 },
-    { label: 'Sep', value: 265000 },
-    { label: 'Oct', value: 290000 },
-    { label: 'Nov', value: 305000 },
-    { label: 'Dec', value: 320000 }
-  ];
+  // Use real data or fallback to empty arrays if loading/error
+  const revenueByMonth = dashboardData?.charts.revenueByMonth || [];
 
-  const expenseBreakdown = [
-    { label: 'Cost of Goods Sold', value: 45, color: '#ef4444' },
-    { label: 'Salaries & Benefits', value: 28, color: '#3b82f6' },
-    { label: 'Operating Expenses', value: 15, color: '#10b981' },
-    { label: 'Marketing', value: 8, color: '#f59e0b' },
-    { label: 'Other', value: 4, color: '#8b5cf6' }
-  ];
+  const expenseBreakdown = (dashboardData?.charts.expenseBreakdown || []).map((item, index) => ({
+    ...item,
+    color: ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'][index % 8]
+  }));
 
-  const topProducts = [
-    { label: 'Product A', value: 125000, color: 'bg-blue-500' },
-    { label: 'Product B', value: 98000, color: 'bg-green-500' },
-    { label: 'Product C', value: 87000, color: 'bg-yellow-500' },
-    { label: 'Product D', value: 76000, color: 'bg-purple-500' },
-    { label: 'Product E', value: 65000, color: 'bg-red-500' }
-  ];
+  const topProducts = (dashboardData?.charts.topCustomers || []).map((item, index) => ({
+    ...item,
+    color: ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-red-500', 'bg-pink-500', 'bg-teal-500', 'bg-orange-500'][index % 8]
+  }));
 
-  const salesFunnel = [
-    { label: 'Leads', value: 1200, color: '#ddd6fe' },
-    { label: 'Qualified', value: 800, color: '#c4b5fd' },
-    { label: 'Proposals', value: 400, color: '#a78bfa' },
-    { label: 'Negotiations', value: 200, color: '#8b5cf6' },
-    { label: 'Closed Won', value: 120, color: '#7c3aed' }
-  ];
+  const salesFunnel = (dashboardData?.charts.salesFunnel || []).map((item, index) => ({
+    ...item,
+    color: ['#ddd6fe', '#c4b5fd', '#a78bfa', '#8b5cf6', '#7c3aed'][index % 5]
+  }));
 
-  const alerts = [
-    { type: 'warning', message: 'Low inventory levels for 3 products', priority: 'high' },
-    { type: 'info', message: 'Monthly financial reports ready for review', priority: 'medium' },
-    { type: 'success', message: '15 new customer orders this week', priority: 'low' },
-    { type: 'warning', message: '5 invoices overdue by 30+ days', priority: 'high' }
-  ];
+  const alerts = (dashboardData?.alerts || []).map(alert => ({
+    ...alert,
+    priority: alert.type === 'warning' ? 'high' : alert.type === 'error' ? 'high' : 'medium'
+  }));
 
   const refreshData = async () => {
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsLoading(false);
+    await refetch();
   };
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-600 mb-2">Failed to load dashboard data</p>
+          <button 
+            onClick={refreshData}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -153,7 +117,7 @@ export default function ExecutiveDashboardPage() {
             </div>
             <span className="text-gray-300">•</span>
             <span className="text-sm text-gray-500">
-              Last updated: {new Date().toLocaleTimeString()}
+              Last updated: {dashboardData?.last_updated ? new Date(dashboardData.last_updated).toLocaleTimeString() : 'Never'}
             </span>
           </div>
         </div>
@@ -221,44 +185,41 @@ export default function ExecutiveDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <DashboardCard
           title="Total Revenue"
-          value={kpiData.totalRevenue.value}
-          change={kpiData.totalRevenue.change}
-          changeType={kpiData.totalRevenue.changeType}
+          value={dashboardData?.kpis.totalRevenue.value || '$0.00'}
+          change={dashboardData?.kpis.totalRevenue.change || '+0.0%'}
+          changeType={getChangeType(dashboardData?.kpis.totalRevenue.change || '+0.0%')}
           icon={DollarSign}
-          trend={kpiData.totalRevenue.trend}
           subtitle="Gross revenue this period"
           loading={isLoading}
         />
         
         <DashboardCard
           title="Net Profit"
-          value={kpiData.netProfit.value}
-          change={kpiData.netProfit.change}
-          changeType={kpiData.netProfit.changeType}
+          value={dashboardData?.kpis.netProfit.value || '$0.00'}
+          change={dashboardData?.kpis.netProfit.change || '+0.0%'}
+          changeType={getChangeType(dashboardData?.kpis.netProfit.change || '+0.0%')}
           icon={TrendingUp}
-          trend={kpiData.netProfit.trend}
           subtitle="After all expenses"
           loading={isLoading}
         />
         
         <DashboardCard
           title="Cash Flow"
-          value={kpiData.cashFlow.value}
-          change={kpiData.cashFlow.change}
-          changeType={kpiData.cashFlow.changeType}
+          value={dashboardData?.kpis.cashFlow.value || '$0.00'}
+          change={dashboardData?.kpis.cashFlow.change || '+0.0%'}
+          changeType={getChangeType(dashboardData?.kpis.cashFlow.change || '+0.0%')}
           icon={Activity}
-          trend={kpiData.cashFlow.trend}
           subtitle="Operating cash flow"
           loading={isLoading}
         />
         
         <DashboardCard
           title="Active Customers"
-          value={kpiData.activeCustomers.value}
-          change={kpiData.activeCustomers.change}
-          changeType={kpiData.activeCustomers.changeType}
+          value={dashboardData?.kpis.activeCustomers.value || '0'}
+          change={dashboardData?.kpis.activeCustomers.change || '+0'}
+          changeType={getChangeType(dashboardData?.kpis.activeCustomers.change || '+0')}
           icon={Users}
-          subtitle="Customers with orders"
+          subtitle="Active customers"
           loading={isLoading}
         />
       </div>
@@ -266,42 +227,42 @@ export default function ExecutiveDashboardPage() {
       {/* Secondary KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <DashboardCard
-          title="Pending Orders"
-          value={kpiData.pendingOrders.value}
-          change={kpiData.pendingOrders.change}
-          changeType={kpiData.pendingOrders.changeType}
+          title="Outstanding A/P"
+          value={dashboardData?.kpis.outstandingAP?.value || '$0.00'}
+          change={dashboardData?.kpis.outstandingAP?.change || '+0.0%'}
+          changeType={getChangeType(dashboardData?.kpis.outstandingAP?.change || '+0.0%')}
           icon={ShoppingCart}
-          subtitle="Awaiting fulfillment"
-          loading={isLoading}
-        />
-        
-        <DashboardCard
-          title="Inventory Value"
-          value={kpiData.inventoryValue.value}
-          change={kpiData.inventoryValue.change}
-          changeType={kpiData.inventoryValue.changeType}
-          icon={Package}
-          subtitle="Current stock value"
+          subtitle="Accounts payable"
           loading={isLoading}
         />
         
         <DashboardCard
           title="Outstanding A/R"
-          value={kpiData.outstandingAR.value}
-          change={kpiData.outstandingAR.change}
-          changeType={kpiData.outstandingAR.changeType}
-          icon={CreditCard}
+          value={dashboardData?.kpis.outstandingAR.value || '$0.00'}
+          change={dashboardData?.kpis.outstandingAR.change || '+0.0%'}
+          changeType={getChangeType(dashboardData?.kpis.outstandingAR.change || '+0.0%')}
+          icon={Package}
           subtitle="Accounts receivable"
           loading={isLoading}
         />
         
         <DashboardCard
-          title="Total Expenses"
-          value={kpiData.totalExpenses.value}
-          change={kpiData.totalExpenses.change}
-          changeType={kpiData.totalExpenses.changeType}
-          icon={TrendingDown}
-          subtitle="All operating costs"
+          title="Cash Position"
+          value={dashboardData?.kpis.cashFlow.value || '$0.00'}
+          change={dashboardData?.kpis.cashFlow.change || '+0.0%'}
+          changeType={getChangeType(dashboardData?.kpis.cashFlow.change || '+0.0%')}
+          icon={CreditCard}
+          subtitle="Cash & bank accounts"
+          loading={isLoading}
+        />
+        
+        <DashboardCard
+          title="Total Revenue"
+          value={dashboardData?.kpis.totalRevenue.value || '$0.00'}
+          change={dashboardData?.kpis.totalRevenue.change || '+0.0%'}
+          changeType={getChangeType(dashboardData?.kpis.totalRevenue.change || '+0.0%')}
+          icon={TrendingUp}
+          subtitle="Total period revenue"
           loading={isLoading}
         />
       </div>
@@ -342,8 +303,8 @@ export default function ExecutiveDashboardPage() {
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartContainer
-          title="Top Products by Revenue"
-          subtitle="Best performing products this month"
+          title="Top Customers by Revenue"
+          subtitle="Best performing customers this period"
           loading={isLoading}
         >
           <SimpleBarChart
