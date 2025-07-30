@@ -90,15 +90,40 @@ export const GlobalSearch: React.FC = () => {
         }
         
         if (nav.href) {
+          // Enhanced search keywords from new nav structure
+          const keywords = [
+            nav.label.toLowerCase(), 
+            category.toLowerCase(),
+            ...(nav.searchKeywords || []),
+            ...(nav.meta?.category ? [nav.meta.category] : [])
+          ];
+          
           items.push({
-            id: `nav-${nav.href}`,
+            id: nav.id || `nav-${nav.href}`,
             title: nav.label,
             description: nav.description || `Navigate to ${nav.label}`,
             href: nav.href,
             category,
             icon: nav.icon,
-            keywords: [nav.label.toLowerCase(), category.toLowerCase()]
+            keywords
           });
+          
+          // Add quick actions as separate searchable items
+          if (nav.quickActions) {
+            nav.quickActions.forEach((action: any) => {
+              if (!action.requiredPermission || hasPermission(action.requiredPermission)) {
+                items.push({
+                  id: `quick-${action.href}`,
+                  title: action.label,
+                  description: `Quick action - ${action.category}`,
+                  href: action.href,
+                  category: 'quick',
+                  icon: action.icon,
+                  keywords: [action.label.toLowerCase(), action.category.toLowerCase(), 'quick', 'action', ...(action.keywords || [])]
+                });
+              }
+            });
+          }
         }
         
         if (nav.children) {
@@ -142,16 +167,21 @@ export const GlobalSearch: React.FC = () => {
       }
     });
     
-    // Add quick actions
+    // Add quick actions from context
     quickActions.forEach(action => {
-      items.push({
-        id: `quick-${action.href}`,
-        title: action.label,
-        description: `Quick action - ${action.category}`,
-        href: action.href,
-        category: 'quick',
-        keywords: [action.label.toLowerCase(), action.category.toLowerCase(), 'quick', 'action']
-      });
+      // Check if action has permission requirement
+      const hasRequiredPermission = !action.requiredPermission || hasPermission(action.requiredPermission);
+      
+      if (hasRequiredPermission) {
+        items.push({
+          id: `context-quick-${action.href}`,
+          title: action.label,
+          description: `Quick action - ${action.category}`,
+          href: action.href,
+          category: 'quick',
+          keywords: [action.label.toLowerCase(), action.category.toLowerCase(), 'quick', 'action', ...(action.keywords || [])]
+        });
+      }
     });
     
     return items;

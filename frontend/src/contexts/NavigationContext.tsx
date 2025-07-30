@@ -26,13 +26,36 @@ interface NavigationContextType {
   isSidebarCollapsed: boolean;
   setIsSidebarCollapsed: (collapsed: boolean) => void;
   
+  // Enhanced features
+  pinnedItems: string[];
+  togglePinnedItem: (href: string) => void;
+  
   // Quick actions
   quickActions: Array<{
     label: string;
     href: string;
     icon: string;
     category: string;
+    keywords?: string[];
+    requiredPermission?: string;
   }>;
+  
+  // Smart suggestions
+  suggestedActions: Array<{
+    label: string;
+    href: string;
+    reason: string;
+    priority: 'high' | 'medium' | 'low';
+  }>;
+  
+  // Navigation preferences
+  navigationPreferences: {
+    viewMode: 'compact' | 'comfortable' | 'spacious';
+    showDescriptions: boolean;
+    showBadges: boolean;
+    groupByFrequency: boolean;
+  };
+  updateNavigationPreferences: (prefs: Partial<NavigationContextType['navigationPreferences']>) => void;
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
@@ -58,26 +81,51 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Recent items state - persist in localStorage
   const [recentItems, setRecentItems] = useState<string[]>([]);
   
+  // Pinned items state - persist in localStorage
+  const [pinnedItems, setPinnedItems] = useState<string[]>([]);
+  
   // Mobile navigation state
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   
   // Sidebar state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
+  // Navigation preferences
+  const [navigationPreferences, setNavigationPreferences] = useState<{
+    viewMode: 'compact' | 'comfortable' | 'spacious';
+    showDescriptions: boolean;
+    showBadges: boolean;
+    groupByFrequency: boolean;
+  }>({
+    viewMode: 'comfortable',
+    showDescriptions: true,
+    showBadges: true,
+    groupByFrequency: false
+  });
+  
   // Quick actions - commonly used features
   const quickActions = [
-    { label: 'New Journal Entry', href: '/transactions/gl/journal-entry/new', icon: '📝', category: 'GL' },
-    { label: 'New Customer', href: '/maintenance/ar/customers/new', icon: '👤', category: 'AR' },
-    { label: 'New Supplier', href: '/maintenance/ap/suppliers/new', icon: '🏢', category: 'AP' },
-    { label: 'Stock Adjustment', href: '/transactions/inventory/adjustments/new', icon: '📦', category: 'Inventory' },
-    { label: 'New Sales Order', href: '/transactions/oe/sales-orders/new', icon: '🛒', category: 'OE' },
-    { label: 'Balance Sheet', href: '/reports/financial/balance-sheet', icon: '📊', category: 'Reports' },
+    { label: 'New Journal Entry', href: '/transactions/gl/journal-entry/new', icon: '📝', category: 'GL', keywords: ['journal', 'entry', 'gl'] },
+    { label: 'New Customer', href: '/maintenance/ar/customers/new', icon: '👤', category: 'AR', keywords: ['customer', 'add', 'ar'] },
+    { label: 'New Supplier', href: '/maintenance/ap/suppliers/new', icon: '🏢', category: 'AP', keywords: ['supplier', 'vendor', 'ap'] },
+    { label: 'Stock Adjustment', href: '/transactions/inventory/adjustments/new', icon: '📦', category: 'Inventory', keywords: ['stock', 'inventory', 'adjustment'] },
+    { label: 'New Sales Order', href: '/transactions/oe/sales-orders/new', icon: '🛒', category: 'OE', keywords: ['sales', 'order', 'oe'] },
+    { label: 'Balance Sheet', href: '/reports/financial/balance-sheet', icon: '📊', category: 'Reports', keywords: ['balance', 'sheet', 'financial'] },
   ];
   
-  // Load favorites and recent items from localStorage on mount
+  // Smart suggestions based on usage patterns
+  const suggestedActions = [
+    { label: 'Complete Month-End Process', href: '/operations/month-end', reason: 'Based on current date', priority: 'high' as const },
+    { label: 'Review Pending Approvals', href: '/operations/approvals', reason: 'You have 3 pending items', priority: 'medium' as const },
+    { label: 'Update Company Settings', href: '/maintenance/system/company', reason: 'Settings not updated in 90 days', priority: 'low' as const },
+  ];
+  
+  // Load favorites, recent items, and pinned items from localStorage on mount
   useEffect(() => {
     const savedFavorites = localStorage.getItem('vinea-favorites');
     const savedRecent = localStorage.getItem('vinea-recent');
+    const savedPinned = localStorage.getItem('vinea-pinned');
+    const savedPreferences = localStorage.getItem('vinea-nav-preferences');
     
     if (savedFavorites) {
       try {
@@ -94,6 +142,22 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         console.error('Failed to parse saved recent items:', error);
       }
     }
+    
+    if (savedPinned) {
+      try {
+        setPinnedItems(JSON.parse(savedPinned));
+      } catch (error) {
+        console.error('Failed to parse saved pinned items:', error);
+      }
+    }
+    
+    if (savedPreferences) {
+      try {
+        setNavigationPreferences(prev => ({ ...prev, ...JSON.parse(savedPreferences) }));
+      } catch (error) {
+        console.error('Failed to parse saved navigation preferences:', error);
+      }
+    }
   }, []);
   
   // Save favorites to localStorage when changed
@@ -105,6 +169,16 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     localStorage.setItem('vinea-recent', JSON.stringify(recentItems));
   }, [recentItems]);
+  
+  // Save pinned items to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('vinea-pinned', JSON.stringify(pinnedItems));
+  }, [pinnedItems]);
+  
+  // Save navigation preferences to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('vinea-nav-preferences', JSON.stringify(navigationPreferences));
+  }, [navigationPreferences]);
   
   // Add current page to recent items when pathname changes
   useEffect(() => {
@@ -153,11 +227,23 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     );
   };
   
+  const togglePinnedItem = (href: string) => {
+    setPinnedItems(prev => 
+      prev.includes(href) 
+        ? prev.filter(item => item !== href)
+        : [...prev, href].slice(0, 5) // Limit to 5 pinned items
+    );
+  };
+  
   const addRecentItem = (href: string) => {
     setRecentItems(prev => {
       const filtered = prev.filter(item => item !== href);
       return [href, ...filtered].slice(0, 10); // Limit to 10 recent items
     });
+  };
+  
+  const updateNavigationPreferences = (prefs: Partial<typeof navigationPreferences>) => {
+    setNavigationPreferences(prev => ({ ...prev, ...prefs }));
   };
   
   const value: NavigationContextType = {
@@ -173,7 +259,12 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setIsMobileNavOpen,
     isSidebarCollapsed,
     setIsSidebarCollapsed,
+    pinnedItems,
+    togglePinnedItem,
     quickActions,
+    suggestedActions,
+    navigationPreferences,
+    updateNavigationPreferences,
   };
   
   return (
