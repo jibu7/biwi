@@ -52,6 +52,7 @@ export const OE_REPORTS_VIEW = "oe:reports_view";
 export const COMMON_SETUP_CURRENCIES = "common:setup_currencies";
 export const COMMON_SETUP_TAXES = "common:setup_taxes";
 export const COMMON_SETUP_BRANCHES = "common:setup_branches";
+export const SYSTEM_ADVANCED_SETUP = "system:advanced_setup";
 
 // Reporting Permissions  
 export const REPORTING_FINANCIAL_STATEMENTS_VIEW = "reporting:financial_statements_view";

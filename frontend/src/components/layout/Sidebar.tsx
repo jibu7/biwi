@@ -1,19 +1,23 @@
 'use client';
 
-
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { navItems } from '@/lib/navigationItems';
 import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 
-export function Sidebar() {
+interface SidebarProps {
+  isSidebarOpen: boolean;
+  setSidebarOpen: (isOpen: boolean) => void;
+}
+
+export function Sidebar({ isSidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
   const { hasPermission } = usePermissions();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-
+  
   const toggleExpanded = (label: string) => {
     setExpandedItems((prev) => {
       const newSet = new Set(prev);
@@ -79,6 +83,7 @@ export function Sidebar() {
         {item.href ? (
           <Link
             href={item.href}
+            onClick={() => setSidebarOpen(false)}
             className={cn(
               'flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md transition-colors',
               pathname === item.href
@@ -119,14 +124,35 @@ export function Sidebar() {
     );
   };
 
+
   return (
-    <div className="bg-white w-64 min-h-screen shadow-lg">
-      <div className="p-6">
-        <h2 className="text-2xl font-bold text-gray-800">Vinea ERP</h2>
+    <>
+      {/* Overlay for mobile */}
+      <div
+        className={cn(
+          'fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden',
+          isSidebarOpen ? 'block' : 'hidden'
+        )}
+        onClick={() => setSidebarOpen(false)}
+      ></div>
+
+      <div
+        className={cn(
+          'bg-white w-64 min-h-screen shadow-lg fixed top-0 left-0 z-40 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0',
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        <div className="flex items-center justify-between p-6">
+          <h2 className="text-2xl font-bold text-gray-800">Vinea ERP</h2>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+        <nav className="px-4 pb-4">
+          {navItems.map((item) => renderNavItem(item))}
+        </nav>
       </div>
-      <nav className="px-4 pb-4">
-        {navItems.map((item) => renderNavItem(item))}
-      </nav>
-    </div>
+    </>
   );
 }
+
