@@ -174,8 +174,8 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
               onClick={() => setSidebarOpen(false)}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
-                'hover:bg-gray-50 hover:text-gray-900',
-                isActive && 'bg-blue-50 text-blue-700 border-r-2 border-blue-600',
+                'hover:bg-blue-50 hover:text-blue-700',
+                isActive && 'bg-blue-100 text-blue-700 border-r-2 border-blue-600',
                 level > 0 && 'ml-6',
                 isSidebarCollapsed && 'justify-center px-2'
               )}
@@ -185,7 +185,7 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
                   <Icon 
                     className={cn(
                       "h-4 w-4 flex-shrink-0",
-                      isActive ? "text-blue-600" : "text-gray-500"
+                      isActive ? "text-blue-600" : "text-gray-600"
                     )} 
                   />
                 )}
@@ -256,7 +256,7 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
             onClick={() => item.id && toggleExpanded(item.id)}
             className={cn(
               'w-full flex items-center justify-between gap-3 px-3 py-3 text-sm font-semibold rounded-lg transition-all duration-200',
-              'hover:bg-gray-50 text-gray-900',
+              'hover:bg-blue-50 text-gray-900',
               level > 0 && 'ml-6',
               isSidebarCollapsed && 'justify-center px-2'
             )}
@@ -331,11 +331,11 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
 
       <div
         className={cn(
-          'bg-background border-r shadow-sm min-h-screen fixed top-0 left-0 z-40 transform transition-all duration-300 ease-in-out lg:relative lg:translate-x-0',
+          'bg-white border-r border-gray-200 shadow-sm min-h-screen fixed top-0 left-0 z-40 transform transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col mobile-sidebar',
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
           isSidebarCollapsed ? 'w-16' : 'w-72',
-          // Mobile-specific styles
-          'md:w-72 sm:w-64'
+          // Mobile-specific styles - improved responsive design
+          'h-full lg:h-screen'
         )}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -343,16 +343,16 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
       >
         {/* Header */}
         <div className={cn(
-          "flex items-center justify-between p-4 border-b",
+          "flex items-center justify-between p-4 border-b border-gray-200 bg-white flex-shrink-0",
           isSidebarCollapsed && "justify-center"
         )}>
           {!isSidebarCollapsed && (
-            <h2 className="text-xl font-bold text-foreground">Vinea ERP</h2>
+            <h2 className="text-xl font-bold text-gray-900">Vinea ERP</h2>
           )}
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-1.5 hover:bg-accent rounded-lg transition-colors hidden lg:flex"
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors hidden lg:flex items-center justify-center"
             >
               <ChevronLeft className={cn(
                 "h-4 w-4 transition-transform duration-200",
@@ -361,7 +361,7 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
             </button>
             <button 
               onClick={() => setSidebarOpen(false)} 
-              className="p-1.5 hover:bg-accent rounded-lg transition-colors lg:hidden"
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors lg:hidden flex items-center justify-center"
             >
               <X className="h-4 w-4" />
             </button>
@@ -371,7 +371,7 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
         {!isSidebarCollapsed && (
           <>
             {/* Enhanced Search - Fixed Alignment */}
-            <div className="px-4 py-4 border-b">
+            <div className="px-4 py-4 border-b border-gray-200 bg-white flex-shrink-0">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
@@ -389,7 +389,7 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
             </div>
 
             {/* Enhanced Navigation Tabs - Fixed Alignment */}
-            <div className="px-4 pb-4 border-b">
+            <div className="px-4 pb-4 border-b border-gray-200 bg-white flex-shrink-0">
               <div className="flex gap-0.5 bg-gray-100 rounded-lg p-0.5">
                 {[
                   { key: 'nav', label: 'Menu', icon: BookOpen },
@@ -417,12 +417,12 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
           </>
         )}
 
-        {/* Enhanced Navigation Content - Fixed Spacing */}
+        {/* Enhanced Navigation Content - Fixed Spacing and Scrolling */}
         <div className={cn(
-          "flex-1 overflow-y-auto px-4 py-3",
-          // Better mobile scrolling and touch handling
-          "overscroll-y-contain scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
-        )}>
+          "flex-1 overflow-y-auto px-4 py-3 bg-white sidebar-scroll",
+          // Better scrolling behavior
+          "overscroll-y-contain"
+        )} style={{ maxHeight: 'calc(100vh - 200px)' }}>
           {activeTab === 'nav' && (
             <>
               {searchQuery ? (
@@ -539,7 +539,7 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
 
         {/* Settings Footer - Fixed Alignment */}
         {!isSidebarCollapsed && (
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-gray-200 p-4 bg-white flex-shrink-0">
             <button
               onClick={() => {
                 // Toggle some preference as example
