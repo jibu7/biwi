@@ -45,7 +45,7 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
     navigationPreferences,
     updateNavigationPreferences
   } = useNavigation();
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['setup-configuration']));
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['setup-configuration', 'analytics-insights']));
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'nav' | 'recent' | 'favorites' | 'suggested'>('nav');
   
@@ -191,22 +191,17 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
                 )}
                 {!isSidebarCollapsed && (
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate">{item.label}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="truncate flex-1 min-w-0">{item.label}</span>
                       {item.badge && (
                         <span className={cn(
-                          "px-1.5 py-0.5 text-xs rounded-full font-medium",
+                          "px-1.5 py-0.5 text-xs rounded-full font-medium flex-shrink-0",
                           item.badge.variant === 'default' && "bg-primary/10 text-primary",
                           item.badge.variant === 'success' && "bg-green-100 text-green-700",
                           item.badge.variant === 'secondary' && "bg-gray-100 text-gray-700",
                           item.badge.pulse && "animate-pulse"
                         )}>
                           {item.badge.text}
-                        </span>
-                      )}
-                      {item.shortcut && (
-                        <span className="text-xs text-muted-foreground bg-muted px-1 py-0.5 rounded">
-                          {item.shortcut}
                         </span>
                       )}
                     </div>
@@ -256,25 +251,20 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
             onClick={() => item.id && toggleExpanded(item.id)}
             className={cn(
               'w-full flex items-center justify-between gap-3 px-3 py-3 text-sm font-semibold rounded-lg transition-all duration-200',
-              'hover:bg-blue-50 text-gray-900',
+              'hover:bg-blue-50 text-gray-900 min-w-0',
               level > 0 && 'ml-6',
               isSidebarCollapsed && 'justify-center px-2'
             )}
           >
-            <div className="flex items-center gap-3">
-              {Icon && <Icon className="h-5 w-5 text-gray-600" />}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              {Icon && <Icon className="h-5 w-5 text-gray-600 flex-shrink-0" />}
               {!isSidebarCollapsed && (
-                <div className="text-left">
+                <div className="text-left min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-900">{item.label}</span>
-                    {item.shortcut && (
-                      <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-                        {item.shortcut}
-                      </span>
-                    )}
+                    <span className="text-gray-900 truncate">{item.label}</span>
                   </div>
                   {navigationPreferences.showDescriptions && item.description && (
-                    <p className="text-xs text-gray-500 mt-0.5 font-normal">
+                    <p className="text-xs text-gray-500 mt-0.5 font-normal truncate">
                       {item.description}
                     </p>
                   )}
@@ -283,9 +273,9 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
             </div>
             {!isSidebarCollapsed && hasChildren && (
               isExpanded ? (
-                <ChevronDown className="h-4 w-4 text-gray-400" />
+                <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-gray-400" />
+                <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
               )
             )}
           </button>
@@ -401,15 +391,15 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
                     key={key}
                     onClick={() => setActiveTab(key as any)}
                     className={cn(
-                      'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-medium rounded-md transition-all duration-200',
-                      'min-h-[36px] whitespace-nowrap',
+                      'flex-1 flex items-center justify-center gap-1 py-2 px-1.5 text-xs font-medium rounded-md transition-all duration-200',
+                      'min-h-[36px] min-w-0',
                       activeTab === key 
                         ? 'bg-white text-gray-900 shadow-sm border border-gray-200' 
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     )}
                   >
                     <Icon className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span className="truncate">{label}</span>
+                    <span className="truncate text-xs leading-tight">{label}</span>
                   </button>
                 ))}
               </div>
@@ -506,17 +496,17 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
                       onClick={() => setSidebarOpen(false)}
                       className="block p-3 bg-accent/20 rounded-lg hover:bg-accent/40 transition-colors"
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="text-sm font-medium text-foreground">
+                      <div className="flex items-start justify-between gap-2 min-w-0">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium text-foreground truncate">
                             {action.label}
                           </h4>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                             {action.reason}
                           </p>
                         </div>
                         <span className={cn(
-                          "px-2 py-1 text-xs rounded-full font-medium",
+                          "px-2 py-1 text-xs rounded-full font-medium flex-shrink-0",
                           action.priority === 'high' && "bg-red-100 text-red-700",
                           action.priority === 'medium' && "bg-yellow-100 text-yellow-700",
                           action.priority === 'low' && "bg-blue-100 text-blue-700"

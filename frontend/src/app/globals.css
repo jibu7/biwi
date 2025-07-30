@@ -41,6 +41,28 @@ body {
   background: #94a3b8;
 }
 
+/* Enhanced text overflow handling for sidebar */
+.sidebar-text-container {
+  min-width: 0; /* Allow flex items to shrink below their content size */
+  overflow: hidden; /* Prevent overflow */
+}
+
+.sidebar-text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Line clamp utility for multi-line text truncation */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Ensure proper mobile viewport handling */
 @media (max-width: 768px) {
   .mobile-sidebar {

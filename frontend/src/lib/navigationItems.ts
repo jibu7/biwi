@@ -45,7 +45,6 @@ export interface NavItem {
     variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success';
     pulse?: boolean;
   };
-  shortcut?: string;
   description?: string;
   searchKeywords?: string[];
   quickActions?: QuickAction[];
@@ -61,7 +60,6 @@ export const navItems: NavItem[] = [
     id: "setup-configuration",
     label: "Setup & Configuration",
     icon: Cog,
-    shortcut: "⌘S",
     description: "Configure your system settings and master data",
     searchKeywords: ["setup", "configuration", "maintenance", "settings"],
     meta: {
@@ -464,7 +462,6 @@ export const navItems: NavItem[] = [
     id: "operations-transactions",
     label: "Operations & Transactions",
     icon: FileText,
-    shortcut: "⌘T",
     description: "Process daily business transactions and operations",
     searchKeywords: ["transactions", "operations", "daily", "business", "process"],
     meta: {
@@ -709,7 +706,6 @@ export const navItems: NavItem[] = [
     id: "analytics-insights",
     label: "Analytics & Insights", 
     icon: BarChart3,
-    shortcut: "⌘R",
     description: "Business intelligence, reports, and analytics",
     searchKeywords: ["reports", "analytics", "insights", "business", "intelligence"],
     meta: {
@@ -968,35 +964,46 @@ export const navItems: NavItem[] = [
         ]
       },
       {
+        id: "tax-reports",
         label: "Tax Reports",
         icon: Calculator,
+        description: "Tax reporting and analysis tools",
+        searchKeywords: ["tax", "reports", "vat", "gst", "sales tax"],
         children: [
           { 
             label: "Tax Summary", 
             href: "/reports/tax/summary", 
-            requiredPermission: permissions.GL_REPORTS_VIEW 
+            requiredPermission: permissions.GL_REPORTS_VIEW,
+            description: "Summary of tax collected and paid"
           },
           { 
             label: "Tax Details by Invoice", 
             href: "/reports/tax/details", 
-            requiredPermission: permissions.GL_REPORTS_VIEW 
+            requiredPermission: permissions.GL_REPORTS_VIEW,
+            description: "Detailed tax breakdown by invoice"
           }
         ]
       },
       {
+        id: "report-management",
         label: "Report Management",
         href: "/reports/management",
+        icon: Settings,
         requiredPermission: permissions.REPORTING_TEMPLATES_MANAGE,
+        description: "Manage report templates and schedules",
+        searchKeywords: ["templates", "schedules", "automation", "management"],
         children: [
           { 
             label: "Report Templates", 
             href: "/reports/management/templates", 
-            requiredPermission: permissions.REPORTING_TEMPLATES_MANAGE 
+            requiredPermission: permissions.REPORTING_TEMPLATES_MANAGE,
+            description: "Create and manage custom report templates"
           },
           { 
             label: "Scheduled Reports", 
             href: "/reports/management/scheduled", 
-            requiredPermission: permissions.REPORTING_TEMPLATES_MANAGE 
+            requiredPermission: permissions.REPORTING_TEMPLATES_MANAGE,
+            description: "Configure automated report generation"
           }
         ]
       }
