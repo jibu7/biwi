@@ -32,7 +32,13 @@ export function Header({ onMenuButtonClick }: HeaderProps) {
               <Menu className="h-6 w-6" />
             </button>
             <div className="hidden lg:block">
-              <Logo size="md" textSize="lg" />
+              <Logo 
+                size="md" 
+                textSize="lg" 
+                showText={false} 
+                clickable={true} 
+                href="/dashboard" 
+              />
             </div>
             <div className="hidden sm:flex items-center gap-4">
               <CompanySwitcher />

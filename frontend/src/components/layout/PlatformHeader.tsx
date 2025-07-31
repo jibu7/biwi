@@ -18,7 +18,13 @@ export function PlatformHeader() {
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="px-6 py-4 flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <Logo size="md" textSize="lg" />
+          <Logo 
+            size="md" 
+            textSize="lg" 
+            showText={false} 
+            clickable={true} 
+            href="/dashboard" 
+          />
           <div>
             <h2 className="text-xl font-semibold text-gray-800">Platform Administration</h2>
             <p className="text-sm text-gray-600">Managing {new Date().toLocaleDateString()}</p>

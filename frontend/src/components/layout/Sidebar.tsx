@@ -144,7 +144,13 @@ export function Sidebar({ isSidebarOpen, setSidebarOpen }: SidebarProps) {
         )}
       >
         <div className="flex items-center justify-between p-6">
-          <Logo size="lg" textSize="2xl" />
+          <Logo 
+            size="lg" 
+            textSize="2xl" 
+            showText={false} 
+            clickable={true} 
+            href="/dashboard" 
+          />
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
             <X className="h-6 w-6" />
           </button>

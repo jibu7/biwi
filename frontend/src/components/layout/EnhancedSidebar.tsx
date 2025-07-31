@@ -338,7 +338,13 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
           isSidebarCollapsed && "justify-center"
         )}>
           {!isSidebarCollapsed && (
-            <Logo size="md" textSize="xl" />
+            <Logo 
+              size="md" 
+              textSize="xl" 
+              showText={false} 
+              clickable={true} 
+              href="/dashboard" 
+            />
           )}
           <div className="flex items-center gap-2">
             <button 

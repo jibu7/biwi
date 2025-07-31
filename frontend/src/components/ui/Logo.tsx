@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 interface LogoProps {
@@ -12,6 +13,8 @@ interface LogoProps {
   className?: string;
   imageClassName?: string;
   textClassName?: string;
+  href?: string;
+  clickable?: boolean;
 }
 
 const sizeConfig = {
@@ -39,6 +42,8 @@ export function Logo({
   className,
   imageClassName,
   textClassName,
+  href,
+  clickable = false,
 }: LogoProps) {
   const { width, height } = sizeConfig[size];
   
@@ -48,12 +53,12 @@ export function Logo({
     return 'text-gray-800 dark:text-white'; // auto variant
   };
 
-  return (
+  const logoContent = (
     <div className={cn('flex items-center gap-3', className)}>
       <div className="relative flex-shrink-0">
         <Image
           src="/channelzap.com_logo_OG.svg"
-          alt="ChannelZap"
+          alt="Logo"
           width={width}
           height={height}
           className={cn('object-contain', imageClassName)}
@@ -74,6 +79,16 @@ export function Logo({
       )}
     </div>
   );
+
+  if (clickable && href) {
+    return (
+      <Link href={href} className="hover:opacity-80 transition-opacity">
+        {logoContent}
+      </Link>
+    );
+  }
+
+  return logoContent;
 }
 
 export default Logo;

@@ -46,7 +46,13 @@ export function Footer() {
           {/* Brand section */}
           <div className="lg:col-span-2">
             <div className="mb-4">
-              <Logo size="lg" textSize="xl" />
+              <Logo 
+                size="lg" 
+                textSize="xl" 
+                showText={false} 
+                clickable={true} 
+                href="/dashboard" 
+              />
             </div>
             <p className="text-gray-600 text-sm mb-4 max-w-md">
               {brandContent.description}
@@ -117,7 +123,13 @@ export function MinimalFooter() {
   return (
     <footer className="mt-8 text-center">
       <div className="flex justify-center mb-4">
-        <Logo size="sm" textSize="md" />
+        <Logo 
+          size="sm" 
+          textSize="md" 
+          showText={false} 
+          clickable={true} 
+          href="/dashboard" 
+        />
       </div>
       <p className="text-xs text-gray-500">
         {brandContent.copyright}
