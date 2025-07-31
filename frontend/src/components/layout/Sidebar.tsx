@@ -7,6 +7,7 @@ import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { navItems } from '@/lib/navigationItems';
 import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/components/ui/Logo';
 
 interface SidebarProps {
   isSidebarOpen: boolean;
@@ -143,7 +144,7 @@ export function Sidebar({ isSidebarOpen, setSidebarOpen }: SidebarProps) {
         )}
       >
         <div className="flex items-center justify-between p-6">
-          <h2 className="text-2xl font-bold text-gray-800">Vinea ERP</h2>
+          <Logo size="lg" textSize="2xl" />
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden">
             <X className="h-6 w-6" />
           </button>

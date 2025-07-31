@@ -1,12 +1,16 @@
-import React from 'react';
-import { useAuthStore } from '@/store/authStore';
-import { LogOut, Shield } from 'lucide-react';
+'use client';
 
-export const PlatformNavbar: React.FC = () => {
-  const { user, logout } = useAuthStore();
+import { usePlatformAuth } from '@/hooks/usePlatformAuth';
+import { LogOut } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
+
+export function PlatformNavbar() {
+  const { platformUser } = usePlatformAuth();
 
   const handleLogout = () => {
-    logout();
+    // Clear platform auth
+    localStorage.removeItem('platform_auth_token');
+    // Redirect to platform login
     window.location.href = '/platform-login';
   };
 
@@ -15,15 +19,15 @@ export const PlatformNavbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Shield className="h-8 w-8 text-blue-400 mr-3" />
-            <h1 className="text-xl font-semibold text-white">
-              Vinea ERP - Platform Administration
-            </h1>
+            <Logo size="md" variant="light" textSize="lg" />
+            <span className="ml-4 text-xl font-semibold text-white">
+              Platform Administration
+            </span>
           </div>
           
           <div className="flex items-center space-x-4">
             <div className="text-sm text-gray-300">
-              Welcome, {user?.full_name || user?.email}
+              Welcome, {platformUser?.full_name || platformUser?.email}
             </div>
             <button
               onClick={handleLogout}
@@ -37,4 +41,4 @@ export const PlatformNavbar: React.FC = () => {
       </div>
     </nav>
   );
-};
+}

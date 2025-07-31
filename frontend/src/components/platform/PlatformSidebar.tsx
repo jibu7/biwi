@@ -52,7 +52,7 @@ export function PlatformSidebar() {
     <div className="w-64 bg-gray-800 text-white flex flex-col">
       <div className="p-4">
         <h2 className="text-xl font-bold mb-2">Biwi Platform</h2>
-        <p className="text-sm text-gray-400">Vinea ERP - Platform Administration</p>
+        <p className="text-sm text-gray-400 mt-2">Platform Administration</p>
       </div>
 
       <nav className="flex-1 mt-8 space-y-2">

@@ -122,10 +122,10 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   
   // Load favorites, recent items, and pinned items from localStorage on mount
   useEffect(() => {
-    const savedFavorites = localStorage.getItem('vinea-favorites');
-    const savedRecent = localStorage.getItem('vinea-recent');
-    const savedPinned = localStorage.getItem('vinea-pinned');
-    const savedPreferences = localStorage.getItem('vinea-nav-preferences');
+    const savedFavorites = localStorage.getItem('channelzap-favorites');
+    const savedRecent = localStorage.getItem('channelzap-recent');
+    const savedPinned = localStorage.getItem('channelzap-pinned');
+    const savedPreferences = localStorage.getItem('channelzap-nav-preferences');
     
     if (savedFavorites) {
       try {
@@ -162,22 +162,22 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   
   // Save favorites to localStorage when changed
   useEffect(() => {
-    localStorage.setItem('vinea-favorites', JSON.stringify(favorites));
+    localStorage.setItem('channelzap-favorites', JSON.stringify(favorites));
   }, [favorites]);
   
   // Save recent items to localStorage when changed
   useEffect(() => {
-    localStorage.setItem('vinea-recent', JSON.stringify(recentItems));
+    localStorage.setItem('channelzap-recent', JSON.stringify(recentItems));
   }, [recentItems]);
   
   // Save pinned items to localStorage when changed
   useEffect(() => {
-    localStorage.setItem('vinea-pinned', JSON.stringify(pinnedItems));
+    localStorage.setItem('channelzap-pinned', JSON.stringify(pinnedItems));
   }, [pinnedItems]);
   
   // Save navigation preferences to localStorage when changed
   useEffect(() => {
-    localStorage.setItem('vinea-nav-preferences', JSON.stringify(navigationPreferences));
+    localStorage.setItem('channelzap-nav-preferences', JSON.stringify(navigationPreferences));
   }, [navigationPreferences]);
   
   // Add current page to recent items when pathname changes

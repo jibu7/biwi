@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Analytics - Vinea ERP',
+  title: 'Analytics - ChannelZap',
   description: 'Business intelligence and analytics dashboard',
 };
 

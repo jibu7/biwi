@@ -6,12 +6,13 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Vinea ERP',
-  description: 'Modern Enterprise Resource Planning System',
+  title: 'ChannelZap',
+  description: 'Complete Multi-Channel Business Management Platform',
+  manifest: '/manifest.json',
   icons: {
-    icon: '/channelzap-logo-011.png',
-    shortcut: '/channelzap-logo-011.png',
-    apple: '/channelzap-logo-011.png',
+    icon: '/channelzap.com_logo_OG.svg',
+    shortcut: '/channelzap.com_logo_OG.svg',
+    apple: '/channelzap.com_logo_OG.svg',
   },
 };
 

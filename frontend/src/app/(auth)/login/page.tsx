@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/store/authStore';
+import { Logo } from '@/components/ui/Logo';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -44,10 +45,16 @@ export default function LoginPage() {
 
   return (
     <>
-      <div>
+      <div className="text-center">
+        <div className="flex justify-center mb-6">
+          <Logo size="xl" textSize="3xl" />
+        </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign in to Vinea ERP
+          Sign in to your account
         </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Access your ChannelZap dashboard
+        </p>
       </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (

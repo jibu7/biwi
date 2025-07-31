@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/favicon.ico',
-        destination: '/channelzap-logo-011.png',
+        destination: '/channelzap.com_logo_OG.svg',
       },
     ];
   },

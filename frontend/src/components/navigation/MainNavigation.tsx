@@ -153,7 +153,7 @@ export const MainNavigation = () => {
                 </div>
                 <div className="hidden sm:block">
                   <h1 className="font-semibold text-lg">
-                    {isPlatformAdmin ? 'Platform Admin' : currentCompany?.name || 'Vinea ERP'}
+                    {isPlatformAdmin ? 'Platform Admin' : currentCompany?.name || 'ChannelZap'}
                   </h1>
                   {currentCompany && !isPlatformAdmin && (
                     <p className="text-xs text-muted-foreground">{currentCompany.name}</p>

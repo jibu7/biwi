@@ -24,6 +24,7 @@ import { navItems, type NavItem } from '@/lib/navigationItems';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/components/ui/Logo';
 
 interface EnhancedSidebarProps {
   isSidebarOpen: boolean;
@@ -337,7 +338,7 @@ export function EnhancedSidebar({ isSidebarOpen, setSidebarOpen }: EnhancedSideb
           isSidebarCollapsed && "justify-center"
         )}>
           {!isSidebarCollapsed && (
-            <h2 className="text-xl font-bold text-gray-900">Vinea ERP</h2>
+            <Logo size="md" textSize="xl" />
           )}
           <div className="flex items-center gap-2">
             <button 

@@ -7,6 +7,7 @@ import { CompanySwitcher } from './CompanySwitcher';
 import { CompanyContext } from './CompanyContext';
 import { GlobalSearch } from '@/components/navigation/GlobalSearch';
 import { useNavigation } from '@/contexts/NavigationContext';
+import { Logo } from '@/components/ui/Logo';
 
 interface HeaderProps {
   onMenuButtonClick: () => void;
@@ -30,6 +31,9 @@ export function Header({ onMenuButtonClick }: HeaderProps) {
             <button onClick={onMenuButtonClick} className="lg:hidden">
               <Menu className="h-6 w-6" />
             </button>
+            <div className="hidden lg:block">
+              <Logo size="md" textSize="lg" />
+            </div>
             <div className="hidden sm:flex items-center gap-4">
               <CompanySwitcher />
               <CompanyContext />

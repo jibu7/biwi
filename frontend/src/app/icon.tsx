@@ -1,6 +1,4 @@
 import { ImageResponse } from 'next/og'
-import { readFile } from 'fs/promises'
-import { join } from 'path'
 
 // Route segment config
 export const runtime = 'edge'
@@ -16,7 +14,7 @@ export const contentType = 'image/png'
 export default function Icon() {
   return new ImageResponse(
     (
-      // Fallback icon with ChannelZap branding
+      // ChannelZap branded icon
       <div
         style={{
           fontSize: 20,
@@ -27,9 +25,10 @@ export default function Icon() {
           alignItems: 'center',
           justifyContent: 'center',
           color: 'white',
-          borderRadius: '4px',
+          borderRadius: '6px',
           fontWeight: 'bold',
           fontFamily: 'system-ui',
+          boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
         }}
       >
         CZ

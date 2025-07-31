@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 import { platformNavItems } from '@/lib/platformNavigationItems';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/components/ui/Logo';
 
 export function PlatformSidebar() {
   const pathname = usePathname();
@@ -72,8 +73,8 @@ export function PlatformSidebar() {
     <aside className="w-64 bg-gray-900 text-white h-full overflow-y-auto">
       <div className="p-4">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Biwi Platform</h1>
-          <p className="text-sm text-gray-400 mt-1">Vinea ERP - Platform Administration</p>
+          <Logo size="lg" variant="light" textSize="2xl" />
+          <p className="text-sm text-gray-400 mt-2">Platform Administration</p>
         </div>
         <nav className="space-y-1">
           {platformNavItems.map(item => renderNavItem(item))}

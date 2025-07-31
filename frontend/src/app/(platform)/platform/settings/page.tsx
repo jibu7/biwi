@@ -27,10 +27,10 @@ export default function PlatformSettingsPage() {
   
   const [settings, setSettings] = useState({
     // General Settings
-    platform_name: 'Vinea ERP Platform',
-    platform_description: 'Multi-tenant ERP platform for modern businesses',
-    support_email: 'support@biwi.com',
-    admin_email: 'admin@biwi.com',
+    platform_name: 'ChannelZap Platform',
+    platform_description: 'Complete Multi-Channel Business Management Platform',
+    support_email: 'support@channelzap.com',
+    admin_email: 'admin@channelzap.com',
     
     // Company Defaults
     default_storage_limit: 10,

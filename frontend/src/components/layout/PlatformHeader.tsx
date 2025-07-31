@@ -3,6 +3,7 @@
 import { usePlatformAuth } from '@/hooks/usePlatformAuth';
 import { LogOutIcon, UserIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Logo } from '@/components/ui/Logo';
 
 export function PlatformHeader() {
   const { platformUser, logout } = usePlatformAuth();
@@ -16,9 +17,12 @@ export function PlatformHeader() {
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="px-6 py-4 flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800">Platform Administration</h2>
-          <p className="text-sm text-gray-600">Managing {new Date().toLocaleDateString()}</p>
+        <div className="flex items-center gap-4">
+          <Logo size="md" textSize="lg" />
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800">Platform Administration</h2>
+            <p className="text-sm text-gray-600">Managing {new Date().toLocaleDateString()}</p>
+          </div>
         </div>
         
         <div className="flex items-center gap-4">

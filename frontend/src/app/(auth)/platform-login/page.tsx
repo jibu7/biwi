@@ -8,6 +8,7 @@ import { Shield, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Logo } from '@/components/ui/Logo';
 
 type FormData = {
   email: string;
@@ -60,8 +61,8 @@ export default function PlatformLoginPage() {
         <div className="w-full max-w-md">
           {/* Logo and branding section */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-2xl mb-6 group hover:scale-105 transition-transform duration-300">
-              <Shield className="h-8 w-8 text-white" />
+            <div className="flex justify-center mb-6">
+              <Logo size="xl" variant="light" textSize="3xl" />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
               Platform Administration

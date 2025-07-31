@@ -1,0 +1,23 @@
+{
+  "name": "ChannelZap",
+  "short_name": "ChannelZap",
+  "description": "Complete Multi-Channel Business Management Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "/channelzap.com_logo_OG.svg",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/channelzap.com_logo_OG.svg",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
