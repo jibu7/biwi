@@ -7,8 +7,8 @@ from app.core.security import get_password_hash
 def test_gl_account_isolation(client: TestClient, db: Session):
     """Test that GL accounts are isolated between companies"""
     # Create two companies
-    company1 = models.Company(name="Company 1")
-    company2 = models.Company(name="Company 2")
+    company1 = models.Company(name="Company 1", code="C1")
+    company2 = models.Company(name="Company 2", code="C2")
     db.add_all([company1, company2])
     db.commit()
     
@@ -81,8 +81,8 @@ def test_gl_account_isolation(client: TestClient, db: Session):
 def test_journal_entry_cross_company_validation(client: TestClient, db: Session):
     """Test that journal entries cannot use accounts from different companies"""
     # Setup companies and accounts
-    company1 = models.Company(name="Company 1")
-    company2 = models.Company(name="Company 2")
+    company1 = models.Company(name="Company 1", code="C1")
+    company2 = models.Company(name="Company 2", code="C2")
     db.add_all([company1, company2])
     db.commit()
     

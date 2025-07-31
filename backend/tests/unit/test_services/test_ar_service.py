@@ -2,7 +2,7 @@ import pytest
 from decimal import Decimal
 from datetime import date
 from app.services.ar_service import ARService
-from app.schemas.ar import ARCustomerCreate, ARInvoiceCreate, ARPaymentCreate
+from app.schemas.ar import CustomerCreate, ARTransactionCreate
 
 class TestARService:
     def test_create_customer(self, db, test_company):

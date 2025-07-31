@@ -1,0 +1,142 @@
+# Page snapshot
+
+```yaml
+- link "Logo":
+  - /url: /dashboard
+  - img "Logo"
+- button
+- textbox "Search navigation..."
+- button "Menu"
+- button "Recent"
+- button "Starred"
+- button "Smart"
+- button "Setup & Configuration Configure your system settings and master data":
+  - text: Setup & Configuration
+  - paragraph: Configure your system settings and master data
+- link "Organization Manage company details, users, and system settings":
+  - /url: /maintenance/system
+  - text: Organization
+  - paragraph: Manage company details, users, and system settings
+  - button
+  - button
+- link "Financial Setup Configure chart of accounts and financial settings":
+  - /url: /maintenance/gl
+  - text: Financial Setup
+  - paragraph: Configure chart of accounts and financial settings
+  - button
+  - button
+- link "Accounts Receivable Configure customer accounts and AR settings":
+  - /url: /maintenance/ar
+  - text: Accounts Receivable
+  - paragraph: Configure customer accounts and AR settings
+  - button
+  - button
+- link "AP Setup Configure supplier accounts and AP settings":
+  - /url: /maintenance/ap
+  - text: AP Setup
+  - paragraph: Configure supplier accounts and AP settings
+  - button
+  - button
+- link "Inventory Setup":
+  - /url: /maintenance/inventory
+  - text: Inventory Setup
+  - button
+  - button
+- link "OE Setup":
+  - /url: /maintenance/oe
+  - text: OE Setup
+  - button
+  - button
+- link "BOM Setup":
+  - /url: /maintenance/bom
+  - text: BOM Setup
+  - button
+  - button
+- link "POS Setup":
+  - /url: /maintenance/pos
+  - text: POS Setup
+  - button
+  - button
+- link "Common":
+  - /url: /maintenance/common
+  - text: Common
+  - button
+  - button
+- button "Operations & Transactions Process daily business transactions and operations":
+  - text: Operations & Transactions
+  - paragraph: Process daily business transactions and operations
+- button "Analytics & Insights Business intelligence, reports, and analytics":
+  - text: Analytics & Insights
+  - paragraph: Business intelligence, reports, and analytics
+- link "Executive Dashboard Live High-level business metrics and KPIs":
+  - /url: /analytics/dashboard/executive
+  - text: Executive Dashboard Live
+  - paragraph: High-level business metrics and KPIs
+  - button
+  - button
+- link "Financial Statements Core Core financial reports and statements":
+  - /url: /reports/financial
+  - text: Financial Statements Core
+  - paragraph: Core financial reports and statements
+  - button
+  - button
+- link "GL Advanced Reports":
+  - /url: /reports/gl/advanced
+  - text: GL Advanced Reports
+  - button
+  - button
+- link "AR Advanced Reports":
+  - /url: /reports/ar/advanced
+  - text: AR Advanced Reports
+  - button
+  - button
+- link "AP Advanced Reports":
+  - /url: /reports/ap/advanced
+  - text: AP Advanced Reports
+  - button
+  - button
+- link "Inventory Reports":
+  - /url: /reports/inventory
+  - text: Inventory Reports
+  - button
+  - button
+- link "OE Reports":
+  - /url: /reports/oe
+  - text: OE Reports
+  - button
+  - button
+- link "BOM Reports":
+  - /url: /reports/bom
+  - text: BOM Reports
+  - button
+  - button
+- link "POS Reports":
+  - /url: /reports/pos
+  - text: POS Reports
+  - button
+  - button
+- button "Tax Reports Tax reporting and analysis tools":
+  - text: Tax Reports
+  - paragraph: Tax reporting and analysis tools
+- link "Report Management Manage report templates and schedules":
+  - /url: /reports/management
+  - text: Report Management
+  - paragraph: Manage report templates and schedules
+  - button
+  - button
+- button "Navigation Settings"
+- banner:
+  - link "Logo":
+    - /url: /dashboard
+    - img "Logo"
+  - text: ACME Corporation
+  - button "Search or jump to..."
+  - paragraph: Admin User
+  - paragraph: admin@acme001.com
+  - button "Logout"
+- main: "Error loading journal entries: Network Error"
+- region "Notifications alt+T"
+- alert
+- button "Open Next.js Dev Tools":
+  - img
+```

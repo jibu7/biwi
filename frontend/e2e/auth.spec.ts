@@ -6,7 +6,7 @@ test.describe('Authentication Flow', () => {
   })
 
   test('should display login form on landing page', async ({ page }) => {
-    await expect(page).toHaveTitle(/Login|BIWI|Vinea ERP/)
+    await expect(page).toHaveTitle('ChannelZap')
     await expect(page.locator('input[name="email"], input[type="email"]')).toBeVisible()
     await expect(page.locator('input[name="password"], input[type="password"]')).toBeVisible()
     await expect(page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign In")')).toBeVisible()
@@ -30,8 +30,8 @@ test.describe('Authentication Flow', () => {
     // Wait for redirect to dashboard or main application
     await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
     
-    // Check for dashboard elements
-    await expect(page.locator('text="Welcome to Vinea ERP"')).toBeVisible()
+    // Check for dashboard elements (actual heading)
+    await expect(page.getByRole('heading', { name: 'Welcome to ChannelZap' })).toBeVisible()
   })
 
   test('should logout successfully', async ({ page }) => {

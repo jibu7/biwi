@@ -1,5 +1,5 @@
 import pytest
-from app.crud import company as company_crud
+from app import crud
 from app.schemas.core import CompanyCreate, CompanyUpdate
 
 class TestCompanyCRUD:

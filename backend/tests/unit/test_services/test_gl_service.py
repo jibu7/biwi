@@ -1,7 +1,7 @@
 import pytest
 from decimal import Decimal
 from app.services.gl_service import GLService
-from app.schemas.gl import GLAccountCreate, GLTransactionCreate
+from app.schemas.gl import GLAccountCreate, GLJournalEntryCreate
 
 class TestGLService:
     def test_create_chart_of_accounts(self, db, test_company):

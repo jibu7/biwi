@@ -48,6 +48,11 @@ def db_session():
         connection.close()
 
 @pytest.fixture(scope="function")
+def db(db_session):
+    """Yield a database session."""
+    yield db_session
+
+@pytest.fixture(scope="function")
 def client(db_session):
     """Create a test client with database dependency override."""
     def override_get_db():
@@ -64,7 +69,7 @@ def client(db_session):
 @pytest.fixture
 def unique_suffix():
     """Generate unique suffix for test data to avoid conflicts."""
-    return str(uuid.uuid4())[:8]
+    return str(uuid.uuid4())[:6]
 
 @pytest.fixture
 def test_company(db_session, unique_suffix):
@@ -178,3 +183,22 @@ def test_gl_accounts(db_session, test_company, unique_suffix):
     
     db_session.commit()
     return accounts
+
+@pytest.fixture
+def token(client, test_superuser):
+    """Get an authentication token for the test superuser."""
+    response = client.post(
+        "/api/v1/auth/login",
+        data={"username": test_superuser.email, "password": "testpass123"}
+    )
+    return response.json()["access_token"]
+
+@pytest.fixture
+def test_superuser_token_headers(client, test_superuser):
+    """Get authentication headers for the test superuser."""
+    response = client.post(
+        "/api/v1/auth/login",
+        data={"username": test_superuser.email, "password": "testpass123"}
+    )
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}

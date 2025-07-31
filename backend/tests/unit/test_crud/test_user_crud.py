@@ -1,5 +1,5 @@
 import pytest
-from app.crud import user as user_crud
+from app import crud
 from app.schemas.core import UserCreate, UserUpdate
 from app.core.security import get_password_hash
 
