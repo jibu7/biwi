@@ -3,70 +3,15 @@
 
 import Link from 'next/link';
 import { usePermissions } from '@/hooks/usePermissions';
-import { 
-  BarChart3, 
-  BookOpen, 
-  UserCheck, 
-  CreditCard, 
-  Package, 
-  ShoppingCart
-} from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
+import { getAnalyticsModules, type DashboardModule } from '@/lib/dashboardUtils';
 import * as permissions from '@/lib/permissions';
 
 export default function ReportsPage() {
   const { hasPermission } = usePermissions();
 
-  const reportModules = [
-    {
-      title: 'Financial Reports',
-      description: 'Generate trial balance, P&L, balance sheet, and other financial reports',
-      icon: BookOpen,
-      href: '/reports/gl',
-      color: 'bg-green-500',
-      requiredPermission: permissions.GL_REPORTS_VIEW,
-      items: ['Trial Balance', 'Profit & Loss', 'Balance Sheet', 'Account Transactions']
-    },
-    {
-      title: 'Accounts Receivable',
-      description: 'Customer aging, statements, and receivables analysis',
-      icon: UserCheck,
-      href: '/reports/ar',
-      color: 'bg-purple-500',
-      requiredPermission: permissions.AR_REPORTS_VIEW,
-      items: ['Customer Aging', 'Customer Statements', 'Sales Analysis', 'Collection Reports']
-    },
-    {
-      title: 'Accounts Payable',
-      description: 'Supplier aging, payment analysis, and payables reports',
-      icon: CreditCard,
-      href: '/reports/ap',
-      color: 'bg-red-500',
-      requiredPermission: permissions.AP_REPORTS_VIEW,
-      items: ['Supplier Aging', 'Payment Analysis', 'Purchase Reports', 'Cash Flow']
-    },
-    {
-      title: 'Inventory Reports',
-      description: 'Stock levels, movement analysis, and valuation reports',
-      icon: Package,
-      href: '/reports/inventory',
-      color: 'bg-yellow-500',
-      requiredPermission: permissions.INV_REPORTS_VIEW,
-      items: ['Stock Quantity', 'Movement Analysis', 'Valuation Reports', 'ABC Analysis']
-    },
-    {
-      title: 'Order Entry Reports',
-      description: 'Sales orders, purchase orders, and delivery analysis',
-      icon: ShoppingCart,
-      href: '/reports/oe',
-      color: 'bg-indigo-500',
-      requiredPermission: permissions.OE_REPORTS_VIEW,
-      items: ['Sales Order Listing', 'Purchase Order Reports', 'GRV Analysis', 'Order Trends']
-    }
-  ];
-
-  const accessibleModules = reportModules.filter(module => 
-    !module.requiredPermission || hasPermission(module.requiredPermission)
-  );
+  // Get analytics modules from navigation items to ensure consistency with sidebar
+  const accessibleModules = getAnalyticsModules(hasPermission);
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -78,7 +23,7 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {accessibleModules.map((module) => {
+        {accessibleModules.map((module: DashboardModule) => {
           const Icon = module.icon;
           return (
             <Link
@@ -98,7 +43,7 @@ export default function ReportsPage() {
               <div className="text-xs text-gray-500">
                 <span className="font-medium">Includes:</span>
                 <ul className="mt-1 space-y-1">
-                  {module.items.map((item, index) => (
+                  {module.items.map((item: string, index: number) => (
                     <li key={index} className="flex items-center">
                       <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
                       {item}

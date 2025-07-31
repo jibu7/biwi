@@ -517,10 +517,13 @@ export const navItems: NavItem[] = [
         ]
       },
       {
+        id: "accounts-receivable-transactions",
         label: "Accounts Receivable",
         icon: UserCheck,
         href: "/transactions/ar",
         requiredPermission: permissions.AR_TRANSACTIONS_POST,
+        description: "Process customer invoices, receipts, and credit notes",
+        searchKeywords: ["ar", "customer", "invoice", "receipt", "credit note"],
         children: [
           { 
             label: "Invoices", 
@@ -550,9 +553,12 @@ export const navItems: NavItem[] = [
         ]
       },
       {
+        id: "accounts-payable-transactions",
         label: "Accounts Payable",
         href: "/transactions/ap",
         requiredPermission: permissions.AP_TRANSACTIONS_POST,
+        description: "Manage supplier invoices, payments, and returns",
+        searchKeywords: ["ap", "supplier", "invoice", "payment", "debit note"],
         children: [
           { 
             label: "New Supplier Invoice", 
@@ -582,10 +588,13 @@ export const navItems: NavItem[] = [
         ]
       },
       {
+        id: "inventory-transactions",
         label: "Inventory",
         icon: Package,
         href: "/transactions/inventory",
         requiredPermission: permissions.INV_TRANSACTIONS_ADJUST,
+        description: "Process inventory adjustments and transfers",
+        searchKeywords: ["inventory", "stock", "adjustment", "transfer"],
         children: [
           { 
             label: "Adjustments", 
@@ -605,8 +614,12 @@ export const navItems: NavItem[] = [
         ]
       },
       {
-        label: "Order Entry",
+        id: "order-entry-transactions",
+        label: "Order Entry", 
+        href: "/transactions/oe",
         icon: ShoppingCart,
+        description: "Manage sales orders, purchase orders, and goods receipts",
+        searchKeywords: ["sales", "purchase", "orders", "oe", "grv"],
         children: [
           {
             label: "Sales Orders",
@@ -656,10 +669,13 @@ export const navItems: NavItem[] = [
         ]
       },
       {
+        id: "bom-transactions",
         label: "BOM",
         href: "/transactions/bom",
         icon: Factory,
         requiredPermission: permissions.BOM_MANUFACTURING_PROCESS,
+        description: "Manufacturing orders and bill of materials processing",
+        searchKeywords: ["bom", "manufacturing", "orders", "production"],
         children: [
           { 
             label: "New Manufacturing Order", 
@@ -674,9 +690,12 @@ export const navItems: NavItem[] = [
         ]
       },
       {
+        id: "pos-transactions",
         label: "Point of Sale",
         href: "/transactions/pos",
         requiredPermission: permissions.POS_SALES_PROCESS,
+        description: "Process point of sale transactions and manage cash",
+        searchKeywords: ["pos", "point of sale", "cash", "terminal"],
         children: [
           { 
             label: "POS Terminal", 

@@ -3,77 +3,15 @@
 
 import Link from 'next/link';
 import { usePermissions } from '@/hooks/usePermissions';
-import { 
-  BookOpen, 
-  UserCheck, 
-  CreditCard, 
-  Package, 
-  ShoppingCart,
-  FileText
-} from 'lucide-react';
+import { FileText } from 'lucide-react';
+import { getTransactionModules, type DashboardModule } from '@/lib/dashboardUtils';
 import * as permissions from '@/lib/permissions';
 
 export default function TransactionsPage() {
   const { hasPermission } = usePermissions();
 
-  const transactionModules: any[] = [
-    {
-      title: 'General Ledger',
-      description: 'Create and manage journal entries for your general ledger',
-      icon: BookOpen,
-      href: '/transactions/gl',
-      color: 'bg-green-500',
-      requiredPermission: permissions.GL_JOURNAL_POST,
-      items: ['Journal Entries', 'Account Postings', 'Period End Processing']
-    },
-    {
-      title: 'Accounts Receivable',
-      description: 'Process customer invoices, receipts, and credit notes',
-      icon: UserCheck,
-      href: '/transactions/ar',
-      color: 'bg-purple-500',
-      requiredPermission: permissions.AR_TRANSACTIONS_POST,
-      items: ['Customer Invoices', 'Receipts', 'Credit Notes', 'Allocations']
-    },
-    {
-      title: 'Accounts Payable',
-      description: 'Manage supplier invoices, payments, and returns',
-      icon: CreditCard,
-      href: '/transactions/ap',
-      color: 'bg-red-500',
-      requiredPermission: permissions.AP_TRANSACTIONS_POST,
-      items: ['Supplier Invoices', 'Payments', 'Debit Notes', 'Allocations']
-    },
-    {
-      title: 'Inventory',
-      description: 'Process inventory adjustments and transfers',
-      icon: Package,
-      href: '/transactions/inventory',
-      color: 'bg-yellow-500',
-      requiredPermission: permissions.INV_TRANSACTIONS_ADJUST,
-      items: ['Stock Adjustments', 'Warehouse Transfers', 'Inventory Counts']
-    },
-    {
-      title: 'Order Entry',
-      description: 'Manage sales orders, purchase orders, and goods receipts',
-      icon: ShoppingCart,
-      href: '/transactions/oe',
-      color: 'bg-indigo-500',
-      anyOfPermissions: [
-        permissions.OE_SALES_ORDERS_MANAGE,
-        permissions.OE_PURCHASE_ORDERS_MANAGE,
-        permissions.OE_GRV_PROCESS
-      ],
-      items: ['Sales Orders', 'Purchase Orders', 'Goods Received Vouchers']
-    }
-  ];
-
-  const accessibleModules = transactionModules.filter(module => {
-    if (module.anyOfPermissions) {
-      return module.anyOfPermissions.some((p: string) => hasPermission(p));
-    }
-    return !module.requiredPermission || hasPermission(module.requiredPermission);
-  });
+  // Get transaction modules from navigation items to ensure consistency with sidebar
+  const accessibleModules = getTransactionModules(hasPermission);
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -85,7 +23,7 @@ export default function TransactionsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {accessibleModules.map((module) => {
+        {accessibleModules.map((module: DashboardModule) => {
           const Icon = module.icon;
           return (
             <Link
