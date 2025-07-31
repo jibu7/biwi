@@ -2,6 +2,12 @@ from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import date, datetime
 from decimal import Decimal
+from enum import Enum
+
+class TaxCalculationMethod(str, Enum):
+    none = "none"
+    inclusive = "inclusive"
+    exclusive = "exclusive"
 
 # GL Account Schemas
 class GLAccountBase(BaseModel):
@@ -37,6 +43,8 @@ class GLJournalEntryLineBase(BaseModel):
     description: Optional[str] = None
     debit_amount: Decimal = Decimal('0.00')
     credit_amount: Decimal = Decimal('0.00')
+    is_tax_line: bool = False  # Flag to identify tax lines
+    tax_base_amount: Optional[Decimal] = None  # Original amount before tax
     
     @validator('debit_amount', 'credit_amount')
     def validate_amounts(cls, v):
@@ -45,7 +53,11 @@ class GLJournalEntryLineBase(BaseModel):
         return v
 
 class GLJournalEntryLineCreate(GLJournalEntryLineBase):
-    pass
+    @validator('credit_amount')
+    def validate_amounts(cls, v, values):
+        if v > 0 and values.get('debit_amount', 0) > 0:
+            raise ValueError('A line cannot have both debit and credit amounts')
+        return v
 
 class GLJournalEntryLineUpdate(BaseModel):
     gl_account_id: Optional[int] = None
@@ -67,9 +79,11 @@ class GLJournalEntryBase(BaseModel):
     reference: Optional[str] = None
     description: str
     status: Optional[str] = "Draft"
+    transaction_type_id: Optional[int] = None  # Link to transaction type for tax config
 
 class GLJournalEntryCreate(GLJournalEntryBase):
     lines: List[GLJournalEntryLineCreate]
+    auto_calculate_tax: bool = True  # Flag to enable automatic tax calculation
     
     @validator('lines')
     def validate_balanced(cls, lines):
@@ -82,6 +96,14 @@ class GLJournalEntryCreate(GLJournalEntryBase):
         if len(lines) < 2:
             raise ValueError('Journal entry must have at least 2 lines')
         return lines
+
+class GLJournalEntryCreateWithTax(BaseModel):
+    entry_date: date
+    reference: Optional[str] = None
+    description: str
+    transaction_type_id: Optional[int] = None  # Link to transaction type for tax config
+    lines: List[GLJournalEntryLineCreate]
+    auto_calculate_tax: bool = True  # Flag to enable automatic tax calculation
 
 class GLJournalEntryUpdate(BaseModel):
     entry_date: Optional[date] = None
@@ -111,7 +133,11 @@ class GLTransactionTypeBase(BaseModel):
     description: Optional[str] = None
     default_debit_account_id: Optional[int] = None
     default_credit_account_id: Optional[int] = None
-    default_tax_control_account_id: Optional[int] = None  # NEW
+    default_tax_control_account_id: Optional[int] = None
+    is_tax_applicable: bool = False
+    tax_rate: Optional[Decimal] = None
+    tax_calculation_method: TaxCalculationMethod = TaxCalculationMethod.none
+    tax_type_id: Optional[int] = None
     is_active: bool = True
 
 class GLTransactionTypeCreate(GLTransactionTypeBase):
@@ -122,8 +148,18 @@ class GLTransactionTypeUpdate(BaseModel):
     description: Optional[str] = None
     default_debit_account_id: Optional[int] = None
     default_credit_account_id: Optional[int] = None
-    default_tax_control_account_id: Optional[int] = None  # NEW
+    default_tax_control_account_id: Optional[int] = None
+    is_tax_applicable: Optional[bool] = None
+    tax_rate: Optional[Decimal] = None
+    tax_calculation_method: Optional[TaxCalculationMethod] = None
+    tax_type_id: Optional[int] = None
     is_active: Optional[bool] = None
+    
+    @validator('tax_rate')
+    def validate_tax_rate(cls, v, values):
+        if values.get('is_tax_applicable') and v is not None and v < 0:
+            raise ValueError('Tax rate must be non-negative')
+        return v
 
 class GLTransactionTypeRead(GLTransactionTypeBase):
     id: int

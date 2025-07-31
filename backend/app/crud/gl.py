@@ -6,6 +6,7 @@ from decimal import Decimal
 from fastapi import HTTPException, status
 from app import models, schemas
 from app.crud.base import CRUDBase
+from app.services.tax_calculator import TaxCalculator
 
 class GLAccountCRUD(CRUDBase[models.GLAccount, schemas.GLAccountCreate, schemas.GLAccountUpdate]):
     def create_with_company(
@@ -378,3 +379,280 @@ def get_account_transactions(
         transactions.append(transaction)
     
     return transactions
+
+
+# Transaction Type CRUD Operations
+class GLTransactionTypeCRUD(CRUDBase[models.GLTransactionType, schemas.GLTransactionTypeCreate, schemas.GLTransactionTypeUpdate]):
+    def create_with_company(
+        self, db: Session, *, obj_in: schemas.GLTransactionTypeCreate, company_id: int
+    ) -> models.GLTransactionType:
+        # Check for duplicate name within company
+        existing = db.query(models.GLTransactionType).filter(
+            models.GLTransactionType.name == obj_in.name,
+            models.GLTransactionType.company_id == company_id
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Transaction type '{obj_in.name}' already exists for this company"
+            )
+        
+        # Validate tax control account if tax is applicable
+        if obj_in.is_tax_applicable and obj_in.default_tax_control_account_id:
+            tax_account = db.query(models.GLAccount).filter(
+                models.GLAccount.id == obj_in.default_tax_control_account_id,
+                models.GLAccount.company_id == company_id
+            ).first()
+            if not tax_account:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Tax control account not found or belongs to different company"
+                )
+        
+        # Validate tax type if specified
+        if obj_in.tax_type_id:
+            tax_type = db.query(models.TaxType).filter(
+                models.TaxType.id == obj_in.tax_type_id,
+                models.TaxType.company_id == company_id
+            ).first()
+            if not tax_type:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Tax type not found or belongs to different company"
+                )
+        
+        # Create the transaction type
+        db_obj = models.GLTransactionType(
+            **obj_in.model_dump(),
+            company_id=company_id
+        )
+        
+        # Validate tax configuration using TaxCalculator
+        try:
+            TaxCalculator.validate_tax_configuration(db_obj, raise_on_error=True)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Tax configuration validation failed: {str(e)}"
+            )
+        
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
+    
+    def get_by_company(
+        self, db: Session, *, company_id: int, skip: int = 0, limit: int = 100,
+        is_active: Optional[bool] = True
+    ) -> List[models.GLTransactionType]:
+        query = db.query(models.GLTransactionType).filter(
+            models.GLTransactionType.company_id == company_id
+        )
+        
+        if is_active is not None:
+            query = query.filter(models.GLTransactionType.is_active == is_active)
+        
+        return query.offset(skip).limit(limit).all()
+    
+    def get_with_company_check(
+        self, db: Session, *, id: int, company_id: int
+    ) -> Optional[models.GLTransactionType]:
+        return db.query(models.GLTransactionType).filter(
+            models.GLTransactionType.id == id,
+            models.GLTransactionType.company_id == company_id
+        ).first()
+    
+    def update_with_company_check(
+        self, db: Session, *, db_obj: models.GLTransactionType, obj_in: schemas.GLTransactionTypeUpdate, company_id: int
+    ) -> models.GLTransactionType:
+        # Verify ownership
+        if db_obj.company_id != company_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Transaction type not found"
+            )
+        
+        # Validate name uniqueness if changing name
+        if hasattr(obj_in, 'name') and obj_in.name and obj_in.name != db_obj.name:
+            existing = db.query(models.GLTransactionType).filter(
+                models.GLTransactionType.name == obj_in.name,
+                models.GLTransactionType.company_id == company_id,
+                models.GLTransactionType.id != db_obj.id
+            ).first()
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Transaction type '{obj_in.name}' already exists for this company"
+                )
+        
+        # Validate tax control account if being updated
+        if hasattr(obj_in, 'default_tax_control_account_id') and obj_in.default_tax_control_account_id:
+            tax_account = db.query(models.GLAccount).filter(
+                models.GLAccount.id == obj_in.default_tax_control_account_id,
+                models.GLAccount.company_id == company_id
+            ).first()
+            if not tax_account:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Tax control account not found or belongs to different company"
+                )
+        
+        # Validate tax type if being updated
+        if hasattr(obj_in, 'tax_type_id') and obj_in.tax_type_id:
+            tax_type = db.query(models.TaxType).filter(
+                models.TaxType.id == obj_in.tax_type_id,
+                models.TaxType.company_id == company_id
+            ).first()
+            if not tax_type:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Tax type not found or belongs to different company"
+                )
+        
+        # Update the object
+        updated_obj = super().update(db, db_obj=db_obj, obj_in=obj_in)
+        
+        # Validate tax configuration after update
+        try:
+            TaxCalculator.validate_tax_configuration(updated_obj, raise_on_error=True)
+        except ValueError as e:
+            # Rollback the changes
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Tax configuration validation failed: {str(e)}"
+            )
+        
+        return updated_obj
+
+
+def create_transaction_type(
+    db: Session,
+    transaction_type_in: schemas.GLTransactionTypeCreate,
+    company_id: int
+) -> models.GLTransactionType:
+    """Create a new transaction type with validation"""
+    return gl_transaction_type.create_with_company(
+        db=db, obj_in=transaction_type_in, company_id=company_id
+    )
+
+
+def update_transaction_type(
+    db: Session,
+    transaction_type_id: int,
+    transaction_type_in: schemas.GLTransactionTypeUpdate,
+    company_id: int
+) -> models.GLTransactionType:
+    """Update a transaction type with validation"""
+    db_obj = gl_transaction_type.get_with_company_check(
+        db=db, id=transaction_type_id, company_id=company_id
+    )
+    if not db_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Transaction type not found"
+        )
+    
+    return gl_transaction_type.update_with_company_check(
+        db=db, db_obj=db_obj, obj_in=transaction_type_in, company_id=company_id
+    )
+
+
+def create_journal_entry_with_tax(
+    db: Session,
+    entry_in: schemas.GLJournalEntryCreateWithTax,
+    company_id: int,
+    user_id: int
+) -> models.GLJournalEntry:
+    """Create a journal entry with automatic tax calculations"""
+    
+    # If no transaction type specified, fall back to regular creation
+    if not entry_in.transaction_type_id:
+        return create_journal_entry(
+            db=db, 
+            entry_in=schemas.GLJournalEntryCreate(**entry_in.model_dump()), 
+            company_id=company_id, 
+            user_id=user_id
+        )
+    
+    # Get and validate transaction type
+    transaction_type = db.query(models.GLTransactionType).filter(
+        models.GLTransactionType.id == entry_in.transaction_type_id,
+        models.GLTransactionType.company_id == company_id
+    ).first()
+    
+    if not transaction_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Transaction type not found or belongs to different company"
+        )
+    
+    # Validate transaction type tax configuration
+    TaxCalculator.validate_tax_configuration(transaction_type, raise_on_error=True)
+    
+    # Process lines and calculate tax if applicable
+    processed_lines = []
+    total_tax_amount = Decimal('0.00')
+    
+    for line_in in entry_in.lines:
+        # Validate GL account belongs to company
+        account = db.query(models.GLAccount).filter(
+            models.GLAccount.id == line_in.gl_account_id,
+            models.GLAccount.company_id == company_id
+        ).first()
+        
+        if not account:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"GL account {line_in.gl_account_id} not found or belongs to different company"
+            )
+        
+        # Add the original line
+        processed_lines.append(line_in)
+        
+        # Calculate tax if applicable and not on tax control account
+        if (transaction_type.is_tax_applicable and 
+            account.id != transaction_type.default_tax_control_account_id):
+            
+            # Determine the amount to tax (debit or credit)
+            amount_to_tax = line_in.debit_amount or line_in.credit_amount or Decimal('0.00')
+            
+            if amount_to_tax > 0:
+                tax_calc = TaxCalculator.calculate_tax(
+                    amount=amount_to_tax,
+                    tax_rate=transaction_type.tax_rate,
+                    method=transaction_type.tax_calculation_method
+                )
+                
+                tax_amount = tax_calc['tax_amount']
+                if tax_amount > 0:
+                    total_tax_amount += tax_amount
+                    
+                    # Create tax line entry (opposite side of the original line)
+                    tax_line = schemas.GLJournalEntryLineCreate(
+                        gl_account_id=transaction_type.default_tax_control_account_id,
+                        description=f"Tax on {line_in.description or 'transaction'}",
+                        debit_amount=tax_amount if line_in.credit_amount else Decimal('0.00'),
+                        credit_amount=tax_amount if line_in.debit_amount else Decimal('0.00')
+                    )
+                    processed_lines.append(tax_line)
+    
+    # Create the journal entry with processed lines
+    journal_entry_data = schemas.GLJournalEntryCreate(
+        entry_date=entry_in.entry_date,
+        reference=entry_in.reference,
+        description=entry_in.description,
+        status=entry_in.status,
+        lines=processed_lines
+    )
+    
+    return create_journal_entry(
+        db=db,
+        entry_in=journal_entry_data,
+        company_id=company_id,
+        user_id=user_id
+    )
+
+
+# Initialize CRUD instances
+gl_transaction_type = GLTransactionTypeCRUD(models.GLTransactionType)

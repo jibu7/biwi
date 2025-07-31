@@ -1,6 +1,6 @@
 // frontend/src/services/glService.ts
 import axiosInstance from '@/lib/axiosInstance';
-import { GLAccount, GLAccountCreate, GLAccountUpdate, GLJournalEntry, GLJournalEntryCreate, GLDefaults, GLDefaultsUpdate, GLTransactionType, GLTransactionTypeCreate, GLTransactionTypeUpdate } from '@/types/gl';
+import { GLAccount, GLAccountCreate, GLAccountUpdate, GLJournalEntry, GLJournalEntryCreate, GLDefaults, GLDefaultsUpdate, GLTransactionType, GLTransactionTypeCreate, GLTransactionTypeUpdate, TaxCalculationResult } from '@/types/gl';
 
 export const glService = {
   // GL Accounts
@@ -155,5 +155,45 @@ export const glService = {
 
   async updateGLTransactionType(id: number, data: GLTransactionTypeUpdate): Promise<GLTransactionType> {
     return this.updateTransactionType(id, data);
+  },
+
+  // Tax-related services
+  async getTaxTypes(): Promise<any[]> {
+    try {
+      const response = await axiosInstance.get('/gl/tax-types');
+      return response.data;
+    } catch (error) {
+      // Return empty array if tax types are not implemented yet
+      return [];
+    }
+  },
+
+  async calculateTax(transactionTypeId: number, amount: number): Promise<TaxCalculationResult> {
+    const response = await axiosInstance.post('/gl/calculate-tax', {
+      transaction_type_id: transactionTypeId,
+      amount
+    });
+    return response.data;
+  },
+
+  async validateTaxConfiguration(transactionTypeData: GLTransactionTypeCreate): Promise<{
+    valid: boolean;
+    errors?: string[];
+  }> {
+    try {
+      const response = await axiosInstance.post('/gl/validate-tax-config', transactionTypeData);
+      return response.data;
+    } catch (error: any) {
+      return {
+        valid: false,
+        errors: [error.response?.data?.detail || 'Tax configuration validation failed']
+      };
+    }
+  },
+
+  // Enhanced journal entry creation with tax support
+  async createJournalEntryWithTax(data: GLJournalEntryCreate): Promise<GLJournalEntry> {
+    const response = await axiosInstance.post('/gl/journal-entries/with-tax', data);
+    return response.data;
   }
 };

@@ -37,6 +37,7 @@ class TaxType(Base):
     
     company = relationship("Company", foreign_keys=[company_id])
     tax_authority_gl_account = relationship("GLAccount", foreign_keys=[tax_authority_gl_account_id])
+    transaction_types = relationship("GLTransactionType", back_populates="tax_type")
     
     __table_args__ = (
         UniqueConstraint('name', 'company_id', name='uq_taxtype_name_company'),

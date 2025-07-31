@@ -307,3 +307,124 @@ async def update_gl_defaults(
     return crud.create_or_update_gl_defaults(
         db=db, defaults=defaults_in, company_id=company_id
     )
+
+
+# Transaction Types endpoints
+@router.post("/transaction-types", response_model=schemas.GLTransactionTypeRead)
+async def create_transaction_type(
+    *,
+    db: Session = Depends(deps.get_db),
+    transaction_type_in: schemas.GLTransactionTypeCreate,
+    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE])),
+    company_id: int = Depends(get_company_id)
+):
+    """Create new transaction type with company isolation and tax validation"""
+    return crud.create_transaction_type(
+        db=db, transaction_type_in=transaction_type_in, company_id=company_id
+    )
+
+
+@router.get("/transaction-types", response_model=List[schemas.GLTransactionTypeRead])
+async def list_transaction_types(
+    db: Session = Depends(deps.get_db),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    is_active: Optional[bool] = Query(True),
+    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE, GL_REPORTS_VIEW])),
+    company_id: int = Depends(get_company_id)
+):
+    """List transaction types for the company"""
+    return crud.gl_transaction_type.get_by_company(
+        db=db, 
+        company_id=company_id,
+        skip=skip,
+        limit=limit,
+        is_active=is_active
+    )
+
+
+@router.get("/transaction-types/{transaction_type_id}", response_model=schemas.GLTransactionTypeRead)
+async def get_transaction_type(
+    *,
+    db: Session = Depends(deps.get_db),
+    transaction_type_id: int,
+    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE, GL_REPORTS_VIEW])),
+    company_id: int = Depends(get_company_id)
+):
+    """Get a specific transaction type by ID"""
+    transaction_type = crud.gl_transaction_type.get_with_company_check(
+        db=db, id=transaction_type_id, company_id=company_id
+    )
+    if not transaction_type:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Transaction type not found"
+        )
+    return transaction_type
+
+
+@router.put("/transaction-types/{transaction_type_id}", response_model=schemas.GLTransactionTypeRead)
+async def update_transaction_type(
+    *,
+    db: Session = Depends(deps.get_db),
+    transaction_type_id: int,
+    transaction_type_in: schemas.GLTransactionTypeUpdate,
+    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE])),
+    company_id: int = Depends(get_company_id)
+):
+    """Update a transaction type with validation"""
+    return crud.update_transaction_type(
+        db=db,
+        transaction_type_id=transaction_type_id,
+        transaction_type_in=transaction_type_in,
+        company_id=company_id
+    )
+
+
+@router.delete("/transaction-types/{transaction_type_id}")
+async def delete_transaction_type(
+    *,
+    db: Session = Depends(deps.get_db),
+    transaction_type_id: int,
+    current_user: models.User = Depends(PermissionChecker([GL_SETUP_MANAGE])),
+    company_id: int = Depends(get_company_id)
+):
+    """Delete a transaction type"""
+    transaction_type = crud.gl_transaction_type.get_with_company_check(
+        db=db, id=transaction_type_id, company_id=company_id
+    )
+    if not transaction_type:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Transaction type not found"
+        )
+    
+    # Check if transaction type is being used in any journal entries
+    journal_entries = db.query(models.GLJournalEntry).filter(
+        models.GLJournalEntry.transaction_type_id == transaction_type_id
+    ).first()
+    
+    if journal_entries:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete transaction type that is being used in journal entries"
+        )
+    
+    return crud.gl_transaction_type.remove(db=db, id=transaction_type_id)
+
+
+@router.post("/journal-entries-with-tax", response_model=schemas.GLJournalEntry)
+async def create_journal_entry_with_tax(
+    *,
+    db: Session = Depends(deps.get_db),
+    entry_in: schemas.GLJournalEntryCreateWithTax,
+    current_user: models.User = Depends(PermissionChecker([GL_JOURNAL_POST])),
+    company_id: int = Depends(get_company_id)
+):
+    """Create journal entry with automatic tax calculations based on transaction type"""
+    return crud.create_journal_entry_with_tax(
+        db=db,
+        entry_in=entry_in,
+        company_id=company_id,
+        user_id=current_user.id
+    )

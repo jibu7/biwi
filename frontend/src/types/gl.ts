@@ -38,6 +38,15 @@ export interface GLJournalEntryLine {
   credit_amount: number;
 }
 
+export interface JournalEntryLineWithTax {
+  gl_account_id: number;
+  description?: string;
+  debit_amount: number;
+  credit_amount: number;
+  is_tax_line?: boolean;
+  tax_base_amount?: number;
+}
+
 export interface GLJournalEntry {
   id: number;
   company_id: number;
@@ -58,6 +67,12 @@ export interface GLJournalEntryCreate {
   lines: GLJournalEntryLine[];
 }
 
+export enum TaxCalculationMethod {
+  NONE = 'none',
+  INCLUSIVE = 'inclusive',
+  EXCLUSIVE = 'exclusive'
+}
+
 export interface GLTransactionType {
   id: number;
   company_id: number;
@@ -65,7 +80,11 @@ export interface GLTransactionType {
   description?: string;
   default_debit_account_id?: number;
   default_credit_account_id?: number;
-  default_tax_control_account_id?: number;  // NEW
+  default_tax_control_account_id?: number;
+  is_tax_applicable: boolean;
+  tax_rate?: number;
+  tax_calculation_method: TaxCalculationMethod;
+  tax_type_id?: number;
   is_active: boolean;
 }
 
@@ -75,6 +94,10 @@ export interface GLTransactionTypeCreate {
   default_debit_account_id?: number;
   default_credit_account_id?: number;
   default_tax_control_account_id?: number;
+  is_tax_applicable?: boolean;
+  tax_rate?: number;
+  tax_calculation_method?: TaxCalculationMethod;
+  tax_type_id?: number;
   is_active?: boolean;
 }
 
@@ -84,6 +107,10 @@ export interface GLTransactionTypeUpdate {
   default_debit_account_id?: number;
   default_credit_account_id?: number;
   default_tax_control_account_id?: number;
+  is_tax_applicable?: boolean;
+  tax_rate?: number;
+  tax_calculation_method?: TaxCalculationMethod;
+  tax_type_id?: number;
   is_active?: boolean;
 }
 
@@ -118,4 +145,14 @@ export interface AccountTransaction {
   debit_amount: number;
   credit_amount: number;
   balance: number;
+}
+
+export interface TaxCalculationResult {
+  transaction_type: string;
+  tax_rate: number;
+  calculation_method: TaxCalculationMethod;
+  input_amount: number;
+  net_amount: number;
+  tax_amount: number;
+  total_amount: number;
 }

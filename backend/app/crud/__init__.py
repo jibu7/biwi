@@ -4,7 +4,9 @@ from . import core, gl, ar, ap, inventory, oe, common, reporting, bom, pos, plat
 from .gl import (
     gl_account, create_journal_entry, post_journal_entry_to_gl,
     get_journal_entries_by_company, calculate_trial_balance,
-    get_gl_defaults, create_or_update_gl_defaults
+    get_gl_defaults, create_or_update_gl_defaults,
+    gl_transaction_type, create_transaction_type, update_transaction_type,
+    create_journal_entry_with_tax
 )
 
 # Inventory imports

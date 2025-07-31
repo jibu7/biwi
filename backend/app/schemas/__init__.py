@@ -8,7 +8,7 @@ from .core import (
 
 from .gl import (
     GLAccount, GLAccountCreate, GLAccountUpdate,
-    GLJournalEntry, GLJournalEntryCreate, GLJournalEntryUpdate,
+    GLJournalEntry, GLJournalEntryCreate, GLJournalEntryUpdate, GLJournalEntryCreateWithTax,
     GLJournalEntryLine, GLJournalEntryLineCreate, GLJournalEntryLineUpdate,
     GLTransactionTypeRead, GLTransactionTypeCreate, GLTransactionTypeUpdate,
     GLDefaults, GLDefaultsCreate, GLDefaultsUpdate,
@@ -106,7 +106,7 @@ __all__ = [
     "AccountingPeriod", "AccountingPeriodCreate", "AccountingPeriodUpdate",
     "Token", "TokenData", "TokenPayload",
     "GLAccount", "GLAccountCreate", "GLAccountUpdate",
-    "GLJournalEntry", "GLJournalEntryCreate", "GLJournalEntryUpdate",
+    "GLJournalEntry", "GLJournalEntryCreate", "GLJournalEntryUpdate", "GLJournalEntryCreateWithTax",
     "GLJournalEntryLine", "GLJournalEntryLineCreate", "GLJournalEntryLineUpdate",
     "GLTransactionTypeRead", "GLTransactionTypeCreate", "GLTransactionTypeUpdate",
     "GLDefaults", "GLDefaultsCreate", "GLDefaultsUpdate",

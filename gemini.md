@@ -46,3 +46,5 @@ The architecture is a modern web application with a distinct separation between 
 -   **Multi-Tenancy:** This is a core concept. Numerous files (`TENANT_AWARE_FRONTEND_IMPLEMENTATION.md`, `test_multitenant.py`, etc.) indicate that the application is designed to serve multiple customers (tenants) from a single instance, with data isolation between them.
 -   **Service Separation:** The project follows a clear separation of concerns with distinct `frontend` and `backend` applications.
 -   **Database First/Code First:** The use of Alembic suggests a "code-first" approach to database schema management, where database changes are driven by code and managed through migration scripts.
+
+"npx https://github.com/google-gemini/gemini-cli"

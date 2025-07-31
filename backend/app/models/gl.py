@@ -1,7 +1,13 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Numeric, Boolean, Text, DateTime, UniqueConstraint, CheckConstraint, Index
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Numeric, Boolean, Text, DateTime, UniqueConstraint, CheckConstraint, Index, Enum
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.sql import func
 from app.database.database import Base
+import enum
+
+class TaxCalculationMethod(str, enum.Enum):
+    NONE = "none"
+    INCLUSIVE = "inclusive"  # Tax included in amount
+    EXCLUSIVE = "exclusive"  # Tax added to amount
 
 class GLAccount(Base):
     __tablename__ = "gl_accounts"
@@ -47,6 +53,7 @@ class GLJournalEntry(Base):
     description = Column(String, nullable=False)
     posted_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     status = Column(String, nullable=False, default="Draft")
+    transaction_type_id = Column(Integer, ForeignKey("gl_transaction_types.id"), nullable=True)  # Link to transaction type for tax config
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -59,6 +66,7 @@ class GLJournalEntry(Base):
     company = relationship("Company", back_populates="gl_journal_entries")
     posted_by_user = relationship("User", foreign_keys=[posted_by_user_id])
     approved_by_user = relationship("User", foreign_keys=[approved_by_user_id])
+    transaction_type = relationship("GLTransactionType")
     lines = relationship("GLJournalEntryLine", back_populates="journal_entry", cascade="all, delete-orphan")
     
     __table_args__ = (
@@ -74,6 +82,10 @@ class GLJournalEntryLine(Base):
     description = Column(String, nullable=True)
     debit_amount = Column(Numeric(precision=15, scale=2), default=0.00)
     credit_amount = Column(Numeric(precision=15, scale=2), default=0.00)
+    
+    # Tax support fields
+    is_tax_line = Column(Boolean, default=False)  # Flag to identify tax lines
+    tax_base_amount = Column(Numeric(precision=15, scale=2), nullable=True)  # Original amount before tax
     
     # Multi-currency support for foreign currency transactions
     currency_id = Column(Integer, ForeignKey("currencies.id"), nullable=True)
@@ -95,13 +107,21 @@ class GLTransactionType(Base):
     description = Column(String, nullable=True)
     default_debit_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     default_credit_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
-    default_tax_control_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)  # NEW
+    default_tax_control_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
+    
+    # Tax configuration fields
+    is_tax_applicable = Column(Boolean, default=False)
+    tax_rate = Column(Numeric(5, 2), nullable=True)  # e.g., 18.00 for 18%
+    tax_calculation_method = Column(Enum(TaxCalculationMethod), default=TaxCalculationMethod.NONE)
+    tax_type_id = Column(Integer, ForeignKey("tax_types.id"), nullable=True)  # Link to tax types from Phase 8
+    
     is_active = Column(Boolean, default=True)
     
     # Add relationships
     default_debit_account = relationship("GLAccount", foreign_keys=[default_debit_account_id])
     default_credit_account = relationship("GLAccount", foreign_keys=[default_credit_account_id])
-    default_tax_control_account = relationship("GLAccount", foreign_keys=[default_tax_control_account_id])  # NEW
+    default_tax_control_account = relationship("GLAccount", foreign_keys=[default_tax_control_account_id])
+    tax_type = relationship("TaxType", back_populates="transaction_types")
     
     __table_args__ = (
         UniqueConstraint('name', 'company_id', name='uq_gltransactiontype_name_company'),

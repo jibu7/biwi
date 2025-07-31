@@ -2,7 +2,7 @@
 from .core import User, Role, UserRole, Company, AccountingPeriod, PlatformAuditLog, UserType, SubscriptionStatus
 
 # GL models
-from .gl import GLAccount, GLJournalEntry, GLJournalEntryLine, GLTransactionType, GLDefaults
+from .gl import GLAccount, GLJournalEntry, GLJournalEntryLine, GLTransactionType, GLDefaults, TaxCalculationMethod
 
 # AR models
 from .ar import Customer, SalesRepresentative, ARTransactionType, ARTransaction, ARAllocation, ARAllocationLine, ARDefaults, ARWriteOff, ARTransactionTaxLine
