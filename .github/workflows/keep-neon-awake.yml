@@ -1,0 +1,21 @@
+name: Keep Neon Awake
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  ping-neon:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Neon Database
+        env:
+          NEON_DB_URL: ${{ secrets.NEON_DB_URL }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          PGPASSWORD=$(echo $NEON_DB_URL | sed -E 's/.*:([^:]+)@.*/\1/')
+          PGHOST=$(echo $NEON_DB_URL | sed -E 's/.*@([^:/]+).*/\1/')
+          PGUSER=$(echo $NEON_DB_URL | sed -E 's/postgresql:\/\/([^:]+):.*/\1/')
+          PGDATABASE=$(echo $NEON_DB_URL | sed -E 's/.*\/(.*)\?.*/\1/')
+          psql "${NEON_DB_URL}" -c 'SELECT 1;'
