@@ -14,8 +14,5 @@ jobs:
           NEON_DB_URL: ${{ secrets.NEON_DB_URL }}
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client
-          PGPASSWORD=$(echo $NEON_DB_URL | sed -E 's/.*:([^:]+)@.*/\1/')
-          PGHOST=$(echo $NEON_DB_URL | sed -E 's/.*@([^:/]+).*/\1/')
-          PGUSER=$(echo $NEON_DB_URL | sed -E 's/postgresql:\/\/([^:]+):.*/\1/')
-          PGDATABASE=$(echo $NEON_DB_URL | sed -E 's/.*\/(.*)\?.*/\1/')
-          psql "${NEON_DB_URL}" -c 'SELECT 1;'
+          export PGPASSWORD=$(echo $NEON_DB_URL | sed -E 's/.*:([^:]+)@.*/\1/')
+          psql "$NEON_DB_URL" -c 'SELECT 1;'
