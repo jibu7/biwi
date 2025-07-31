@@ -195,12 +195,6 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K for search
-      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
-        event.preventDefault();
-        setIsSearchOpen(!isSearchOpen);
-      }
-      
       // ESC to close modals
       if (event.key === 'Escape') {
         setIsSearchOpen(false);
@@ -217,7 +211,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isSearchOpen, isSidebarCollapsed]);
+  }, [isSidebarCollapsed]);
   
   const toggleFavorite = (href: string) => {
     setFavorites(prev => 

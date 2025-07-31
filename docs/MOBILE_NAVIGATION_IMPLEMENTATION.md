@@ -41,7 +41,6 @@
 
 #### **Search Experience**
 - **Header Integration**: Search trigger directly in header
-- **Keyboard Shortcuts**: Cmd+K support with visual indicators
 - **Mobile Input**: Proper text size and touch handling
 
 #### **Content Areas**

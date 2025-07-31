@@ -9,7 +9,7 @@ After thorough analysis of the current ERP navigation system and extensive resea
 ### **Current System**
 - ✅ Intent-based organization (Maintenance, Transactions, Reports)
 - ✅ Permission-based visibility
-- ✅ Basic global search (Cmd+K)
+- ✅ Basic global search
 - ✅ Mobile responsive
 - ❌ Deep nesting reduces discoverability
 - ❌ No contextual quick actions

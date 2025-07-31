@@ -95,7 +95,7 @@ I have successfully created a comprehensive, feature-rich executive dashboard at
 
 The executive dashboard perfectly complements our enhanced navigation system:
 
-1. **Command Palette Integration**: Searchable via Cmd+K with keywords like "executive", "dashboard", "analytics", "kpi"
+1. **Command Palette Integration**: Searchable via search functionality with keywords like "executive", "dashboard", "analytics", "kpi"
 
 2. **Quick Actions**: Featured in the Smart tab of our enhanced sidebar
 

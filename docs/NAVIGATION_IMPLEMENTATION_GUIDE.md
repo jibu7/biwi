@@ -22,7 +22,7 @@ import { EnhancedSidebar } from '@/components/layout/EnhancedSidebar';
 - **Starred**: User-favorited items with star button
 - **Smart**: AI-like suggestions based on usage patterns
 
-#### **Enhanced Search (Cmd+K)**
+#### **Enhanced Search**
 - Searches across all navigation items
 - Includes quick actions and contextual commands
 - Enhanced keyword matching
@@ -101,7 +101,6 @@ The enhanced navigation automatically adapts for mobile with:
 
 ## ⌨️ Keyboard Shortcuts
 
-- **Cmd/Ctrl + K**: Open global search
 - **Cmd/Ctrl + B**: Toggle sidebar collapse  
 - **Escape**: Close search/modals
 - **↑/↓**: Navigate search results

@@ -48,10 +48,6 @@ export function Header({ onMenuButtonClick }: HeaderProps) {
             >
               <Search className="h-4 w-4" />
               <span>Search or jump to...</span>
-              <div className="ml-auto flex items-center gap-1 text-xs">
-                <kbd className="px-2 py-1 bg-white rounded border">⌘</kbd>
-                <kbd className="px-2 py-1 bg-white rounded border">K</kbd>
-              </div>
             </button>
           </div>
           
