@@ -7,7 +7,7 @@ import {
   TrendingUp, BarChart3, Users, MessageCircle
 } from 'lucide-react';
 import { feedbackService, FeedbackRequest, FeedbackSummary, FeedbackTrend } from '../../services/feedbackService';
-import { toast } from '../../lib/toast';
+import { toast } from 'sonner';
 
 interface FeedbackDashboardProps {
   className?: string;

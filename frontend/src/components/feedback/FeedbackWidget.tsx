@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { MessageSquarePlus, X } from 'lucide-react';
-import { FeedbackModal } from './FeedbackModal';
+import { FeedbackModal } from '@/components/feedback/FeedbackModal';
 
 interface FeedbackWidgetProps {
   className?: string;

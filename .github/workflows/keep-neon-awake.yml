@@ -13,6 +13,10 @@ jobs:
         env:
           NEON_DB_URL: ${{ secrets.NEON_DB_URL }}
         run: |
+          if [ -z "$NEON_DB_URL" ]; then
+            echo "❌ NEON_DB_URL secret is not configured"
+            exit 1
+          fi
           sudo apt-get update && sudo apt-get install -y postgresql-client
           echo "Testing connection to Neon database..."
           # Remove channel_binding parameter which can cause issues

@@ -1,4 +1,4 @@
-import axiosInstance from '@/lib/axiosInstance';
+import axiosInstance from '../lib/axiosInstance';
 
 export interface FeedbackRequestCreate {
   request_type: 'feature' | 'modification' | 'improvement' | 'bug_report';

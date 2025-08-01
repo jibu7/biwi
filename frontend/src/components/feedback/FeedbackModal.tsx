@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Send, Upload, Loader2 } from 'lucide-react';
 import { feedbackService } from '../../services/feedbackService';
-import { toast } from '../../lib/toast';
+import { toast } from 'sonner';
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -315,3 +315,4 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
     </div>
   );
 };
+
