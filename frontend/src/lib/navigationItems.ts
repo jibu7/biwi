@@ -20,6 +20,7 @@ import {
   Calculator,
   LayoutDashboard,
   Building2,
+  MessageSquare,
 } from 'lucide-react';
 import * as permissions from './permissions';
 
@@ -1023,6 +1024,42 @@ export const navItems: NavItem[] = [
             href: "/reports/management/scheduled", 
             requiredPermission: permissions.REPORTING_TEMPLATES_MANAGE,
             description: "Configure automated report generation"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "administration",
+    label: "Administration",
+    icon: Settings,
+    description: "Administrative tools and management",
+    searchKeywords: ["administration", "admin", "management", "feedback"],
+    meta: {
+      category: 'administration',
+      priority: 'medium',
+      frequency: 'daily'
+    },
+    children: [
+      {
+        id: "feedback-management",
+        label: "Feedback Management",
+        href: "/feedback",
+        icon: MessageSquare,
+        requiredPermission: permissions.USER_READ,
+        description: "Manage user feedback and feature requests",
+        searchKeywords: ["feedback", "requests", "features", "bugs", "suggestions"],
+        badge: {
+          text: "New",
+          variant: "secondary" as const
+        },
+        quickActions: [
+          {
+            label: "View Feedback Summary",
+            icon: BarChart3,
+            href: "/feedback",
+            category: "Analytics",
+            keywords: ["summary", "stats", "dashboard"]
           }
         ]
       }

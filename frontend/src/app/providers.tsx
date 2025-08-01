@@ -3,6 +3,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
+import { FeedbackWidget } from '../components/feedback';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,6 +21,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       {children}
       <Toaster />
+      <FeedbackWidget />
     </QueryClientProvider>
   );
 }
