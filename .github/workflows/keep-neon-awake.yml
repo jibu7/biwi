@@ -14,5 +14,7 @@ jobs:
           NEON_DB_URL: ${{ secrets.NEON_DB_URL }}
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client
-          export PGPASSWORD=$(echo $NEON_DB_URL | sed -E 's/.*:([^:]+)@.*/\1/')
-          psql "$NEON_DB_URL" -c 'SELECT 1;'
+          echo "Testing connection to Neon database..."
+          # Remove channel_binding parameter which can cause issues
+          CLEAN_URL=$(echo "$NEON_DB_URL" | sed 's/&channel_binding=require//g')
+          psql "$CLEAN_URL" -c 'SELECT 1 as ping_result;' && echo "✅ Neon database ping successful!"
