@@ -96,6 +96,15 @@ export const PLATFORM_VIEW_AUDIT = "platform:view_audit";
 export const PLATFORM_MANAGE_BILLING = "platform:manage_billing";
 export const PLATFORM_SYSTEM_CONFIG = "platform:system_config";
 
+// Feedback Permissions
+export const FEEDBACK_CREATE = "feedback:create";
+export const FEEDBACK_VIEW_OWN = "feedback:view_own";
+export const FEEDBACK_MANAGE = "feedback:manage";
+export const FEEDBACK_VIEW_ALL = "feedback:view_all";
+export const FEEDBACK_COMMENT = "feedback:comment";
+export const FEEDBACK_ASSIGN = "feedback:assign";
+export const FEEDBACK_STATUS_UPDATE = "feedback:status_update";
+
 export const hasPermission = (userPermissions: string[], requiredPermission: string) => {
     return userPermissions.includes(requiredPermission);
 };

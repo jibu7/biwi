@@ -5,6 +5,7 @@ import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { EnhancedSidebar } from '@/components/layout/EnhancedSidebar';
 import { Header } from '@/components/layout/Header';
 import { NavigationProvider } from '@/contexts/NavigationContext';
+import { FeedbackWidget } from '@/components/feedback/FeedbackWidget';
 
 export default function DashboardLayout({
   children,
@@ -24,6 +25,8 @@ export default function DashboardLayout({
               <div className="container mx-auto px-6 py-8 max-w-full">{children}</div>
             </main>
           </div>
+          {/* Feedback Widget */}
+          <FeedbackWidget />
         </div>
       </NavigationProvider>
     </ProtectedRoute>

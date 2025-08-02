@@ -118,6 +118,7 @@ class User(Base):
     default_company = relationship("Company", foreign_keys=[default_company_id])
     roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
     platform_audit_logs = relationship("PlatformAuditLog", back_populates="user")
+    feedback_requests = relationship("FeedbackRequest", foreign_keys="[FeedbackRequest.user_id]", back_populates="user")
     
     __table_args__ = (
         CheckConstraint(

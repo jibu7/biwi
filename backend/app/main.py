@@ -7,11 +7,14 @@ from app.middleware.tenant_isolation import TenantIsolationMiddleware
 from app.middleware.audit_logging import AuditLoggingMiddleware
 from app.middleware.database_connection import DatabaseConnectionMiddleware
 from app.middleware.audit import AuditMiddleware
+from app.core.error_handler import global_exception_handler
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
+
+app.add_exception_handler(Exception, global_exception_handler)
 
 # CORS
 app.add_middleware(
@@ -47,4 +50,4 @@ def health_check():
 
 @app.get("/")
 async def root():
-    return {"message": "Vinea ERP Backend is running"}
+    return {"message": "ChannelZap Backend is running"}

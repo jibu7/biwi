@@ -80,6 +80,9 @@ from .platform import (
     is_feature_enabled, get_platform_stats
 )
 
+# Feedback imports
+from .feedback import feedback_request, feedback_comment, feedback_category
+
 # Export all functions
 __all__ = [
     "get_user_by_email",

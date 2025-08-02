@@ -44,3 +44,6 @@ from .platform import (
 
 # Reporting models
 from .reporting import ReportTemplate, ReportSchedule, BankReconciliation, BankReconciliationItem
+
+# Feedback models
+from .feedback import FeedbackRequest, FeedbackComment, FeedbackCategory

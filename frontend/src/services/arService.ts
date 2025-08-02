@@ -448,3 +448,13 @@ export const writeOffService = {
   approve: (id: number, approval: ARWriteOffApproval) => arService.approveARWriteOff(id, approval),
   reject: (id: number, approval: ARWriteOffApproval) => arService.rejectARWriteOff(id, approval),
 };
+
+// Export createARInvoice function for backward compatibility
+export const createARInvoice = (data: ARInvoiceCreateSchema) => arService.createARTransaction(data);
+
+// Export arReportsService for backward compatibility
+export const arReportsService = {
+  getCustomerAging: (asOfDate: string) => arService.getCustomerAgeing(asOfDate),
+  getCustomerStatement: (customerId: number, startDate: string, endDate: string) => 
+    arService.getARTransactions({ customer_id: customerId, from_date: startDate, to_date: endDate })
+};

@@ -3,7 +3,7 @@
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Building2, Users, Settings, Shield } from 'lucide-react';
+import { Building2, Users, Settings, Shield, Bug } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -59,6 +59,12 @@ export default function AdministrationLayout({
       href: '/administration/security',
       icon: Shield,
       description: 'Security and audit logs',
+    },
+    {
+      name: 'Error Reports',
+      href: '/administration/error-reports',
+      icon: Bug,
+      description: 'System error tracking and management',
     },
   ];
 

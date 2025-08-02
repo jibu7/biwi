@@ -23,6 +23,16 @@ class Settings(BaseSettings):
         "https://channelzap.com"
     ]
     
+    # Alert system configuration
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_TLS: bool = True
+    SMTP_FROM_EMAIL: str = "noreply@vinea-erp.com"
+    ALERT_EMAIL: str = "admin@vinea-erp.com"
+    SLACK_WEBHOOK_URL: str = ""
+    
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     
     def __init__(self, **kwargs):
