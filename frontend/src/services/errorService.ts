@@ -1,4 +1,4 @@
-import { apiClient } from './api';
+import axiosInstance from '@/lib/axiosInstance';
 
 export interface BugReport {
   id: number;
@@ -58,27 +58,38 @@ export interface BugReportStatusUpdate {
 
 export const errorService = {
   // Get all bug reports with optional filtering
-  getBugReports: (filters?: BugReportFilters) => {
-    const params = new URLSearchParams();
-    if (filters?.skip !== undefined) params.append('skip', filters.skip.toString());
-    if (filters?.limit !== undefined) params.append('limit', filters.limit.toString());
-    if (filters?.status) params.append('status', filters.status);
-    if (filters?.severity) params.append('severity', filters.severity);
-    if (filters?.error_type) params.append('error_type', filters.error_type);
+  async getBugReports(filters?: BugReportFilters): Promise<BugReport[]> {
+    const params: Record<string, string> = {};
+    if (filters?.skip !== undefined) params.skip = filters.skip.toString();
+    if (filters?.limit !== undefined) params.limit = filters.limit.toString();
+    if (filters?.status) params.status = filters.status;
+    if (filters?.severity) params.severity = filters.severity;
+    if (filters?.error_type) params.error_type = filters.error_type;
     
-    return apiClient.get<BugReport[]>(`/errors?${params.toString()}`);
+    const response = await axiosInstance.get<BugReport[]>('/errors', { params });
+    return response.data;
   },
 
   // Get bug report statistics
-  getBugReportStats: () => apiClient.get<BugReportStats>('/errors/stats'),
+  async getBugReportStats(): Promise<BugReportStats> {
+    const response = await axiosInstance.get<BugReportStats>('/errors/stats');
+    return response.data;
+  },
 
   // Get specific bug report
-  getBugReport: (id: number) => apiClient.get<BugReport>(`/errors/${id}`),
+  async getBugReport(id: number): Promise<BugReport> {
+    const response = await axiosInstance.get<BugReport>(`/errors/${id}`);
+    return response.data;
+  },
 
   // Update bug report status
-  updateBugReportStatus: (id: number, update: BugReportStatusUpdate) =>
-    apiClient.patch<BugReport>(`/errors/${id}/status`, update),
+  async updateBugReportStatus(id: number, update: BugReportStatusUpdate): Promise<BugReport> {
+    const response = await axiosInstance.patch<BugReport>(`/errors/${id}/status`, update);
+    return response.data;
+  },
 
   // Delete bug report
-  deleteBugReport: (id: number) => apiClient.delete(`/errors/${id}`),
+  async deleteBugReport(id: number): Promise<void> {
+    await axiosInstance.delete(`/errors/${id}`);
+  },
 };
