@@ -47,4 +47,4 @@ The architecture is a modern web application with a distinct separation between 
 -   **Service Separation:** The project follows a clear separation of concerns with distinct `frontend` and `backend` applications.
 -   **Database First/Code First:** The use of Alembic suggests a "code-first" approach to database schema management, where database changes are driven by code and managed through migration scripts.
 
-"npx https://github.com/google-gemini/gemini-cli"
+npx https://github.com/google-gemini/gemini-cli

@@ -66,6 +66,11 @@ export const REPORTING_BANK_RECONCILIATION_MANAGE = "reporting:bank_reconciliati
 export const REPORTING_COMPARATIVE_ANALYSIS = "reporting:comparative_analysis";
 export const REPORTING_CASH_FLOW_VIEW = "reporting:cash_flow_view";
 
+// New Report Permissions
+export const REPORTS_FINANCIAL_VIEW = "reports:financial_view";
+export const REPORTS_CUSTOM_CREATE = "reports:custom_create";
+export const REPORTS_SCHEDULE_MANAGE = "reports:schedule_manage";
+
 // Legacy aliases for backwards compatibility
 export const REPORTING_FINANCIAL_STATEMENTS = REPORTING_FINANCIAL_STATEMENTS_VIEW;
 export const REPORTING_ADVANCED_GL = REPORTING_GL_ADVANCED_VIEW;

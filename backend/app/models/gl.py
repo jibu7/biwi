@@ -4,6 +4,13 @@ from sqlalchemy.sql import func
 from app.database.database import Base
 import enum
 
+class AccountType(str, enum.Enum):
+    ASSET = "Asset"
+    LIABILITY = "Liability"
+    EQUITY = "Equity"
+    INCOME = "Income"
+    EXPENSE = "Expense"
+
 class TaxCalculationMethod(str, enum.Enum):
     NONE = "none"
     INCLUSIVE = "inclusive"  # Tax included in amount

@@ -15,29 +15,29 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ../backend
       dockerfile: ../docker/Dockerfile.backend
     container_name: Biwi_backend
     command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
     volumes:
-      - ./backend:/app
+      - ../backend:/app
     ports:
       - "8000:8000"
     depends_on:
       - db
     env_file:
-      - ./backend/.env
+      - ../backend/.env
     networks:
       - Biwi_network
 
   frontend:
     build:
-      context: ./frontend
+      context: ../frontend
       dockerfile: ../docker/Dockerfile.frontend
     container_name: Biwi_frontend
     command: npm run dev
     volumes:
-      - ./frontend:/app
+      - ../frontend:/app
       - /app/node_modules
       - /app/.next
     ports:

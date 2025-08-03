@@ -761,46 +761,172 @@ export const navItems: NavItem[] = [
       },
       {
         id: "financial-reporting",
-        label: "Financial Statements",
-        href: "/reports/financial",
-        requiredPermission: permissions.REPORTING_FINANCIAL_STATEMENTS,
-        description: "Core financial reports and statements",
-        searchKeywords: ["financial", "statements", "balance", "income", "cash flow"],
+        label: "Reports",
+        href: "/reports",
+        icon: FileText,
+        description: "Core reports and statements",
+        searchKeywords: ["reports", "financial", "statements", "balance", "income", "cash flow", "custom"],
         badge: { text: "Core", variant: "default" },
         children: [
-          { 
-            id: "balance-sheet",
-            label: "Balance Sheet", 
-            href: "/reports/financial/balance-sheet", 
-            requiredPermission: permissions.REPORTING_FINANCIAL_STATEMENTS,
-            description: "Statement of financial position",
-            searchKeywords: ["balance", "sheet", "assets", "liabilities", "equity"]
+          {
+            label: "Financial Reports",
+            href: "/reports/financial",
+            requiredPermission: permissions.REPORTS_FINANCIAL_VIEW,
+            children: [
+              { 
+                label: "Balance Sheet", 
+                href: "/reports/financial/balance-sheet", 
+                requiredPermission: permissions.REPORTS_FINANCIAL_VIEW,
+                description: "Statement of financial position",
+                searchKeywords: ["balance", "sheet", "assets", "liabilities", "equity"]
+              },
+              { 
+                label: "Income Statement", 
+                href: "/reports/financial/income-statement", 
+                requiredPermission: permissions.REPORTS_FINANCIAL_VIEW,
+                description: "Profit and loss statement",
+                searchKeywords: ["income", "statement", "profit", "loss", "revenue"]
+              },
+              { 
+                label: "Cash Flow Statement", 
+                href: "/reports/financial/cash-flow", 
+                requiredPermission: permissions.REPORTS_FINANCIAL_VIEW,
+                description: "Statement of cash flows",
+                searchKeywords: ["cash", "flow", "statement", "operating", "investing"]
+              },
+              { 
+                label: "Trial Balance", 
+                href: "/reports/gl/trial-balance", 
+                requiredPermission: permissions.GL_REPORTS_VIEW 
+              },
+            ]
           },
-          { 
-            id: "income-statement",
-            label: "Income Statement", 
-            href: "/reports/financial/income-statement", 
-            requiredPermission: permissions.REPORTING_FINANCIAL_STATEMENTS,
-            description: "Profit and loss statement",
-            searchKeywords: ["income", "statement", "profit", "loss", "revenue"]
+          {
+            label: "Custom Reports",
+            href: "/reports/custom",
+            requiredPermission: permissions.REPORTS_CUSTOM_CREATE,
+            children: [
+              { 
+                label: "Report Builder", 
+                href: "/reports/custom/builder", 
+                requiredPermission: permissions.REPORTS_CUSTOM_CREATE,
+                description: "Build custom reports with drag-and-drop interface"
+              },
+              { 
+                label: "Saved Reports", 
+                href: "/reports/custom/saved", 
+                requiredPermission: permissions.REPORTS_FINANCIAL_VIEW,
+                description: "Access saved custom reports"
+              },
+            ]
           },
-          { 
-            id: "cash-flow-statement",
-            label: "Cash Flow Statement", 
-            href: "/reports/financial/cash-flow", 
-            requiredPermission: permissions.REPORTING_FINANCIAL_STATEMENTS,
-            description: "Statement of cash flows",
-            searchKeywords: ["cash", "flow", "statement", "operating", "investing"]
+          {
+            label: "Report Scheduling",
+            href: "/reports/scheduling",
+            requiredPermission: permissions.REPORTS_SCHEDULE_MANAGE,
+            children: [
+              { 
+                label: "Schedules", 
+                href: "/reports/scheduling/list", 
+                requiredPermission: permissions.REPORTS_SCHEDULE_MANAGE,
+                description: "View and manage report schedules"
+              },
+              { 
+                label: "Create Schedule", 
+                href: "/reports/scheduling/new", 
+                requiredPermission: permissions.REPORTS_SCHEDULE_MANAGE,
+                description: "Create new automated report schedule"
+              },
+              { 
+                label: "Report History", 
+                href: "/reports/history", 
+                requiredPermission: permissions.REPORTS_FINANCIAL_VIEW,
+                description: "View report generation history"
+              },
+            ]
           },
-          { 
-            label: "Trial Balance", 
-            href: "/reports/gl/trial-balance", 
-            requiredPermission: permissions.GL_REPORTS_VIEW 
+          {
+            label: "AR Reports",
+            href: "/reports/ar",
+            requiredPermission: permissions.AR_REPORTS_VIEW,
+            children: [
+              { 
+                label: "Customer Aging", 
+                href: "/reports/ar/aging", 
+                requiredPermission: permissions.AR_REPORTS_VIEW 
+              },
+              { 
+                label: "Customer Statement", 
+                href: "/reports/ar/statement", 
+                requiredPermission: permissions.AR_REPORTS_VIEW 
+              },
+              { 
+                label: "Customer Listing", 
+                href: "/reports/ar/customer-listing", 
+                requiredPermission: permissions.AR_REPORTS_VIEW 
+              }
+            ]
           },
-          { 
-            label: "Account Transactions", 
-            href: "/reports/gl/account-transactions", 
-            requiredPermission: permissions.GL_REPORTS_VIEW 
+          {
+            label: "AP Reports",
+            href: "/reports/ap",
+            requiredPermission: permissions.AP_REPORTS_VIEW,
+            children: [
+              { 
+                label: "Age Analysis", 
+                href: "/reports/ap/age-analysis", 
+                requiredPermission: permissions.AP_REPORTS_VIEW 
+              },
+              { 
+                label: "Supplier Listing", 
+                href: "/reports/ap/supplier-listing", 
+                requiredPermission: permissions.AP_REPORTS_VIEW 
+              },
+              { 
+                label: "Supplier Statement", 
+                href: "/reports/ap/statement", 
+                requiredPermission: permissions.AP_REPORTS_VIEW 
+              },
+            ]
+          },
+          {
+            label: "Inventory Reports",
+            href: "/reports/inventory",
+            requiredPermission: permissions.INV_REPORTS_VIEW,
+            children: [
+              { 
+                label: "Item Listing", 
+                href: "/reports/inventory/item-listing", 
+                requiredPermission: permissions.INV_REPORTS_VIEW 
+              },
+              { 
+                label: "Stock Quantity", 
+                href: "/reports/inventory/stock-quantity", 
+                requiredPermission: permissions.INV_REPORTS_VIEW 
+              },
+              { 
+                label: "Movement Report", 
+                href: "/reports/inventory/movement", 
+                requiredPermission: permissions.INV_REPORTS_VIEW 
+              },
+            ]
+          },
+          {
+            label: "OE Reports",
+            href: "/reports/oe",
+            requiredPermission: permissions.OE_REPORTS_VIEW,
+            children: [
+              { 
+                label: "Sales Order Listing", 
+                href: "/reports/oe/sales-orders", 
+                requiredPermission: permissions.OE_REPORTS_VIEW 
+              },
+              { 
+                label: "Purchase Order Listing", 
+                href: "/reports/oe/purchase-orders", 
+                requiredPermission: permissions.OE_REPORTS_VIEW 
+              },
+            ]
           },
         ]
       },

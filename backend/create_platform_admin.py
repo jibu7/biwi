@@ -1,56 +1,83 @@
+#!/usr/bin/env python3
+"""
+Create platform admin user only - no companies.
+Platform admin can then create companies through the proper workflow.
+"""
+
 import sys
 import os
+from pathlib import Path
+
+# Add the app directory to Python path
+sys.path.append(str(Path(__file__).parent / "app"))
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.models.core import Base, User, UserType
 from app.core.security import get_password_hash
+from app.models.core import User
+from app.config import Settings
 
-def create_platform_admin(db_url: str, email: str, password: str, full_name: str = None):
-    """Create a platform admin user."""
-    engine = create_engine(db_url)
+def create_platform_admin():
+    """Create platform admin user"""
+    
+    # Get database URL
+    settings = Settings()
+    database_url = settings.DATABASE_URL
+    print(f"Connecting to database...")
+    
+    # Create engine and session
+    engine = create_engine(database_url)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    
     db = SessionLocal()
     
     try:
-        # Check if user already exists
-        existing_user = db.query(User).filter(User.email == email).first()
-        if existing_user:
-            print(f"User with email {email} already exists.")
-            # If user exists but is not a platform admin, update it
-            if existing_user.user_type != 'platform_admin':
-                existing_user.user_type = 'platform_admin'
-                db.commit()
-                print(f"User {email} has been updated to platform admin.")
+        # Check if platform admin already exists
+        existing_admin = db.query(User).filter(User.email == "admin@biwi.com").first()
+        if existing_admin:
+            print("✅ Platform admin user already exists")
             return
         
-        # Create new platform admin
-        user = User(
-            email=email,
-            full_name=full_name,
-            hashed_password=get_password_hash(password),
+        # Create platform admin user
+        hashed_password = get_password_hash("admin123")
+        
+        platform_admin = User(
+            email="admin@biwi.com",
+            hashed_password=hashed_password,
+            full_name="Platform Administrator",
             is_active=True,
-            user_type='platform_admin'
+            is_superuser=True,
+            user_type="platform_admin",
+            company_id=None,  # Platform admin doesn't belong to any specific company
+            default_company_id=None
         )
-        db.add(user)
+        
+        db.add(platform_admin)
         db.commit()
-        print(f"Platform admin {email} created successfully.")
-    
+        db.refresh(platform_admin)
+        
+        print(f"✅ Created platform admin user:")
+        print(f"   Email: admin@biwi.com")
+        print(f"   Password: admin123")
+        print(f"   User Type: platform_admin")
+        print(f"   Superuser: True")
+        print()
+        print("🎯 Platform admin can now:")
+        print("   - Log into the system")
+        print("   - Create new companies")
+        print("   - Manage platform-wide settings")
+        print("   - Access all companies (when impersonating)")
+        
     except Exception as e:
         db.rollback()
-        print(f"Error creating platform admin: {str(e)}")
+        print(f"❌ Error creating platform admin: {e}")
+        return False
     finally:
         db.close()
+    
+    return True
 
 if __name__ == "__main__":
-    # Use PostgreSQL in Docker environment
-    db_url = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@db:5432/biwi")
-    
-    if len(sys.argv) < 3:
-        print("Usage: python create_platform_admin.py <email> <password> [full_name]")
+    success = create_platform_admin()
+    if not success:
         sys.exit(1)
-    
-    email = sys.argv[1]
-    password = sys.argv[2]
-    full_name = sys.argv[3] if len(sys.argv) > 3 else None
-    
-    create_platform_admin(db_url, email, password, full_name)
