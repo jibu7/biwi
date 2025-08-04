@@ -150,19 +150,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id')
         )
         # Note: Index ix_company_subscriptions_id is handled by dedicated migration 1bc10f96b52b
-    op.create_table('feedback_categories',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('company_id', sa.Integer(), nullable=True),
-    sa.Column('name', sa.String(), nullable=False),
-    sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('color', sa.String(), nullable=True),
-    sa.Column('is_active', sa.Boolean(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('ix_category_company', 'feedback_categories', ['company_id'], unique=False)
-    op.create_index(op.f('ix_feedback_categories_id'), 'feedback_categories', ['id'], unique=False)
+    # Note: feedback_categories table is handled by dedicated migration a9b8c7d6e5f4
     op.create_table('financial_reporting_periods',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=False),
@@ -1123,9 +1111,7 @@ def downgrade() -> None:
     op.drop_table('system_configurations')
     op.drop_index(op.f('ix_financial_reporting_periods_id'), table_name='financial_reporting_periods')
     op.drop_table('financial_reporting_periods')
-    op.drop_index(op.f('ix_feedback_categories_id'), table_name='feedback_categories')
-    op.drop_index('ix_category_company', table_name='feedback_categories')
-    op.drop_table('feedback_categories')
+    # Note: feedback_categories table is handled by dedicated migration a9b8c7d6e5f4
     # Note: Index ix_company_subscriptions_id drop is handled by dedicated migration 1bc10f96b52b
     op.drop_table('company_subscriptions')
     op.drop_index(op.f('ix_system_health_id'), table_name='system_health')

@@ -1,6 +1,21 @@
-"""Add feedback system models
-
-Revision ID: a9b8c7d6e5f4
+"""Add feedback systdef upgrade() -> None:
+    """Add feedback system tables"""
+    
+    # Create feedback_categories table
+    if not table_exists('feedback_categories'):
+        op.create_table('feedback_categories',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('company_id', sa.Integer(), nullable=True),
+            sa.Column('name', sa.String(), nullable=False),
+            sa.Column('description', sa.Text(), nullable=True),
+            sa.Column('color', sa.String(), nullable=True),
+            sa.Column('is_active', sa.Boolean(), nullable=True),
+            sa.Column('created_at', sa.DateTime(), nullable=False),
+            sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
+            sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index('ix_category_company', 'feedback_categories', ['company_id'])
+        op.create_index('ix_feedback_categories_id', 'feedback_categories', ['id'])on ID: a9b8c7d6e5f4
 Revises: f5d7c8b9a1e2
 Create Date: 2025-08-01 10:00:00.000000
 
@@ -10,12 +25,22 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.sql import text
 
 # revision identifiers, used by Alembic.
 revision: str = 'a9b8c7d6e5f4'
 down_revision: Union[str, None] = 'f5d7c8b9a1e2'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
+
+
+def table_exists(table_name: str) -> bool:
+    """Check if a table exists in the database."""
+    connection = op.get_bind()
+    result = connection.execute(text(
+        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = :table_name)"
+    ), {"table_name": table_name})
+    return result.scalar()
 
 
 def upgrade() -> None:
