@@ -58,9 +58,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
-    if not index_exists('ix_company_subscriptions_id'):
-
-        op.create_index(op.f('ix_billing_plans_id'), 'billing_plans', ['id'], unique=False)
+    op.create_index(op.f('ix_billing_plans_id'), 'billing_plans', ['id'], unique=False)
     op.create_table('feature_flags',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
@@ -152,7 +150,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
         sa.PrimaryKeyConstraint('id')
         )
-        # Create index only if it doesn't exist, 'company_subscriptions', ['id'], unique=False)
+        op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
     op.create_table('feedback_categories',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=True),
@@ -164,9 +162,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    if not index_exists('ix_company_subscriptions_id'):
-
-        op.create_index('ix_category_company', 'feedback_categories', ['company_id'], unique=False)
+    op.create_index('ix_category_company', 'feedback_categories', ['company_id'], unique=False)
     op.create_index(op.f('ix_feedback_categories_id'), 'feedback_categories', ['id'], unique=False)
     op.create_table('financial_reporting_periods',
     sa.Column('id', sa.Integer(), nullable=False),

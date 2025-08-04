@@ -100,9 +100,8 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.Column('last_login', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id')
-    )        if not index_exists('ix_company_subscriptions_company_id'):
-
-            op.create_index(op.f('ix_platform_admins_email'), 'platform_admins', ['email'], unique=True)
+    )
+    op.create_index(op.f('ix_platform_admins_email'), 'platform_admins', ['email'], unique=True)
     op.create_index(op.f('ix_platform_admins_id'), 'platform_admins', ['id'], unique=False)
     
     # Create billing_plans table
