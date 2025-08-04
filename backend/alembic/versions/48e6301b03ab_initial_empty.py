@@ -20,7 +20,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    pass
+    from sqlalchemy.dialects import postgresql
+
+    billingplantype = postgresql.ENUM('trial', 'basic', 'professional', 'enterprise', 'custom', name='billingplantype')
+    billingplantype.create(op.get_bind(), checkfirst=True)
+
+    usagemetrictype = postgresql.ENUM('API_CALLS', 'STORAGE', 'USERS', 'TRANSACTIONS', 'CUSTOM', name='usagemetrictype')
+    usagemetrictype.create(op.get_bind(), checkfirst=True)
 
 
 def downgrade() -> None:

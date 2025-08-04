@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, validator
-from typing import Optional, List
+from typing import Optional, List, Literal
 from datetime import date, datetime
 from enum import Enum
 from app.models.core import UserType
@@ -61,6 +61,14 @@ class CompanyUpdate(BaseModel):
     storage_limit_gb: Optional[int] = None
     user_limit: Optional[int] = None
 
+# Company Formatting Update Schema
+class CompanyFormattingUpdate(BaseModel):
+    date_format: Optional[str] = None
+    time_format: Optional[Literal["12h", "24h"]] = None
+    decimal_separator: Optional[str] = None
+    thousand_separator: Optional[str] = None
+    currency_position: Optional[Literal["prefix", "suffix"]] = None
+
 class Company(CompanyBase):
     id: int
     created_at: Optional[datetime] = None
@@ -71,6 +79,20 @@ class Company(CompanyBase):
     billing_email: Optional[str] = None
     storage_limit_gb: Optional[int] = None
     user_limit: Optional[int] = None
+    # Internationalization fields
+    date_format: str
+    time_format: str
+    decimal_separator: str
+    thousand_separator: str
+    currency_position: str
+    
+    class Config:
+        from_attributes = True
+
+# Extended Company Read with Currency
+class CompanyRead(Company):
+    # Remove the currency relationship for now to avoid circular import
+    # default_currency: Optional["CurrencyRead"] = None
     
     class Config:
         from_attributes = True
@@ -124,6 +146,12 @@ class UserUpdate(BaseModel):
     user_type: Optional[str] = None
     company_id: Optional[int] = None
 
+# User Preferences Update Schema
+class UserPreferencesUpdate(BaseModel):
+    date_format_override: Optional[str] = None
+    locale: Optional[str] = None
+    timezone: Optional[str] = None
+
 class User(UserBase):
     id: int
     user_type: UserType
@@ -132,6 +160,17 @@ class User(UserBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
+    class Config:
+        from_attributes = True
+
+# User with Preferences Schema
+class UserWithPreferences(User):
+    date_format_override: Optional[str] = None
+    locale: str
+    timezone: str
+    # Computed field for effective date format
+    effective_date_format: Optional[str] = None
+    
     class Config:
         from_attributes = True
 
