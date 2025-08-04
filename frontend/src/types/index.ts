@@ -7,6 +7,21 @@ export interface User {
   company_id?: number;
   is_active: boolean;
   is_superuser?: boolean;
+  date_format_override?: string;
+  locale?: string;
+  timezone?: string;
+  formatting_config?: {
+    dateFormat: string;
+    timeFormat: '12h' | '24h';
+    decimalSeparator: string;
+    thousandSeparator: string;
+    currencyCode: string;
+    currencySymbol: string;
+    currencyPosition: 'prefix' | 'suffix';
+    currencyDecimalPlaces: number;
+    locale: string;
+    timezone: string;
+  };
 }
 
 export interface UserCreate {
@@ -45,6 +60,16 @@ export interface Company {
   contact_info?: any;
   default_currency_code?: string;
   is_active: boolean;
+  date_format?: string;
+  time_format?: '12h' | '24h';
+  decimal_separator?: string;
+  thousand_separator?: string;
+  currency_position?: 'prefix' | 'suffix';
+  default_currency?: {
+    code: string;
+    symbol: string;
+    decimal_places: number;
+  };
 }
 
 export interface CompanyCreate {
@@ -61,6 +86,33 @@ export interface CompanyUpdate {
   contact_info?: any;
   default_currency_code?: string;
   is_active?: boolean;
+}
+
+export interface CompanyFormattingUpdate {
+  date_format?: string;
+  time_format?: '12h' | '24h';
+  decimal_separator?: string;
+  thousand_separator?: string;
+  currency_position?: 'prefix' | 'suffix';
+}
+
+export interface UserPreferencesUpdate {
+  date_format_override?: string;
+  locale?: string;
+  timezone?: string;
+}
+
+export interface FormattingConfig {
+  dateFormat: string;
+  timeFormat: '12h' | '24h';
+  decimalSeparator: string;
+  thousandSeparator: string;
+  currencyCode: string;
+  currencySymbol: string;
+  currencyPosition: 'prefix' | 'suffix';
+  currencyDecimalPlaces: number;
+  locale: string;
+  timezone: string;
 }
 
 // Role Types

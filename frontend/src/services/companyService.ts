@@ -1,5 +1,5 @@
 import axiosInstance from '@/lib/axiosInstance';
-import { Company, CompanyCreate, CompanyUpdate } from '@/types';
+import { Company, CompanyCreate, CompanyUpdate, CompanyFormattingUpdate } from '@/types';
 
 export const companyService = {
   async getCompanies(skip = 0, limit = 100): Promise<Company[]> {
@@ -26,6 +26,11 @@ export const companyService = {
 
   async updateCompany(id: number, data: CompanyUpdate): Promise<Company> {
     const response = await axiosInstance.put<Company>(`/companies/${id}`, data);
+    return response.data;
+  },
+
+  async updateCompanyFormatting(companyId: number, data: CompanyFormattingUpdate): Promise<Company> {
+    const response = await axiosInstance.put<Company>(`/companies/${companyId}/formatting`, data);
     return response.data;
   }
 };

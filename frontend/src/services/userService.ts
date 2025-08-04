@@ -1,5 +1,5 @@
 import axiosInstance from '@/lib/axiosInstance';
-import { User, UserCreate, UserUpdate, Role } from '@/types';
+import { User, UserCreate, UserUpdate, Role, UserPreferencesUpdate } from '@/types';
 
 export const userService = {
   async getUsers(skip = 0, limit = 100): Promise<User[]> {
@@ -49,5 +49,15 @@ export const userService = {
       const response = await axiosInstance.get<Role[]>('/auth/me/roles');
       return response.data;
     }
+  },
+
+  async updateMyPreferences(data: UserPreferencesUpdate): Promise<User> {
+    const response = await axiosInstance.put<User>('/users/me/preferences', data);
+    return response.data;
+  },
+
+  async getMyFormattingConfig(): Promise<any> {
+    const response = await axiosInstance.get('/users/me/formatting');
+    return response.data;
   }
 };

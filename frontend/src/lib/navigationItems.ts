@@ -137,6 +137,14 @@ export const navItems: NavItem[] = [
             description: "Set up and manage accounting periods",
             searchKeywords: ["accounting", "periods", "fiscal", "year"]
           },
+          { 
+            id: "formatting-settings",
+            label: "Formatting Settings", 
+            href: "/maintenance/system/settings", 
+            requiredPermission: permissions.COMPANY_UPDATE,
+            description: "Configure date, currency, and number formatting",
+            searchKeywords: ["formatting", "date", "currency", "number", "locale", "settings"]
+          },
         ]
       },
       {

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { FeedbackWidget } from '../components/feedback';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { FormattingProvider } from '../contexts/FormattingContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,9 +22,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        {children}
-        <Toaster />
-        <FeedbackWidget />
+        <FormattingProvider>
+          {children}
+          <Toaster />
+          <FeedbackWidget />
+        </FormattingProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

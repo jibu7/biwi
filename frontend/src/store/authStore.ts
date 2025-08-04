@@ -2,6 +2,19 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Company } from '@/types';
 
+interface FormattingConfig {
+  dateFormat: string;
+  timeFormat: '12h' | '24h';
+  decimalSeparator: string;
+  thousandSeparator: string;
+  currencyCode: string;
+  currencySymbol: string;
+  currencyPosition: 'prefix' | 'suffix';
+  currencyDecimalPlaces: number;
+  locale: string;
+  timezone: string;
+}
+
 interface AuthState {
   user: User | null;
   company: Company | null;
@@ -10,6 +23,7 @@ interface AuthState {
   isPlatformAdmin: boolean;
   isAuthenticated: boolean;
   isLoading: boolean;
+  formattingConfig: FormattingConfig | null;
   
   login: (email: string, password: string) => Promise<void>;
   platformLogin: (email: string, password: string, otpCode?: string) => Promise<void>;
@@ -19,6 +33,7 @@ interface AuthState {
   refreshUser: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   initAuth: () => Promise<void>;
+  updateFormattingConfig: (config: FormattingConfig) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -31,6 +46,7 @@ export const useAuthStore = create<AuthState>()(
       isPlatformAdmin: false,
       isAuthenticated: false,
       isLoading: true,
+      formattingConfig: null,
       
       login: async (email: string, password: string) => {
         set({ isLoading: true });
@@ -71,6 +87,7 @@ export const useAuthStore = create<AuthState>()(
             isPlatformAdmin: data.is_platform_admin || false,
             isAuthenticated: true,
             selectedCompanyId: user.company_id,
+            formattingConfig: user.formatting_config,
             isLoading: false,
           });
         } catch (error) {
@@ -129,6 +146,7 @@ export const useAuthStore = create<AuthState>()(
             user,
             isPlatformAdmin: true,
             isAuthenticated: true,
+            formattingConfig: user.formatting_config,
             isLoading: false,
           });
         } catch (error) {
@@ -145,6 +163,7 @@ export const useAuthStore = create<AuthState>()(
           token: null,
           isPlatformAdmin: false,
           isAuthenticated: false,
+          formattingConfig: null,
           isLoading: false,
         });
       },
@@ -171,7 +190,11 @@ export const useAuthStore = create<AuthState>()(
           
           if (response.ok) {
             const user = await response.json();
-            set({ user, company: user.company });
+            set({ 
+              user, 
+              company: user.company,
+              formattingConfig: user.formatting_config 
+            });
           }
         } catch (error) {
           console.error('Failed to refresh user:', error);
@@ -205,6 +228,7 @@ export const useAuthStore = create<AuthState>()(
               user,
               company: user.company,
               selectedCompanyId: user.company_id,
+              formattingConfig: user.formatting_config,
               isAuthenticated: true,
               isLoading: false,
             });
@@ -217,6 +241,7 @@ export const useAuthStore = create<AuthState>()(
               token: null,
               isPlatformAdmin: false,
               isAuthenticated: false,
+              formattingConfig: null,
               isLoading: false,
             });
           }
@@ -230,10 +255,13 @@ export const useAuthStore = create<AuthState>()(
             token: null,
             isPlatformAdmin: false,
             isAuthenticated: false,
+            formattingConfig: null,
             isLoading: false,
           });
         }
       },
+
+      updateFormattingConfig: (config) => set({ formattingConfig: config }),
     }),
     {
       name: 'auth-storage',
@@ -244,6 +272,7 @@ export const useAuthStore = create<AuthState>()(
         selectedCompanyId: state.selectedCompanyId,
         isPlatformAdmin: state.isPlatformAdmin,
         isAuthenticated: state.isAuthenticated,
+        formattingConfig: state.formattingConfig,
       }),
     }
   )
