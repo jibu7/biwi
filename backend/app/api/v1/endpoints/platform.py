@@ -10,7 +10,7 @@ from app.models.gl import GLJournalEntry
 from app.models.ar import ARTransaction, ARWriteOff
 from app.models.billing import UsageAlert
 from app.models.platform import AuditLog
-from app.models.pos import Till, POSSession, POSCashMovement
+from app.models.pos import Till, TillSession, POSCashMovement
 from app.models.reporting import ReportTemplate, BankReconciliation
 from app.schemas.core import Company as CompanySchema, CompanyCreate, CompanyUpdate, CompanyWithStats
 from app.schemas.core import User as UserSchema, UserCreate, UserUpdate
@@ -734,7 +734,7 @@ def delete_platform_user(
         
         # 7. Check for records that prevent deletion (required foreign keys)
         try:
-            pos_sessions_count = db.query(POSSession).filter(POSSession.cashier_id == user_id).count()
+            pos_sessions_count = db.query(TillSession).filter(TillSession.cashier_id == user_id).count()
             if pos_sessions_count > 0:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,

@@ -92,12 +92,12 @@ from .pos import (
     Till, TillCreate, TillUpdate,
     TillSession, TillSessionOpen, TillSessionClose, TillSessionReconcile, POSSessionCreate,
     POSTransactionType, POSTransactionTypeCreate, POSTransactionTypeUpdate,
-    POSTransactionCreate, POSTransactionRead,
-    POSTransactionLineCreate, POSTransactionLineRead,
-    POSPaymentCreate, POSPaymentRead,
-    POSReturnCreate, POSCashMovementCreate,
+    POSTransaction, POSTransactionCreate, POSTransactionRead,
+    POSTransactionLine, POSTransactionLineCreate, POSTransactionLineRead,
+    POSPayment, POSPaymentCreate, POSPaymentRead,
+    POSReturnCreate, POSCashMovement, POSCashMovementCreate,
     POSDefaults, POSDefaultsCreate, POSDefaultsUpdate,
-    ReceiptData
+    POSSession, POSSessionClose, ReceiptData
 )
 
 __all__ = [
@@ -159,7 +159,7 @@ __all__ = [
     "BankReconciliation", "BankReconciliationCreate", "BankReconciliationBase",
     "ARAgingDetail", "APAgingDetail",
     "BOMHeaderBase", "BOMHeaderCreate", "BOMHeaderUpdate", "BOMHeaderRead",
-    "BOMComponentBase", "BOMComponentCreate", "BOMComponentUpdate", "BOMComponentRead",
+    "BOMComponentCreate", "BOMComponentUpdate", "BOMComponentRead",
     "ManufacturingOrderBase", "ManufacturingOrderCreate", "ManufacturingOrderUpdate", "ManufacturingOrderRead",
     "ManufacturingOrderComponentBase", "ManufacturingOrderComponentCreate", "ManufacturingOrderComponentRead",
     "BOMDefaultsBase", "BOMDefaultsCreate", "BOMDefaultsUpdate", "BOMDefaultsRead",
@@ -170,9 +170,9 @@ __all__ = [
     "POSTransaction", "POSTransactionCreate", "POSTransactionRead",
     "POSTransactionLine", "POSTransactionLineCreate", "POSTransactionLineRead",
     "POSPayment", "POSPaymentCreate", "POSPaymentRead",
-    "POSReturnCreate",
+    "POSReturnCreate", "POSCashMovement", "POSCashMovementCreate",
     "POSDefaults", "POSDefaultsCreate", "POSDefaultsUpdate",
-    "ReceiptData"
+    "POSSession", "POSSessionClose", "ReceiptData"
 ]
 
 # Platform schemas

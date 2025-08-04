@@ -78,21 +78,21 @@ def upgrade() -> None:
     
     if 'system_health' not in existing_tables:
         op.create_table('system_health',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('service_name', sa.String(), nullable=False),
-    sa.Column('status', sa.String(), nullable=False),
-    sa.Column('response_time_ms', sa.Integer(), nullable=True),
-    sa.Column('cpu_usage_percent', sa.Numeric(precision=5, scale=2), nullable=True),
-    sa.Column('memory_usage_mb', sa.Integer(), nullable=True),
-    sa.Column('disk_usage_percent', sa.Numeric(precision=5, scale=2), nullable=True),
-    sa.Column('error_count', sa.Integer(), nullable=True),
-    sa.Column('last_error', sa.Text(), nullable=True),
-    sa.Column('meta_data', sa.JSON(), nullable=True),
-    sa.Column('checked_at', sa.DateTime(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_system_health_checked_at'), 'system_health', ['checked_at'], unique=False)
-    op.create_index(op.f('ix_system_health_id'), 'system_health', ['id'], unique=False)
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('service_name', sa.String(), nullable=False),
+        sa.Column('status', sa.String(), nullable=False),
+        sa.Column('response_time_ms', sa.Integer(), nullable=True),
+        sa.Column('cpu_usage_percent', sa.Numeric(precision=5, scale=2), nullable=True),
+        sa.Column('memory_usage_mb', sa.Integer(), nullable=True),
+        sa.Column('disk_usage_percent', sa.Numeric(precision=5, scale=2), nullable=True),
+        sa.Column('error_count', sa.Integer(), nullable=True),
+        sa.Column('last_error', sa.Text(), nullable=True),
+        sa.Column('meta_data', sa.JSON(), nullable=True),
+        sa.Column('checked_at', sa.DateTime(), nullable=True),
+        sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index(op.f('ix_system_health_checked_at'), 'system_health', ['checked_at'], unique=False)
+        op.create_index(op.f('ix_system_health_id'), 'system_health', ['id'], unique=False)
     op.create_table('company_subscriptions',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=False),

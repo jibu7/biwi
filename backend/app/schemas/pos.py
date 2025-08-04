@@ -193,3 +193,11 @@ class ReceiptData(BaseModel):
     cashier_name: str
     receipt_header: Optional[str]
     receipt_footer: Optional[str]
+
+# Aliases for backward compatibility
+POSTransaction = POSTransactionRead
+POSTransactionLine = POSTransactionLineRead
+POSPayment = POSPaymentRead
+POSCashMovement = POSCashMovementCreate
+POSSession = TillSession
+POSSessionClose = TillSessionClose

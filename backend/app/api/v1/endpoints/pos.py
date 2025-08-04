@@ -5,7 +5,21 @@ from datetime import date, datetime
 from app import models, schemas, crud
 from app.api import deps
 from app.core import permissions
-from app.core.permissions import PermissionChecker
+from app.core.permissions import (
+    PermissionChecker,
+    POS_SETUP_MANAGE,
+    POS_TILL_MANAGE,
+    POS_TILL_OPERATE,
+    POS_SESSION_OPEN,
+    POS_SESSION_CLOSE,
+    POS_SALES_CREATE,
+    POS_SALES_REFUND,
+    POS_SALES_PROCESS,
+    POS_RETURNS_PROCESS,
+    POS_RECONCILE,
+    POS_REPORTS_VIEW,
+    POS_CASH_MANAGE
+)
 from app.database.database import get_db
 
 router = APIRouter()
