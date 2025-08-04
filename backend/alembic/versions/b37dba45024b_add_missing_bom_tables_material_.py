@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.create_table('billing_plans',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
-    sa.Column('plan_type', sa.Enum('TRIAL', 'BASIC', 'PROFESSIONAL', 'ENTERPRISE', 'CUSTOM', name='billingplantype'), nullable=False),
+    sa.Column('plan_type', postgresql.ENUM('trial', 'basic', 'professional', 'enterprise', 'custom', name='billingplantype', create_type=False), nullable=False),
     sa.Column('monthly_price', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('annual_price', sa.Numeric(precision=10, scale=2), nullable=True),
     sa.Column('max_users', sa.Integer(), nullable=True),
@@ -94,7 +94,7 @@ def upgrade() -> None:
     sa.Column('billing_email', sa.String(), nullable=True),
     sa.Column('custom_limits', sa.JSON(), nullable=True),
     sa.Column('custom_price', sa.Numeric(precision=10, scale=2), nullable=True),
-    sa.Column('status', sa.Enum('TRIAL', 'ACTIVE', 'CANCELLED', 'EXPIRED', name='subscriptionstatus'), nullable=True),
+    sa.Column('status', postgresql.ENUM('trial', 'active', 'cancelled', 'expired', name='subscriptionstatus', create_type=False), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['billing_plan_id'], ['billing_plans.id'], ),
@@ -145,7 +145,7 @@ def upgrade() -> None:
     op.create_table('usage_metrics',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=False),
-    sa.Column('metric_type', sa.Enum('API_CALLS', 'STORAGE', 'USERS', 'TRANSACTIONS', 'CUSTOM', name='usagemetrictype'), nullable=False),
+    sa.Column('metric_type', postgresql.ENUM('api_calls', 'storage', 'users', 'transactions', 'custom', name='usagemetrictype', create_type=False), nullable=False),
     sa.Column('metric_date', sa.DateTime(), nullable=False),
     sa.Column('value', sa.Numeric(), nullable=False),
     sa.Column('meta_data', sa.JSON(), nullable=True),
@@ -162,7 +162,7 @@ def upgrade() -> None:
     sa.Column('company_id', sa.Integer(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('platform_admin_id', sa.Integer(), nullable=True),
-    sa.Column('action', sa.Enum('CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'API_CALL', 'PERMISSION_CHANGE', 'SUBSCRIPTION_CHANGE', 'OTHER', name='auditactiontype'), nullable=False),
+    sa.Column('action', postgresql.ENUM('create', 'update', 'delete', 'login', 'logout', 'api_call', 'permission_change', 'subscription_change', 'other', name='auditactiontype', create_type=False), nullable=False),
     sa.Column('resource_type', sa.String(), nullable=False),
     sa.Column('resource_id', sa.String(), nullable=True),
     sa.Column('ip_address', sa.String(), nullable=True),
@@ -256,7 +256,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('template_id', sa.Integer(), nullable=True),
-    sa.Column('report_type', sa.Enum('BALANCE_SHEET', 'INCOME_STATEMENT', 'CASH_FLOW', 'TRIAL_BALANCE', 'CUSTOM', 'AR_AGING', 'AP_AGING', 'INVENTORY_VALUATION', name='reporttype'), nullable=False),
+    sa.Column('report_type', postgresql.ENUM('balance_sheet', 'income_statement', 'cash_flow', 'trial_balance', 'custom', 'ar_aging', 'ap_aging', 'inventory_valuation', name='reporttype', create_type=False), nullable=False),
     sa.Column('report_name', sa.String(), nullable=False),
     sa.Column('parameters', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('file_path', sa.String(), nullable=True),
@@ -432,7 +432,7 @@ def upgrade() -> None:
     op.add_column('gl_transaction_types', sa.Column('default_tax_control_account_id', sa.Integer(), nullable=True))
     op.add_column('gl_transaction_types', sa.Column('is_tax_applicable', sa.Boolean(), nullable=True))
     op.add_column('gl_transaction_types', sa.Column('tax_rate', sa.Numeric(precision=5, scale=2), nullable=True))
-    op.add_column('gl_transaction_types', sa.Column('tax_calculation_method', sa.Enum('NONE', 'INCLUSIVE', 'EXCLUSIVE', name='taxcalculationmethod'), nullable=True))
+    op.add_column('gl_transaction_types', sa.Column('tax_calculation_method', postgresql.ENUM('none', 'inclusive', 'exclusive', name='taxcalculationmethod', create_type=False), nullable=True))
     op.add_column('gl_transaction_types', sa.Column('tax_type_id', sa.Integer(), nullable=True))
     op.create_index('idx_gl_trans_type_company', 'gl_transaction_types', ['company_id'], unique=False)
     op.create_index(op.f('ix_gl_transaction_types_name'), 'gl_transaction_types', ['name'], unique=False)
@@ -550,7 +550,7 @@ def upgrade() -> None:
     op.drop_column('purchase_orders', 'exchange_rate')
     op.drop_column('purchase_orders', 'currency_id')
     op.add_column('report_schedules', sa.Column('template_id', sa.Integer(), nullable=False))
-    op.add_column('report_schedules', sa.Column('frequency', sa.Enum('DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'ON_DEMAND', name='reportfrequency'), nullable=False))
+    op.add_column('report_schedules', sa.Column('frequency', postgresql.ENUM('daily', 'weekly', 'monthly', 'quarterly', 'yearly', 'on_demand', name='reportfrequency', create_type=False), nullable=False))
     op.add_column('report_schedules', sa.Column('schedule_config', postgresql.JSONB(astext_type=sa.Text()), nullable=True))
     op.add_column('report_schedules', sa.Column('recipient_emails', postgresql.JSONB(astext_type=sa.Text()), nullable=True))
     op.add_column('report_schedules', sa.Column('export_formats', postgresql.JSONB(astext_type=sa.Text()), nullable=True))
@@ -568,7 +568,7 @@ def upgrade() -> None:
     op.add_column('report_templates', sa.Column('is_system', sa.Boolean(), nullable=True))
     op.alter_column('report_templates', 'report_type',
                existing_type=sa.VARCHAR(),
-               type_=sa.Enum('BALANCE_SHEET', 'INCOME_STATEMENT', 'CASH_FLOW', 'TRIAL_BALANCE', 'CUSTOM', 'AR_AGING', 'AP_AGING', 'INVENTORY_VALUATION', name='reporttype'),
+               type_=postgresql.ENUM('balance_sheet', 'income_statement', 'cash_flow', 'trial_balance', 'custom', 'ar_aging', 'ap_aging', 'inventory_valuation', name='reporttype', create_type=False),
                existing_nullable=False)
     op.alter_column('report_templates', 'created_by_user_id',
                existing_type=sa.INTEGER(),
@@ -699,7 +699,7 @@ def downgrade() -> None:
                existing_type=sa.INTEGER(),
                nullable=False)
     op.alter_column('report_templates', 'report_type',
-               existing_type=sa.Enum('BALANCE_SHEET', 'INCOME_STATEMENT', 'CASH_FLOW', 'TRIAL_BALANCE', 'CUSTOM', 'AR_AGING', 'AP_AGING', 'INVENTORY_VALUATION', name='reporttype'),
+               existing_type=postgresql.ENUM('balance_sheet', 'income_statement', 'cash_flow', 'trial_balance', 'custom', 'ar_aging', 'ap_aging', 'inventory_valuation', name='reporttype', create_type=False),
                type_=sa.VARCHAR(),
                existing_nullable=False)
     op.drop_column('report_templates', 'is_system')
