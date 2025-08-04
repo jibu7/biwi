@@ -1,29 +1,30 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 
 # Till Schemas
 class TillBase(BaseModel):
-    till_code: str
-    till_name: str
+    till_number: str
+    name: str
     location: Optional[str] = None
-    default_cashier_id: Optional[int] = None
-    default_warehouse_id: int
-    cash_gl_account_id: int
+    hardware_config: Optional[dict] = None
     is_active: bool = True
+    default_warehouse_id: int
+    default_customer_id: Optional[int] = None
+    branch_id: Optional[int] = None
 
 class TillCreate(TillBase):
     pass
 
 class TillUpdate(BaseModel):
-    till_code: Optional[str] = None
-    till_name: Optional[str] = None
+    name: Optional[str] = None
     location: Optional[str] = None
-    default_cashier_id: Optional[int] = None
-    default_warehouse_id: Optional[int] = None
-    cash_gl_account_id: Optional[int] = None
+    hardware_config: Optional[dict] = None
     is_active: Optional[bool] = None
+    default_warehouse_id: Optional[int] = None
+    default_customer_id: Optional[int] = None
+    branch_id: Optional[int] = None
 
 class Till(TillBase):
     id: int
@@ -32,14 +33,48 @@ class Till(TillBase):
     class Config:
         from_attributes = True
 
+# Till Session Schemas
+class TillSessionOpen(BaseModel):
+    till_id: int
+    opening_balance: Decimal = Field(..., ge=0)
+
+class POSSessionCreate(BaseModel):
+    till_id: int
+    opening_cash: Decimal = Field(..., ge=0)
+
+class TillSessionClose(BaseModel):
+    actual_closing_balance: Decimal = Field(..., ge=0)
+    reconciliation_notes: Optional[str] = None
+
+class TillReconciliationDetail(BaseModel):
+    payment_method: str
+    counted_amount: Decimal
+    notes: Optional[str] = None
+
+class TillSessionReconcile(BaseModel):
+    reconciliation_details: List[TillReconciliationDetail]
+
+class TillSession(BaseModel):
+    id: int
+    till_id: int
+    user_id: int
+    opening_date: datetime
+    closing_date: Optional[datetime]
+    opening_balance: Decimal
+    expected_closing_balance: Optional[Decimal]
+    actual_closing_balance: Optional[Decimal]
+    variance: Optional[Decimal]
+    status: str
+    
+    class Config:
+        from_attributes = True
+
 # POS Transaction Type Schemas
 class POSTransactionTypeBase(BaseModel):
     name: str
-    description: Optional[str] = None
     base_type: str
-    affects_inventory: bool = True
-    affects_ar: bool = True
-    default_payment_method: str = "Cash"
+    default_payment_method: Optional[str] = None
+    gl_account_id: Optional[int] = None
     is_active: bool = True
 
 class POSTransactionTypeCreate(POSTransactionTypeBase):
@@ -47,11 +82,8 @@ class POSTransactionTypeCreate(POSTransactionTypeBase):
 
 class POSTransactionTypeUpdate(BaseModel):
     name: Optional[str] = None
-    description: Optional[str] = None
-    base_type: Optional[str] = None
-    affects_inventory: Optional[bool] = None
-    affects_ar: Optional[bool] = None
     default_payment_method: Optional[str] = None
+    gl_account_id: Optional[int] = None
     is_active: Optional[bool] = None
 
 class POSTransactionType(POSTransactionTypeBase):
@@ -61,119 +93,84 @@ class POSTransactionType(POSTransactionTypeBase):
     class Config:
         from_attributes = True
 
-# POS Session Schemas
-class POSSessionBase(BaseModel):
-    till_id: int
-    cashier_id: int
-    session_date: date
-    opening_cash: Decimal = Decimal("0.00")
+# POS Transaction Line Schemas
+class POSTransactionLineCreate(BaseModel):
+    item_id: int
+    quantity: Decimal = Field(..., gt=0)
+    unit_price: Decimal
+    discount_percentage: Decimal = Field(default=0, ge=0, le=100)
+    discount_amount: Decimal = Field(default=0, ge=0)
+    tax_type_id: Optional[int] = None
 
-class POSSessionCreate(POSSessionBase):
-    pass
-
-class POSSessionClose(BaseModel):
-    closing_cash: Decimal
-
-class POSSession(POSSessionBase):
+class POSTransactionLineRead(POSTransactionLineCreate):
     id: int
-    company_id: int
-    opening_time: datetime
-    closing_time: Optional[datetime] = None
-    closing_cash: Optional[Decimal] = None
-    expected_cash: Decimal = Decimal("0.00")
-    cash_variance: Decimal = Decimal("0.00")
-    status: str = "Open"
+    description: str
+    tax_amount: Decimal
+    line_total: Decimal
     
     class Config:
         from_attributes = True
 
-# POS Transaction Line Schemas
-class POSTransactionLineBase(BaseModel):
-    item_id: int
-    barcode_used: Optional[str] = None
-    description: str
-    quantity: Decimal
-    unit_price: Decimal
-    discount_percentage: Decimal = Decimal("0.00")
-    discount_amount: Decimal = Decimal("0.00")
-    tax_type_id: Optional[int] = None
-    tax_amount: Decimal = Decimal("0.00")
-    line_total: Decimal
+# POS Payment Schemas
+class POSPaymentCreate(BaseModel):
+    payment_method: str
+    amount: Decimal = Field(..., gt=0)
+    reference_number: Optional[str] = None
+    payment_details: Optional[dict] = None
 
-class POSTransactionLineCreate(POSTransactionLineBase):
-    pass
-
-class POSTransactionLine(POSTransactionLineBase):
+class POSPaymentRead(POSPaymentCreate):
     id: int
-    transaction_id: int
     
     class Config:
         from_attributes = True
 
 # POS Transaction Schemas
-class POSTransactionBase(BaseModel):
-    transaction_type_id: int
+class POSTransactionCreate(BaseModel):
     customer_id: Optional[int] = None
-    payment_method: str
-    cash_tendered: Optional[Decimal] = None
-    notes: Optional[str] = None
-
-class POSTransactionCreate(POSTransactionBase):
+    transaction_type_id: int
     lines: List[POSTransactionLineCreate]
-    reference_transaction_id: Optional[int] = None  # For returns
+    payments: List[POSPaymentCreate]
+    discount_amount: Decimal = Field(default=0, ge=0)
 
-class POSTransaction(POSTransactionBase):
+class POSTransactionRead(BaseModel):
     id: int
-    company_id: int
-    session_id: int
     transaction_number: str
-    transaction_datetime: datetime
-    subtotal_amount: Decimal
+    transaction_date: datetime
+    customer_id: Optional[int]
+    subtotal: Decimal
     tax_amount: Decimal
     discount_amount: Decimal
     total_amount: Decimal
-    change_amount: Optional[Decimal] = None
-    linked_gl_journal_entry_id: Optional[int] = None
-    linked_ar_transaction_id: Optional[int] = None
-    reference_transaction_id: Optional[int] = None
     status: str
-    lines: List[POSTransactionLine] = []
+    lines: List[POSTransactionLineRead]
+    payments: List[POSPaymentRead]
     
     class Config:
         from_attributes = True
 
-# POS Cash Movement Schemas
-class POSCashMovementBase(BaseModel):
-    movement_type: str
-    amount: Decimal
+class POSReturnCreate(BaseModel):
+    original_transaction_id: int
+    return_lines: List[POSTransactionLineCreate]
+    reason: str
+
+class POSCashMovementCreate(BaseModel):
+    session_id: int
+    movement_type: str  # "cash_in" or "cash_out"
+    amount: Decimal = Field(..., gt=0)
     reason: str
     reference: Optional[str] = None
-    authorized_by_id: Optional[int] = None
-
-class POSCashMovementCreate(POSCashMovementBase):
-    pass
-
-class POSCashMovement(POSCashMovementBase):
-    id: int
-    company_id: int
-    session_id: int
-    movement_datetime: datetime
-    
-    class Config:
-        from_attributes = True
 
 # POS Defaults Schemas
 class POSDefaultsBase(BaseModel):
-    default_customer_id: Optional[int] = None
-    default_tax_type_id: Optional[int] = None
+    default_walk_in_customer_id: Optional[int] = None
     receipt_header: Optional[str] = None
     receipt_footer: Optional[str] = None
-    enable_negative_stock: bool = False
-    require_customer_for_credit: bool = True
     auto_print_receipt: bool = True
-    default_sale_transaction_type_id: Optional[int] = None
-    default_return_transaction_type_id: Optional[int] = None
+    allow_negative_stock: bool = False
+    require_customer_for_credit: bool = True
+    default_tax_type_id: Optional[int] = None
     cash_rounding_method: str = "None"
+    cash_rounding_precision: Decimal = 0.01
 
 class POSDefaultsCreate(POSDefaultsBase):
     pass
@@ -184,30 +181,15 @@ class POSDefaultsUpdate(POSDefaultsBase):
 class POSDefaults(POSDefaultsBase):
     id: int
     company_id: int
-    next_transaction_number: int
     
     class Config:
         from_attributes = True
 
-# Report Schemas
-class CashierSalesReport(BaseModel):
-    cashier_id: int
+# Receipt Schema
+class ReceiptData(BaseModel):
+    transaction: POSTransactionRead
+    company_info: dict
+    till_info: dict
     cashier_name: str
-    session_count: int
-    total_sales: Decimal
-    total_returns: Decimal
-    net_sales: Decimal
-    cash_sales: Decimal
-    card_sales: Decimal
-    other_sales: Decimal
-
-class InventorySalesReport(BaseModel):
-    item_id: int
-    item_code: str
-    description: str
-    quantity_sold: Decimal
-    quantity_returned: Decimal
-    net_quantity: Decimal
-    sales_amount: Decimal
-    return_amount: Decimal
-    net_amount: Decimal
+    receipt_header: Optional[str]
+    receipt_footer: Optional[str]

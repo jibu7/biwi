@@ -135,14 +135,14 @@ BOM_MANUFACTURING_PROCESS = "bom:manufacturing_process"
 BOM_REPORTS_VIEW = "bom:reports_view"
 BOM_MRP_RUN = "bom:mrp_run"
 
+# POS Permissions
 POS_SETUP_MANAGE = "pos:setup_manage"
+POS_TILL_OPERATE = "pos:till_operate"
 POS_TILL_MANAGE = "pos:till_manage"
-POS_SESSION_OPEN = "pos:session_open"
-POS_SESSION_CLOSE = "pos:session_close"
-POS_SALES_PROCESS = "pos:sales_process"
+POS_SALES_CREATE = "pos:sales_create"
 POS_RETURNS_PROCESS = "pos:returns_process"
-POS_CASH_MANAGE = "pos:cash_manage"
 POS_REPORTS_VIEW = "pos:reports_view"
+POS_RECONCILE = "pos:reconcile"
 
 # Frontend compatibility aliases for reporting permissions
 REPORTING_FINANCIAL_STATEMENTS = "reporting:financial_statements"
@@ -175,8 +175,8 @@ ALL_PERMISSIONS_LIST = [
     REPORTING_FINANCIAL_STATEMENTS, REPORTING_ADVANCED_GL,
     REPORTING_ADVANCED_AR, REPORTING_ADVANCED_AP, REPORTING_BANK_RECONCILIATION,
     BOM_SETUP_MANAGE, BOM_MANUFACTURING_CREATE, BOM_MANUFACTURING_PROCESS, BOM_REPORTS_VIEW, BOM_MRP_RUN,
-    POS_SETUP_MANAGE, POS_TILL_MANAGE, POS_SESSION_OPEN, POS_SESSION_CLOSE,
-    POS_SALES_PROCESS, POS_RETURNS_PROCESS, POS_CASH_MANAGE, POS_REPORTS_VIEW,
+    POS_SETUP_MANAGE, POS_TILL_OPERATE, POS_TILL_MANAGE, POS_SALES_CREATE,
+    POS_RETURNS_PROCESS, POS_REPORTS_VIEW, POS_RECONCILE,
 ]
 
 def check_permissions(required_permissions: List[Permission]) -> Callable:

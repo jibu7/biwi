@@ -90,13 +90,14 @@ from .bom import (
 
 from .pos import (
     Till, TillCreate, TillUpdate,
+    TillSession, TillSessionOpen, TillSessionClose, TillSessionReconcile, POSSessionCreate,
     POSTransactionType, POSTransactionTypeCreate, POSTransactionTypeUpdate,
-    POSSession, POSSessionCreate, POSSessionClose,
-    POSTransaction, POSTransactionCreate,
-    POSTransactionLine, POSTransactionLineCreate,
-    POSCashMovement, POSCashMovementCreate,
+    POSTransactionCreate, POSTransactionRead,
+    POSTransactionLineCreate, POSTransactionLineRead,
+    POSPaymentCreate, POSPaymentRead,
+    POSReturnCreate, POSCashMovementCreate,
     POSDefaults, POSDefaultsCreate, POSDefaultsUpdate,
-    CashierSalesReport, InventorySalesReport
+    ReceiptData
 )
 
 __all__ = [
@@ -164,13 +165,14 @@ __all__ = [
     "BOMDefaultsBase", "BOMDefaultsCreate", "BOMDefaultsUpdate", "BOMDefaultsRead",
     "MRPRequest", "MRPResult",
     "Till", "TillCreate", "TillUpdate",
+    "TillSession", "TillSessionOpen", "TillSessionClose", "TillSessionReconcile",
     "POSTransactionType", "POSTransactionTypeCreate", "POSTransactionTypeUpdate",
-    "POSSession", "POSSessionCreate", "POSSessionClose",
-    "POSTransaction", "POSTransactionCreate",
-    "POSTransactionLine", "POSTransactionLineCreate",
-    "POSCashMovement", "POSCashMovementCreate",
+    "POSTransaction", "POSTransactionCreate", "POSTransactionRead",
+    "POSTransactionLine", "POSTransactionLineCreate", "POSTransactionLineRead",
+    "POSPayment", "POSPaymentCreate", "POSPaymentRead",
+    "POSReturnCreate",
     "POSDefaults", "POSDefaultsCreate", "POSDefaultsUpdate",
-    "CashierSalesReport", "InventorySalesReport"
+    "ReceiptData"
 ]
 
 # Platform schemas

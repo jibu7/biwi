@@ -30,7 +30,7 @@ from .common import Currency, TaxType, Branch
 from .bom import BOMHeader, BOMComponent, ManufacturingOrder, ManufacturingOrderComponent, BOMDefaults, MaterialRequisition, ProductionEntry
 
 # POS models
-from .pos import Till, POSTransactionType, POSSession, POSTransaction, POSTransactionLine, POSCashMovement, POSDefaults
+from .pos import Till, TillSession, POSTransactionType, POSTransaction, POSTransactionLine, POSPayment, TillReconciliation, POSDefaults, POSCashMovement
 
 # Billing models (NEW)
 from .billing import ResourceUsage, BillingConfiguration, UsageAlert, BillingTransaction

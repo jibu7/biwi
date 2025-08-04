@@ -1,97 +1,87 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, DateTime, Numeric, Text, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Numeric, JSON, UniqueConstraint, Text
 from sqlalchemy.orm import relationship
-from app.database.database import Base
 from datetime import datetime
+from app.database.database import Base
 
 class Till(Base):
-    __tablename__ = "tills"
+    __tablename__ = "pos_tills"
     
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    till_code = Column(String, nullable=False)
-    till_name = Column(String, nullable=False)
-    location = Column(String, nullable=True)
-    default_cashier_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    default_warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=False)
-    cash_gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=False)
+    branch_id = Column(Integer, ForeignKey("branches.id"), nullable=True)
+    till_number = Column(String(50), nullable=False)
+    name = Column(String(100), nullable=False)
+    location = Column(String(200), nullable=True)
+    hardware_config = Column(JSON, nullable=True)  # Printer settings, cash drawer config
     is_active = Column(Boolean, default=True)
+    default_warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=False)
+    default_customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)  # Walk-in customer
     
-    company = relationship("Company")
-    default_cashier = relationship("User")
-    default_warehouse = relationship("Warehouse")
-    cash_gl_account = relationship("GLAccount")
-    sessions = relationship("POSSession", back_populates="till")
+    sessions = relationship("TillSession", back_populates="till")
+    __table_args__ = (UniqueConstraint('till_number', 'company_id', name='uq_till_number_company'),)
+
+class TillSession(Base):
+    __tablename__ = "pos_till_sessions"
     
-    __table_args__ = (UniqueConstraint('till_code', 'company_id', name='uq_till_code_company'),)
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    till_id = Column(Integer, ForeignKey("pos_tills.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    opening_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    closing_date = Column(DateTime, nullable=True)
+    opening_balance = Column(Numeric(15, 2), nullable=False)
+    expected_closing_balance = Column(Numeric(15, 2), nullable=True)
+    actual_closing_balance = Column(Numeric(15, 2), nullable=True)
+    variance = Column(Numeric(15, 2), nullable=True)
+    status = Column(String(20), nullable=False)  # "Open", "Closed", "Reconciled"
+    reconciliation_notes = Column(Text, nullable=True)
+    
+    till = relationship("Till", back_populates="sessions")
+    user = relationship("User")
+    transactions = relationship("POSTransaction", back_populates="session")
+    reconciliation_details = relationship("TillReconciliation", back_populates="session")
 
 class POSTransactionType(Base):
     __tablename__ = "pos_transaction_types"
     
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    name = Column(String, nullable=False)
-    description = Column(String, nullable=True)
-    base_type = Column(String, nullable=False)  # "Sale", "Return", "CashIn", "CashOut"
-    affects_inventory = Column(Boolean, default=True)
-    affects_ar = Column(Boolean, default=True)
-    default_payment_method = Column(String, default="Cash")  # "Cash", "Card", "EFT", "Voucher"
+    name = Column(String(100), nullable=False)
+    base_type = Column(String(50), nullable=False)  # "Sale", "Return", "CashIn", "CashOut"
+    default_payment_method = Column(String(50), nullable=True)  # "Cash", "Card", "EFT"
+    gl_account_id = Column(Integer, ForeignKey("gl_accounts.id"), nullable=True)
     is_active = Column(Boolean, default=True)
     
-    company = relationship("Company")
-    
-    __table_args__ = (UniqueConstraint('name', 'company_id', name='uq_postranstype_name_company'),)
-
-class POSSession(Base):
-    __tablename__ = "pos_sessions"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    till_id = Column(Integer, ForeignKey("tills.id"), nullable=False)
-    cashier_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    session_date = Column(Date, nullable=False)
-    opening_time = Column(DateTime, nullable=False, default=datetime.utcnow)
-    closing_time = Column(DateTime, nullable=True)
-    opening_cash = Column(Numeric(15, 2), default=0.00)
-    closing_cash = Column(Numeric(15, 2), nullable=True)
-    expected_cash = Column(Numeric(15, 2), default=0.00)
-    cash_variance = Column(Numeric(15, 2), default=0.00)
-    status = Column(String, default="Open")  # "Open", "Closed", "Suspended"
-    
-    company = relationship("Company")
-    till = relationship("Till", back_populates="sessions")
-    cashier = relationship("User")
-    transactions = relationship("POSTransaction", back_populates="session")
+    __table_args__ = (UniqueConstraint('name', 'company_id', name='uq_pos_trans_type_company'),)
 
 class POSTransaction(Base):
     __tablename__ = "pos_transactions"
     
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    session_id = Column(Integer, ForeignKey("pos_sessions.id"), nullable=False)
+    till_session_id = Column(Integer, ForeignKey("pos_till_sessions.id"), nullable=False)
+    transaction_number = Column(String(50), nullable=False, unique=True)
     transaction_type_id = Column(Integer, ForeignKey("pos_transaction_types.id"), nullable=False)
-    transaction_number = Column(String, nullable=False)  # POS-YYYYMMDD-0001
-    transaction_datetime = Column(DateTime, nullable=False, default=datetime.utcnow)
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)
-    payment_method = Column(String, nullable=False)
-    subtotal_amount = Column(Numeric(15, 2), nullable=False)
-    tax_amount = Column(Numeric(15, 2), default=0.00)
-    discount_amount = Column(Numeric(15, 2), default=0.00)
+    transaction_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    subtotal = Column(Numeric(15, 2), nullable=False)
+    tax_amount = Column(Numeric(15, 2), nullable=False, default=0)
+    discount_amount = Column(Numeric(15, 2), nullable=False, default=0)
     total_amount = Column(Numeric(15, 2), nullable=False)
-    cash_tendered = Column(Numeric(15, 2), nullable=True)
-    change_amount = Column(Numeric(15, 2), nullable=True)
-    linked_gl_journal_entry_id = Column(Integer, ForeignKey("gl_journal_entries.id"), nullable=True)
-    linked_ar_transaction_id = Column(Integer, ForeignKey("ar_transactions.id"), nullable=True)
+    payment_method = Column(String(50), nullable=False)
+    payment_details = Column(JSON, nullable=True)  # Card last 4 digits, auth code, etc.
+    status = Column(String(20), nullable=False)  # "Completed", "Void", "Refunded"
     reference_transaction_id = Column(Integer, ForeignKey("pos_transactions.id"), nullable=True)  # For returns
-    status = Column(String, default="Completed")  # "Draft", "Completed", "Voided", "Returned"
-    notes = Column(Text, nullable=True)
+    linked_ar_transaction_id = Column(Integer, ForeignKey("ar_transactions.id"), nullable=True)
+    linked_gl_journal_entry_id = Column(Integer, ForeignKey("gl_journal_entries.id"), nullable=True)
+    receipt_printed = Column(Boolean, default=False)
+    receipt_email_sent = Column(Boolean, default=False)
     
-    company = relationship("Company")
-    session = relationship("POSSession", back_populates="transactions")
+    session = relationship("TillSession", back_populates="transactions")
     transaction_type = relationship("POSTransactionType")
     customer = relationship("Customer")
-    lines = relationship("POSTransactionLine", back_populates="transaction")
-    
-    __table_args__ = (UniqueConstraint('transaction_number', 'company_id', name='uq_postrans_number_company'),)
+    lines = relationship("POSTransactionLine", back_populates="transaction", cascade="all, delete-orphan")
+    payments = relationship("POSPayment", back_populates="transaction", cascade="all, delete-orphan")
 
 class POSTransactionLine(Base):
     __tablename__ = "pos_transaction_lines"
@@ -99,52 +89,68 @@ class POSTransactionLine(Base):
     id = Column(Integer, primary_key=True, index=True)
     transaction_id = Column(Integer, ForeignKey("pos_transactions.id"), nullable=False)
     item_id = Column(Integer, ForeignKey("inventory_items.id"), nullable=False)
-    barcode_used = Column(String, nullable=True)
-    description = Column(String, nullable=False)
-    quantity = Column(Numeric(15, 3), nullable=False)
+    description = Column(String(200), nullable=False)
+    quantity = Column(Numeric(10, 2), nullable=False)
     unit_price = Column(Numeric(15, 2), nullable=False)
-    discount_percentage = Column(Numeric(5, 2), default=0.00)
-    discount_amount = Column(Numeric(15, 2), default=0.00)
+    discount_percentage = Column(Numeric(5, 2), default=0)
+    discount_amount = Column(Numeric(15, 2), default=0)
     tax_type_id = Column(Integer, ForeignKey("tax_types.id"), nullable=True)
-    tax_amount = Column(Numeric(15, 2), default=0.00)
+    tax_amount = Column(Numeric(15, 2), default=0)
     line_total = Column(Numeric(15, 2), nullable=False)
     
     transaction = relationship("POSTransaction", back_populates="lines")
     item = relationship("InventoryItem")
     tax_type = relationship("TaxType")
 
+class POSPayment(Base):
+    __tablename__ = "pos_payments"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    transaction_id = Column(Integer, ForeignKey("pos_transactions.id"), nullable=False)
+    payment_method = Column(String(50), nullable=False)
+    amount = Column(Numeric(15, 2), nullable=False)
+    reference_number = Column(String(100), nullable=True)  # Check number, card auth code
+    payment_details = Column(JSON, nullable=True)
+    
+    transaction = relationship("POSTransaction", back_populates="payments")
+
+class TillReconciliation(Base):
+    __tablename__ = "till_reconciliations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    session_id = Column(Integer, ForeignKey("pos_till_sessions.id"), nullable=False)
+    expected_cash = Column(Numeric(15, 2), nullable=False)
+    actual_cash = Column(Numeric(15, 2), nullable=False)
+    variance = Column(Numeric(15, 2), nullable=False)
+    reconciliation_time = Column(DateTime, nullable=False)
+    reconciled_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    notes = Column(Text, nullable=True)
+
 class POSCashMovement(Base):
     __tablename__ = "pos_cash_movements"
     
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    session_id = Column(Integer, ForeignKey("pos_sessions.id"), nullable=False)
-    movement_type = Column(String, nullable=False)  # "CashIn", "CashOut", "Float"
+    session_id = Column(Integer, ForeignKey("pos_till_sessions.id"), nullable=False)
+    movement_type = Column(String(20), nullable=False)  # "cash_in", "cash_out"
     amount = Column(Numeric(15, 2), nullable=False)
-    reason = Column(String, nullable=False)
-    reference = Column(String, nullable=True)
-    movement_datetime = Column(DateTime, nullable=False, default=datetime.utcnow)
+    reason = Column(String(255), nullable=False)
+    reference = Column(String(100), nullable=True)
+    movement_datetime = Column(DateTime, nullable=False)
     authorized_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    
-    company = relationship("Company")
-    session = relationship("POSSession")
-    authorized_by = relationship("User")
 
 class POSDefaults(Base):
     __tablename__ = "pos_defaults"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     company_id = Column(Integer, ForeignKey("companies.id"), unique=True, nullable=False)
-    default_customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)  # Walk-in customer
-    default_tax_type_id = Column(Integer, ForeignKey("tax_types.id"), nullable=True)
+    default_walk_in_customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)
     receipt_header = Column(Text, nullable=True)
     receipt_footer = Column(Text, nullable=True)
-    enable_negative_stock = Column(Boolean, default=False)
-    require_customer_for_credit = Column(Boolean, default=True)
     auto_print_receipt = Column(Boolean, default=True)
-    default_sale_transaction_type_id = Column(Integer, ForeignKey("pos_transaction_types.id"), nullable=True)
-    default_return_transaction_type_id = Column(Integer, ForeignKey("pos_transaction_types.id"), nullable=True)
-    cash_rounding_method = Column(String, default="None")  # "None", "Up", "Down", "Nearest5Cents"
-    next_transaction_number = Column(Integer, default=1)
-    
-    company = relationship("Company")
+    allow_negative_stock = Column(Boolean, default=False)
+    require_customer_for_credit = Column(Boolean, default=True)
+    default_tax_type_id = Column(Integer, ForeignKey("tax_types.id"), nullable=True)
+    cash_rounding_method = Column(String(20), default="None")  # "None", "Up", "Down", "Nearest"
+    cash_rounding_precision = Column(Numeric(3, 2), default=0.01)
