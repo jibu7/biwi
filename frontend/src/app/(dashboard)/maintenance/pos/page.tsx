@@ -19,16 +19,16 @@ export default function POSMaintenancePage() {
     },
     {
       title: 'Transaction Types',
-      description: 'Manage payment methods and transaction types',
+      description: 'Manage POS transaction types for sales and returns',
       icon: DollarSign,
       href: '/maintenance/pos/transaction-types',
       color: 'bg-green-100 text-green-600',
     },
     {
-      title: 'POS Settings',
-      description: 'Configure general POS system settings',
+      title: 'POS Defaults',
+      description: 'Configure default POS system settings',
       icon: Settings,
-      href: '/maintenance/pos/settings',
+      href: '/maintenance/pos/defaults',
       color: 'bg-purple-100 text-purple-600',
     },
   ];

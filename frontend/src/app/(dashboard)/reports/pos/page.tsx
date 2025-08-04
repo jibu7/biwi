@@ -9,6 +9,13 @@ export default function POSReportsPage() {
 
   const reportItems = [
     {
+      title: 'Daily Sales Summary',
+      description: 'Daily sales summary with payment breakdown',
+      icon: BarChart,
+      href: '/reports/pos/daily-summary',
+      color: 'bg-blue-100 text-blue-600',
+    },
+    {
       title: 'Cashier Sales Report',
       description: 'View sales performance by cashier',
       icon: Users,

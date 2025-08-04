@@ -70,3 +70,34 @@ body {
     height: 100dvh; /* Dynamic viewport height for mobile browsers */
   }
 }
+
+/* Receipt print styles */
+@media print {
+  .receipt-print-area {
+    width: 80mm;
+    margin: 0;
+    padding: 10mm 5mm;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  
+  body * {
+    visibility: hidden;
+  }
+  
+  .receipt-print-area,
+  .receipt-print-area * {
+    visibility: visible;
+  }
+  
+  .receipt-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  
+  /* Hide non-essential elements during printing */
+  .no-print {
+    display: none !important;
+  }
+}

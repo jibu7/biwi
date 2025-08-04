@@ -215,3 +215,35 @@ export interface InventoryItem {
   cost_price: number;
   is_active: boolean;
 }
+
+// Additional types for compatibility with specification
+export interface TillSession {
+  id: number;
+  tillId: number;
+  userId: number;
+  openingDate: string;
+  closingDate?: string;
+  openingBalance: number;
+  expectedClosingBalance?: number;
+  actualClosingBalance?: number;
+  variance?: number;
+  status: 'Open' | 'Closed' | 'Reconciled';
+  reconciliationNotes?: string;
+}
+
+export interface POSPayment {
+  id: number;
+  paymentMethod: string;
+  amount: number;
+  referenceNumber?: string;
+  paymentDetails?: any;
+}
+
+export interface ReceiptData {
+  transaction: POSTransaction;
+  companyInfo: any;
+  tillInfo: any;
+  cashierName: string;
+  receiptHeader?: string;
+  receiptFooter?: string;
+}
