@@ -27,6 +27,17 @@ def table_exists(table_name: str) -> bool:
         return result.scalar()
     except Exception:
         return False
+def index_exists(index_name: str) -> bool:
+    """Check if an index exists in the database."""
+    try:
+        connection = op.get_bind()
+        result = connection.execute(text(
+            "SELECT EXISTS (SELECT FROM pg_indexes WHERE indexname = :index_name)"
+        ), {"index_name": index_name})
+        return result.scalar()
+    except Exception:
+        return False
+
 
 
 def upgrade() -> None:
@@ -93,7 +104,12 @@ def upgrade() -> None:
         sa.Column('last_login', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_platform_admins_email'), 'platform_admins', ['email'], unique=True)
+    if not index_exists('ix_company_subscriptions_company_id'):
+
+        if not index_exists('ix_company_subscriptions_company_id'):
+
+
+            op.create_index(op.f('ix_platform_admins_email'), 'platform_admins', ['email'], unique=True)
     op.create_index(op.f('ix_platform_admins_id'), 'platform_admins', ['id'], unique=False)
     
     # Create billing_plans table
@@ -146,7 +162,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id')
         )
         op.create_index(op.f('ix_company_subscriptions_company_id'), 'company_subscriptions', ['company_id'], unique=False)
-        op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
+        if not index_exists('ix_company_subscriptions_id'):
+
+            op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
     
     op.create_table('system_configurations',
         sa.Column('id', sa.Integer(), nullable=False),
@@ -161,7 +179,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('key')
     )
-    op.create_index(op.f('ix_system_configurations_id'), 'system_configurations', ['id'], unique=False)
+    if not index_exists('ix_company_subscriptions_id'):
+
+        op.create_index(op.f('ix_system_configurations_id'), 'system_configurations', ['id'], unique=False)
     
     op.create_table('system_health',
         sa.Column('id', sa.Integer(), nullable=False),

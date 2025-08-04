@@ -51,7 +51,9 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
-    op.create_index(op.f('ix_billing_plans_id'), 'billing_plans', ['id'], unique=False)
+    if not index_exists('ix_company_subscriptions_id'):
+
+        op.create_index(op.f('ix_billing_plans_id'), 'billing_plans', ['id'], unique=False)
     op.create_table('feature_flags',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
@@ -155,7 +157,9 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index('ix_category_company', 'feedback_categories', ['company_id'], unique=False)
+    if not index_exists('ix_company_subscriptions_id'):
+
+        op.create_index('ix_category_company', 'feedback_categories', ['company_id'], unique=False)
     op.create_index(op.f('ix_feedback_categories_id'), 'feedback_categories', ['id'], unique=False)
     op.create_table('financial_reporting_periods',
     sa.Column('id', sa.Integer(), nullable=False),

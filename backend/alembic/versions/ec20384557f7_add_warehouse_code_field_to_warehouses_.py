@@ -30,6 +30,17 @@ def table_exists(table_name: str) -> bool:
         return result.scalar()
     except Exception:
         return False
+def index_exists(index_name: str) -> bool:
+    """Check if an index exists in the database."""
+    try:
+        connection = op.get_bind()
+        result = connection.execute(text(
+            "SELECT EXISTS (SELECT FROM pg_indexes WHERE indexname = :index_name)"
+        ), {"index_name": index_name})
+        return result.scalar()
+    except Exception:
+        return False
+
 
 def upgrade() -> None:
     """Upgrade schema."""
@@ -50,7 +61,9 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
-    op.create_index(op.f('ix_billing_plans_id'), 'billing_plans', ['id'], unique=False)
+    if not index_exists('ix_company_subscriptions_id'):
+
+        op.create_index(op.f('ix_billing_plans_id'), 'billing_plans', ['id'], unique=False)
     op.create_table('feature_flags',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
@@ -162,7 +175,9 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('company_id', 'resource_type', 'usage_date', name='uq_company_resource_date')
     )
-    op.create_index('idx_resource_usage_company_date', 'resource_usage', ['company_id', 'usage_date'], unique=False)
+    if not index_exists('ix_company_subscriptions_id'):
+
+        op.create_index('idx_resource_usage_company_date', 'resource_usage', ['company_id', 'usage_date'], unique=False)
     op.create_table('system_configurations',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('key', sa.String(), nullable=False),
