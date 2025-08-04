@@ -7,10 +7,12 @@ from decimal import Decimal
 class CurrencyBase(BaseModel):
     code: str = Field(..., min_length=3, max_length=3, description="ISO currency code (e.g., USD, EUR)")
     name: str = Field(..., min_length=1, max_length=100, description="Full currency name")
-    symbol: Optional[str] = Field(None, max_length=5, description="Currency symbol")
+    symbol: str = Field(..., max_length=5, description="Currency symbol")
     exchange_rate_to_base: Decimal = Field(default=Decimal("1.000000"), ge=Decimal("0.000001"), le=Decimal("999999"), description="Exchange rate to base currency")
     is_base_currency: bool = Field(default=False, description="Whether this is the base currency")
     is_active: bool = Field(default=True, description="Whether currency is active")
+    decimal_places: int = Field(default=2, ge=0, le=10, description="Number of decimal places")
+    symbol_position: str = Field(default="prefix", description="Symbol position: prefix or suffix")
 
 
 class CurrencyCreate(CurrencyBase):
@@ -24,12 +26,23 @@ class CurrencyUpdate(BaseModel):
     exchange_rate_to_base: Optional[Decimal] = Field(None, ge=Decimal("0.000001"), le=Decimal("999999"))
     is_base_currency: Optional[bool] = None
     is_active: Optional[bool] = None
+    decimal_places: Optional[int] = Field(None, ge=0, le=10)
+    symbol_position: Optional[str] = None
 
 
 class Currency(CurrencyBase):
     id: int
     company_id: int
 
+    class Config:
+        from_attributes = True
+
+# Extended Currency Read Schema
+class CurrencyRead(CurrencyBase):
+    id: int
+    decimal_places: int
+    symbol_position: str
+    
     class Config:
         from_attributes = True
 

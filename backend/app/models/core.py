@@ -43,6 +43,13 @@ class Company(Base):
     default_currency_code = Column(String(3), nullable=True)
     is_active = Column(Boolean, default=True)
     
+    # Internationalization settings
+    date_format = Column(String(20), nullable=False, default="YYYY-MM-DD")
+    time_format = Column(String(10), nullable=False, default="24h")  # "24h" or "12h"
+    decimal_separator = Column(String(1), nullable=False, default=".")
+    thousand_separator = Column(String(1), nullable=False, default=",")
+    currency_position = Column(String(10), nullable=False, default="prefix")  # "prefix" or "suffix"
+    
     # Resource limits and usage
     storage_limit_gb = Column(Integer, nullable=True)
     user_limit = Column(Integer, nullable=True)
@@ -59,6 +66,10 @@ class Company(Base):
     roles = relationship("Role", back_populates="company")
     accounting_periods = relationship("AccountingPeriod", back_populates="company")
     audit_logs = relationship("PlatformAuditLog", back_populates="company")
+    
+    # Add relationship to currency
+    default_currency = relationship("Currency", foreign_keys=[default_currency_code], 
+                                  primaryjoin="Company.default_currency_code==Currency.code")
 
     @validates('subscription_status')
     def validate_subscription_status(self, key, value):
@@ -112,6 +123,11 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     mfa_secret = Column(String, nullable=True)  # For MFA
+    
+    # User preferences for internationalization
+    date_format_override = Column(String(20), nullable=True)
+    locale = Column(String(10), nullable=False, default="en-US")
+    timezone = Column(String(50), nullable=False, default="UTC")
     
     # Update relationships
     company = relationship("Company", foreign_keys=[company_id])

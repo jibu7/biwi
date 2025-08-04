@@ -71,3 +71,30 @@ def update_company(
         raise HTTPException(status_code=403, detail="Not enough permissions")
     company = crud.core.update_company(db, company_db_obj=company, company_in=company_in)
     return company
+
+
+@router.put("/{company_id}/formatting")
+async def update_company_formatting(
+    company_id: int,
+    formatting: schemas.CompanyFormattingUpdate,
+    current_user: models.User = Depends(PermissionChecker([COMPANY_UPDATE])),
+    db: Session = Depends(get_db)
+):
+    """Update company formatting preferences"""
+    company = crud.core.get_company(db, company_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Verify user belongs to company or is superadmin
+    if not current_user.is_superuser and current_user.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    update_data = formatting.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(company, field, value)
+    
+    db.add(company)
+    db.commit()
+    db.refresh(company)
+    
+    return company

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app import crud, models, schemas
 from app.core.permissions import PermissionChecker, USER_CREATE, USER_READ, USER_UPDATE, USER_DELETE, USER_MANAGE_ROLES
 from app.core.security import get_current_active_user
+from app.core.formatting import FormattingService
 from app.database.database import get_db
 
 router = APIRouter()
@@ -149,3 +150,35 @@ def revoke_role_from_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@router.put("/me/preferences")
+async def update_my_preferences(
+    preferences: schemas.UserPreferencesUpdate,
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update current user's formatting preferences"""
+    update_data = preferences.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(current_user, field, value)
+    
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    
+    return current_user
+
+
+@router.get("/me/formatting")
+async def get_my_formatting_config(
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get complete formatting configuration for current user"""
+    company = db.query(models.Company).filter(
+        models.Company.id == current_user.company_id
+    ).first()
+    
+    config = FormattingService.get_user_formatting_config(current_user, company)
+    return config

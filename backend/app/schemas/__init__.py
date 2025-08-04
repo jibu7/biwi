@@ -1,7 +1,7 @@
 from .core import (
-    Company, CompanyCreate, CompanyUpdate, CompanyWithStats,
+    Company, CompanyCreate, CompanyUpdate, CompanyWithStats, CompanyFormattingUpdate, CompanyRead,
     Role, RoleCreate, RoleUpdate,
-    User, UserCreate, UserUpdate, UserLogin, PlatformUser,
+    User, UserCreate, UserUpdate, UserLogin, PlatformUser, UserPreferencesUpdate, UserWithPreferences,
     AccountingPeriod, AccountingPeriodCreate, AccountingPeriodUpdate,
     Token, TokenData, TokenPayload, PlatformAuditLog, PlatformAuditLogCreate
 )
@@ -66,7 +66,7 @@ from .oe import (
 )
 
 from .common import (
-    Currency, CurrencyCreate, CurrencyUpdate,
+    Currency, CurrencyCreate, CurrencyUpdate, CurrencyRead,
     TaxType, TaxTypeCreate, TaxTypeUpdate,
     Branch, BranchCreate, BranchUpdate,
     DocumentLineWithTax

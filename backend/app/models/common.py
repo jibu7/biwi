@@ -11,10 +11,14 @@ class Currency(Base):
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     code = Column(String(3), nullable=False)  # e.g., "USD", "EUR"
     name = Column(String, nullable=False)  # e.g., "US Dollar"
-    symbol = Column(String(5), nullable=True)  # e.g., "$", "€"
+    symbol = Column(String(5), nullable=False)  # e.g., "$", "€", "£"
     exchange_rate_to_base = Column(Numeric(15, 6), default=1.000000)  # Rate to base currency
     is_base_currency = Column(Boolean, default=False)  # Only one per company
     is_active = Column(Boolean, default=True)
+    
+    # Formatting preferences
+    decimal_places = Column(Integer, nullable=False, default=2)
+    symbol_position = Column(String(10), nullable=False, default="prefix")  # Override company default
     
     company = relationship("Company", foreign_keys=[company_id])
     
