@@ -150,7 +150,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
         sa.PrimaryKeyConstraint('id')
         )
-        op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
+        # Note: Index ix_company_subscriptions_id is handled by dedicated migration 1bc10f96b52b
     op.create_table('feedback_categories',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=True),
@@ -1127,7 +1127,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_feedback_categories_id'), table_name='feedback_categories')
     op.drop_index('ix_category_company', table_name='feedback_categories')
     op.drop_table('feedback_categories')
-    op.drop_index(op.f('ix_company_subscriptions_id'), table_name='company_subscriptions')
+    # Note: Index ix_company_subscriptions_id drop is handled by dedicated migration 1bc10f96b52b
     op.drop_table('company_subscriptions')
     op.drop_index(op.f('ix_system_health_id'), table_name='system_health')
     op.drop_index(op.f('ix_system_health_checked_at'), table_name='system_health')
