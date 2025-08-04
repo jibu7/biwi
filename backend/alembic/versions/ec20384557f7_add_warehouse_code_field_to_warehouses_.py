@@ -158,7 +158,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
+    # Note: Index ix_company_subscriptions_id is handled by dedicated migration 1bc10f96b52b
     op.create_table('resource_usage',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=False),
@@ -623,7 +623,7 @@ def downgrade() -> None:
     op.drop_table('system_configurations')
     op.drop_index('idx_resource_usage_company_date', table_name='resource_usage')
     op.drop_table('resource_usage')
-    op.drop_index(op.f('ix_company_subscriptions_id'), table_name='company_subscriptions')
+    # Note: Index ix_company_subscriptions_id drop is handled by dedicated migration 1bc10f96b52b
     op.drop_table('company_subscriptions')
     op.drop_index('idx_billing_transaction_stripe_invoice', table_name='billing_transactions')
     op.drop_index('idx_billing_transaction_company', table_name='billing_transactions')
