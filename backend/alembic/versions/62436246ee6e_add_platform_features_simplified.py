@@ -8,12 +8,25 @@ Create Date: 2025-07-20 19:33:04.367187
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
 revision = '62436246ee6e'
 down_revision = 'ff859d8ad766'
 branch_labels = None
 depends_on = None
+
+
+def table_exists(table_name: str) -> bool:
+    """Check if a table exists in the database."""
+    try:
+        connection = op.get_bind()
+        result = connection.execute(text(
+            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = :table_name)"
+        ), {"table_name": table_name})
+        return result.scalar()
+    except Exception:
+        return False
 
 
 def upgrade() -> None:
@@ -114,25 +127,26 @@ def upgrade() -> None:
     # Create foreign key after billing_plans table exists
     op.create_foreign_key(None, 'companies', 'billing_plans', ['billing_plan_id'], ['id'])
     
-    # Create remaining tables
-    op.create_table('company_subscriptions',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('company_id', sa.Integer(), nullable=False),
-        sa.Column('billing_plan_id', sa.Integer(), nullable=False),
-        sa.Column('start_date', sa.DateTime(), nullable=False),
-        sa.Column('end_date', sa.DateTime(), nullable=True),
-        sa.Column('status', postgresql.ENUM('trial', 'active', 'cancelled', 'expired', name='subscriptionstatus', create_type=False), nullable=False),
-        sa.Column('payment_method', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('next_billing_date', sa.DateTime(), nullable=True),
-        sa.Column('cancellation_date', sa.DateTime(), nullable=True),
+    # Create remaining tables - only if they don't exist
+    if not table_exists('company_subscriptions'):
+        op.create_table('company_subscriptions',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('company_id', sa.Integer(), nullable=False),
+            sa.Column('billing_plan_id', sa.Integer(), nullable=False),
+            sa.Column('start_date', sa.DateTime(), nullable=False),
+            sa.Column('end_date', sa.DateTime(), nullable=True),
+            sa.Column('status', postgresql.ENUM('trial', 'active', 'cancelled', 'expired', name='subscriptionstatus', create_type=False), nullable=False),
+            sa.Column('payment_method', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+            sa.Column('next_billing_date', sa.DateTime(), nullable=True),
+            sa.Column('cancellation_date', sa.DateTime(), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.ForeignKeyConstraint(['billing_plan_id'], ['billing_plans.id'], ),
         sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
         sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_company_subscriptions_company_id'), 'company_subscriptions', ['company_id'], unique=False)
-    op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
+        )
+        op.create_index(op.f('ix_company_subscriptions_company_id'), 'company_subscriptions', ['company_id'], unique=False)
+        op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
     
     op.create_table('system_configurations',
         sa.Column('id', sa.Integer(), nullable=False),

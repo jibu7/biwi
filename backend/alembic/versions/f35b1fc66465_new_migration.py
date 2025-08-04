@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import text
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
@@ -17,6 +18,18 @@ down_revision: Union[str, None] = '1be7468c7e9d'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
+
+
+def table_exists(table_name: str) -> bool:
+    """Check if a table exists in the database."""
+    try:
+        connection = op.get_bind()
+        result = connection.execute(text(
+            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = :table_name)"
+        ), {"table_name": table_name})
+        return result.scalar()
+    except Exception:
+        return False
 
 def upgrade() -> None:
     """Upgrade schema."""
@@ -106,7 +119,11 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_system_health_checked_at'), 'system_health', ['checked_at'], unique=False)
     op.create_index(op.f('ix_system_health_id'), 'system_health', ['id'], unique=False)
-    op.create_table('company_subscriptions',
+    # Create company_subscriptions table only if it doesn't exist
+
+    if not table_exists('company_subscriptions'):
+
+        op.create_table('company_subscriptions',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('billing_plan_id', sa.Integer(), nullable=False),

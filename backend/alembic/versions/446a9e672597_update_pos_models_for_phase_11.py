@@ -10,12 +10,25 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
 revision: str = '446a9e672597'
 down_revision: Union[str, None] = 'b37dba45024b'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
+
+
+def table_exists(table_name: str) -> bool:
+    """Check if a table exists in the database."""
+    try:
+        connection = op.get_bind()
+        result = connection.execute(text(
+            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = :table_name)"
+        ), {"table_name": table_name})
+        return result.scalar()
+    except Exception:
+        return False
 
 
 def upgrade() -> None:
@@ -106,27 +119,30 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_system_health_checked_at'), 'system_health', ['checked_at'], unique=False)
     op.create_index(op.f('ix_system_health_id'), 'system_health', ['id'], unique=False)
-    op.create_table('company_subscriptions',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('company_id', sa.Integer(), nullable=False),
-    sa.Column('billing_plan_id', sa.Integer(), nullable=False),
-    sa.Column('start_date', sa.DateTime(), nullable=False),
-    sa.Column('end_date', sa.DateTime(), nullable=True),
-    sa.Column('next_billing_date', sa.DateTime(), nullable=True),
-    sa.Column('is_trial', sa.Boolean(), nullable=True),
-    sa.Column('trial_end_date', sa.DateTime(), nullable=True),
-    sa.Column('payment_method', sa.String(), nullable=True),
-    sa.Column('billing_email', sa.String(), nullable=True),
-    sa.Column('custom_limits', sa.JSON(), nullable=True),
-    sa.Column('custom_price', sa.Numeric(precision=10, scale=2), nullable=True),
-    sa.Column('status', sa.Enum('TRIAL', 'ACTIVE', 'CANCELLED', 'EXPIRED', name='subscriptionstatus'), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['billing_plan_id'], ['billing_plans.id'], ),
-    sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
+    
+    # Create company_subscriptions table only if it doesn't exist
+    if not table_exists('company_subscriptions'):
+        op.create_table('company_subscriptions',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('company_id', sa.Integer(), nullable=False),
+        sa.Column('billing_plan_id', sa.Integer(), nullable=False),
+        sa.Column('start_date', sa.DateTime(), nullable=False),
+        sa.Column('end_date', sa.DateTime(), nullable=True),
+        sa.Column('next_billing_date', sa.DateTime(), nullable=True),
+        sa.Column('is_trial', sa.Boolean(), nullable=True),
+        sa.Column('trial_end_date', sa.DateTime(), nullable=True),
+        sa.Column('payment_method', sa.String(), nullable=True),
+        sa.Column('billing_email', sa.String(), nullable=True),
+        sa.Column('custom_limits', sa.JSON(), nullable=True),
+        sa.Column('custom_price', sa.Numeric(precision=10, scale=2), nullable=True),
+        sa.Column('status', sa.Enum('TRIAL', 'ACTIVE', 'CANCELLED', 'EXPIRED', name='subscriptionstatus'), nullable=True),
+        sa.Column('created_at', sa.DateTime(), nullable=True),
+        sa.Column('updated_at', sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(['billing_plan_id'], ['billing_plans.id'], ),
+        sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
+        sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
     op.create_table('feedback_categories',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=True),
