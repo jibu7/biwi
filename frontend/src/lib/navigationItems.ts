@@ -396,14 +396,14 @@ export const navItems: NavItem[] = [
         ]
       },
       {
-        label: "BOM Setup",
+        label: "Bill of Materials",
         href: "/maintenance/bom",
         icon: Wrench,
         requiredPermission: permissions.BOM_SETUP_MANAGE,
         children: [
           { 
-            label: "Bill of Materials", 
-            href: "/maintenance/bom/bills", 
+            label: "BOM Setup", 
+            href: "/maintenance/bom/items", 
             requiredPermission: permissions.BOM_SETUP_MANAGE 
           },
           { 
@@ -670,23 +670,33 @@ export const navItems: NavItem[] = [
         ]
       },
       {
-        id: "bom-transactions",
-        label: "BOM",
-        href: "/transactions/bom",
+        id: "manufacturing-transactions",
+        label: "Manufacturing",
+        href: "/transactions/manufacturing",
         icon: Factory,
-        requiredPermission: permissions.BOM_MANUFACTURING_PROCESS,
-        description: "Manufacturing orders and bill of materials processing",
-        searchKeywords: ["bom", "manufacturing", "orders", "production"],
+        requiredPermission: permissions.BOM_MANUFACTURING_CREATE,
+        description: "Manufacturing orders and production management",
+        searchKeywords: ["manufacturing", "production", "orders", "bom"],
         children: [
           { 
             label: "New Manufacturing Order", 
-            href: "/transactions/bom/manufacturing-orders/new", 
-            requiredPermission: permissions.BOM_MANUFACTURING_PROCESS 
+            href: "/transactions/manufacturing/orders/new", 
+            requiredPermission: permissions.BOM_MANUFACTURING_CREATE 
           },
           { 
             label: "View Manufacturing Orders", 
-            href: "/transactions/bom/manufacturing-orders", 
+            href: "/transactions/manufacturing/orders", 
+            requiredPermission: permissions.BOM_MANUFACTURING_CREATE 
+          },
+          { 
+            label: "Production Entry", 
+            href: "/transactions/manufacturing/production", 
             requiredPermission: permissions.BOM_MANUFACTURING_PROCESS 
+          },
+          { 
+            label: "Material Requirements Planning", 
+            href: "/transactions/manufacturing/mrp", 
+            requiredPermission: permissions.BOM_MRP_RUN 
           }
         ]
       },
@@ -1076,13 +1086,23 @@ export const navItems: NavItem[] = [
         requiredPermission: permissions.BOM_REPORTS_VIEW,
         children: [
           { 
-            label: "Material Requirements", 
-            href: "/reports/bom/mrp", 
+            label: "BOM Listing", 
+            href: "/reports/bom/listing", 
             requiredPermission: permissions.BOM_REPORTS_VIEW 
           },
           { 
-            label: "Manufacturing Process", 
-            href: "/reports/bom/manufacturing-process", 
+            label: "Where Used", 
+            href: "/reports/bom/where-used", 
+            requiredPermission: permissions.BOM_REPORTS_VIEW 
+          },
+          { 
+            label: "Manufacturing Orders", 
+            href: "/reports/bom/manufacturing-orders", 
+            requiredPermission: permissions.BOM_REPORTS_VIEW 
+          },
+          { 
+            label: "Material Requirements", 
+            href: "/reports/bom/material-requirements", 
             requiredPermission: permissions.BOM_REPORTS_VIEW 
           }
         ]

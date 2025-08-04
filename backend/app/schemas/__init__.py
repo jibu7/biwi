@@ -81,9 +81,9 @@ from .reporting import (
 
 from .bom import (
     BOMHeaderBase, BOMHeaderCreate, BOMHeaderUpdate, BOMHeaderRead,
-    BOMComponentBase, BOMComponentCreate, BOMComponentUpdate, BOMComponentRead,
+    BOMComponentCreate, BOMComponentRead,
     ManufacturingOrderBase, ManufacturingOrderCreate, ManufacturingOrderUpdate, ManufacturingOrderRead,
-    ManufacturingOrderComponentBase, ManufacturingOrderComponentCreate, ManufacturingOrderComponentRead,
+    MaterialRequisitionRead, ProductionEntryCreate, ProductionEntryRead,
     BOMDefaultsBase, BOMDefaultsCreate, BOMDefaultsUpdate, BOMDefaultsRead,
     MRPRequest, MRPResult
 )

@@ -1,68 +1,74 @@
-from pydantic import BaseModel
-from typing import Optional, List, TYPE_CHECKING
-from datetime import datetime
+from pydantic import BaseModel, Field, validator
+from typing import Optional, List
+from datetime import date, datetime
 from decimal import Decimal
-
-if TYPE_CHECKING:
-    from .inventory import InventoryItem, UnitOfMeasure
 
 # BOM Header Schemas
 class BOMHeaderBase(BaseModel):
-    parent_item_id: int
-    bom_code: str
+    item_id: int
+    version: str = "1.0"
     description: Optional[str] = None
-    revision: str = "1.0"
-    effective_date: datetime
-    expiry_date: Optional[datetime] = None
-    quantity_per_batch: Decimal = Decimal("1.00")
+    effective_date: date
+    expiry_date: Optional[date] = None
+    status: str = "Active"
+    unit_quantity: Decimal = Decimal("1.0")
+    labor_hours: Decimal = Decimal("0.0")
+    overhead_percentage: Decimal = Decimal("0.0")
+
+class BOMComponentCreate(BaseModel):
+    component_item_id: int
+    quantity_required: Decimal
     unit_of_measure_id: int
-    is_active: bool = True
+    scrap_percentage: Decimal = Decimal("0.0")
+    is_phantom: bool = False
     notes: Optional[str] = None
 
 class BOMHeaderCreate(BOMHeaderBase):
-    components: List["BOMComponentCreate"]
+    components: List[BOMComponentCreate]
+    
+    @validator('components')
+    def validate_components(cls, v):
+        if not v:
+            raise ValueError("BOM must have at least one component")
+        return v
 
 class BOMHeaderUpdate(BaseModel):
+    version: Optional[str] = None
     description: Optional[str] = None
-    expiry_date: Optional[datetime] = None
-    quantity_per_batch: Optional[Decimal] = None
-    is_active: Optional[bool] = None
-    notes: Optional[str] = None
+    effective_date: Optional[date] = None
+    expiry_date: Optional[date] = None
+    status: Optional[str] = None
+    unit_quantity: Optional[Decimal] = None
+    labor_hours: Optional[Decimal] = None
+    overhead_percentage: Optional[Decimal] = None
 
-class BOMHeaderRead(BOMHeaderBase):
+class BOMComponentRead(BaseModel):
     id: int
-    company_id: int
-    parent_item: Optional["InventoryItem"] = None
-    unit_of_measure: Optional["UnitOfMeasure"] = None
-    components: List["BOMComponentRead"] = []
+    component_item_id: int
+    component_item_code: Optional[str] = None
+    component_item_description: Optional[str] = None
+    quantity_required: Decimal
+    unit_of_measure_id: int
+    unit_of_measure_name: Optional[str] = None
+    scrap_percentage: Decimal
+    is_phantom: bool
+    notes: Optional[str] = None
+    unit_cost: Optional[Decimal] = None  # From inventory item
+    extended_cost: Optional[Decimal] = None  # Calculated
     
     class Config:
         from_attributes = True
 
-# BOM Component Schemas
-class BOMComponentBase(BaseModel):
-    component_item_id: int
-    quantity_required: Decimal
-    unit_of_measure_id: int
-    scrap_percentage: Decimal = Decimal("0.00")
-    sequence_number: int = 10
-    is_phantom: bool = False
-    notes: Optional[str] = None
-
-class BOMComponentCreate(BOMComponentBase):
-    pass
-
-class BOMComponentUpdate(BaseModel):
-    quantity_required: Optional[Decimal] = None
-    scrap_percentage: Optional[Decimal] = None
-    sequence_number: Optional[int] = None
-    notes: Optional[str] = None
-
-class BOMComponentRead(BOMComponentBase):
+class BOMHeaderRead(BOMHeaderBase):
     id: int
-    bom_header_id: int
-    component_item: Optional["InventoryItem"] = None
-    unit_of_measure: Optional["UnitOfMeasure"] = None
+    company_id: int
+    item_code: Optional[str] = None
+    item_description: Optional[str] = None
+    components: List[BOMComponentRead] = []
+    total_material_cost: Optional[Decimal] = None
+    total_labor_cost: Optional[Decimal] = None
+    total_overhead_cost: Optional[Decimal] = None
+    total_cost: Optional[Decimal] = None
     
     class Config:
         from_attributes = True
@@ -70,90 +76,119 @@ class BOMComponentRead(BOMComponentBase):
 # Manufacturing Order Schemas
 class ManufacturingOrderBase(BaseModel):
     bom_header_id: int
+    item_id: int
     warehouse_id: int
-    quantity_to_manufacture: Decimal
-    due_date: Optional[datetime] = None
+    quantity_to_produce: Decimal
+    scheduled_start_date: datetime
+    scheduled_end_date: datetime
+    priority: int = 5
     notes: Optional[str] = None
+    linked_sales_order_id: Optional[int] = None
 
 class ManufacturingOrderCreate(ManufacturingOrderBase):
     pass
 
 class ManufacturingOrderUpdate(BaseModel):
-    due_date: Optional[datetime] = None
+    quantity_to_produce: Optional[Decimal] = None
+    scheduled_start_date: Optional[datetime] = None
+    scheduled_end_date: Optional[datetime] = None
     status: Optional[str] = None
+    priority: Optional[int] = None
     notes: Optional[str] = None
 
 class ManufacturingOrderRead(ManufacturingOrderBase):
     id: int
     company_id: int
     order_number: str
-    quantity_completed: Decimal
-    order_date: datetime
-    start_date: Optional[datetime]
-    completion_date: Optional[datetime]
+    quantity_produced: Decimal
+    actual_start_date: Optional[datetime] = None
+    actual_end_date: Optional[datetime] = None
     status: str
+    created_at: datetime
+    created_by_user_id: int
     
     class Config:
         from_attributes = True
 
-# BOM Defaults Schemas
-class BOMDefaultsBase(BaseModel):
-    default_wip_gl_account_id: Optional[int] = None
-    default_material_usage_gl_account_id: Optional[int] = None
-    default_manufacturing_overhead_gl_account_id: Optional[int] = None
-    default_scrap_gl_account_id: Optional[int] = None
-
-class BOMDefaultsCreate(BOMDefaultsBase):
-    pass
-
-class BOMDefaultsUpdate(BOMDefaultsBase):
-    pass
-
-class BOMDefaultsRead(BOMDefaultsBase):
+# Material Requisition Schemas
+class MaterialRequisitionRead(BaseModel):
     id: int
-    company_id: int
-    next_mo_number: int
+    manufacturing_order_id: int
+    component_item_id: int
+    component_item_code: Optional[str] = None
+    component_item_description: Optional[str] = None
+    required_quantity: Decimal
+    issued_quantity: Decimal
+    warehouse_id: int
+    status: str
+    issue_date: Optional[datetime] = None
     
     class Config:
         from_attributes = True
 
-# Material Requirements Planning
+# Production Entry Schemas
+class ProductionEntryCreate(BaseModel):
+    manufacturing_order_id: int
+    entry_date: datetime
+    quantity_produced: Decimal
+    quantity_scrapped: Decimal = Decimal("0.0")
+    labor_hours_actual: Decimal = Decimal("0.0")
+    notes: Optional[str] = None
+
+class ProductionEntryRead(ProductionEntryCreate):
+    id: int
+    linked_gl_journal_entry_id: Optional[int] = None
+    created_by_user_id: int
+    
+    class Config:
+        from_attributes = True
+
+# MRP Schemas
 class MRPRequest(BaseModel):
-    bom_header_id: int
-    quantity_to_produce: Decimal
+    item_ids: Optional[List[int]] = None  # If None, run for all items
     warehouse_id: int
-    include_phantom_items: bool = False
+    planning_horizon_days: int = 30
+    include_sales_orders: bool = True
+    include_min_stock_levels: bool = True
 
 class MRPResult(BaseModel):
     item_id: int
     item_code: str
-    description: str
-    quantity_required: Decimal
-    quantity_available: Decimal
-    quantity_short: Decimal
-    unit_of_measure: str
-    level: int  # BOM level (0 = parent, 1 = direct component, etc.)
+    item_description: str
+    current_stock: Decimal
+    required_quantity: Decimal
+    suggested_production_quantity: Decimal
+    suggested_purchase_quantity: Decimal
+    suggested_date: date
+    source_documents: List[str] = []
 
-# Manufacturing Order Component Schemas
-class ManufacturingOrderComponentBase(BaseModel):
-    component_item_id: int
-    quantity_required: Decimal
-    unit_cost: Decimal
+# BOM Defaults Schemas
+class BOMDefaultsBase(BaseModel):
+    default_overhead_percentage: Decimal = Decimal("15.0")
+    default_labor_rate_per_hour: Decimal = Decimal("25.0")
+    wip_gl_account_id: Optional[int] = None
+    labor_gl_account_id: Optional[int] = None
+    overhead_gl_account_id: Optional[int] = None
+    variance_gl_account_id: Optional[int] = None
+    auto_issue_components: bool = True
+    allow_negative_inventory: bool = False
 
-class ManufacturingOrderComponentCreate(ManufacturingOrderComponentBase):
+class BOMDefaultsCreate(BOMDefaultsBase):
     pass
 
-class ManufacturingOrderComponentRead(ManufacturingOrderComponentBase):
+class BOMDefaultsUpdate(BaseModel):
+    default_overhead_percentage: Optional[Decimal] = None
+    default_labor_rate_per_hour: Optional[Decimal] = None
+    wip_gl_account_id: Optional[int] = None
+    labor_gl_account_id: Optional[int] = None
+    overhead_gl_account_id: Optional[int] = None
+    variance_gl_account_id: Optional[int] = None
+    auto_issue_components: Optional[bool] = None
+    allow_negative_inventory: Optional[bool] = None
+
+class BOMDefaultsRead(BOMDefaultsBase):
     id: int
-    manufacturing_order_id: int
-    quantity_issued: Decimal
+    company_id: int
     
     class Config:
         from_attributes = True
-
-# Import here to avoid circular imports
-from .inventory import InventoryItem, UnitOfMeasure
-
-# Update forward references
-BOMHeaderRead.model_rebuild()
-BOMComponentRead.model_rebuild()

@@ -1,9 +1,7 @@
 'use client';
 
-
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { ReportCard, ReportPageLayout } from '@/components/reports';
 import { BarChart, Users, Clock, TrendingUp } from 'lucide-react';
 
 export default function POSReportsPage() {
@@ -42,37 +40,23 @@ export default function POSReportsPage() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">POS Reports</h1>
-        <p className="text-gray-600">Point of Sale reporting and analytics</p>
-      </div>
-
+    <ReportPageLayout
+      title="POS Reports"
+      description="Point of Sale reporting and analytics"
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {reportItems.map((item, index) => {
-          const Icon = item.icon;
-          return (
-            <Card key={index} className="p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-lg ${item.color}`}>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold mb-2">{item.title}</h3>
-                  <p className="text-sm text-gray-600 mb-4">{item.description}</p>
-                  <Button
-                    onClick={() => router.push(item.href)}
-                    disabled={item.disabled}
-                    className="w-full"
-                  >
-                    {item.disabled ? 'Coming Soon' : 'View Report'}
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
+        {reportItems.map((item, index) => (
+          <ReportCard
+            key={index}
+            title={item.title}
+            description={item.description}
+            icon={item.icon}
+            color={item.color}
+            disabled={item.disabled}
+            onClick={() => router.push(item.href)}
+          />
+        ))}
       </div>
-    </div>
+    </ReportPageLayout>
   );
 }

@@ -1,24 +1,27 @@
 'use client';
 
-
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Card } from '@/components/ui/card';
+import { ReportCard, ReportPageLayout } from '@/components/reports';
 import { Settings, FileText, Calendar, BarChart3 } from 'lucide-react';
 
 export default function ReportManagementPage() {
+  const router = useRouter();
+
   const managementTools = [
     {
       title: 'Report Templates',
       description: 'Create, edit, and manage custom report templates and formats',
       href: '/reports/management/templates',
       icon: FileText,
-      color: 'bg-blue-50 border-blue-200 text-blue-700'
+      color: 'bg-blue-100 text-blue-600'
     },
     {
       title: 'Scheduled Reports',
       description: 'Set up automated report generation and email delivery',
       href: '/reports/management/scheduled',
       icon: Calendar,
-      color: 'bg-green-50 border-green-200 text-green-700'
+      color: 'bg-green-100 text-green-600'
     }
   ];
 
@@ -26,95 +29,81 @@ export default function ReportManagementPage() {
     {
       title: 'Financial Reports',
       href: '/reports/financial',
-      description: 'Balance Sheet, Income Statement, Cash Flow'
+      description: 'Balance Sheet, Income Statement, Cash Flow',
+      icon: BarChart3,
+      color: 'bg-indigo-100 text-indigo-600'
     },
     {
       title: 'Advanced GL',
       href: '/reports/gl/advanced',
-      description: 'Cashbook, Trial Balance, Chart of Accounts'
+      description: 'Cashbook, Trial Balance, Chart of Accounts',
+      icon: BarChart3,
+      color: 'bg-purple-100 text-purple-600'
     },
     {
       title: 'Advanced AR',
       href: '/reports/ar/advanced',
-      description: 'Aging Analysis, Customer Reports'
+      description: 'Aging Analysis, Customer Reports',
+      icon: BarChart3,
+      color: 'bg-emerald-100 text-emerald-600'
     },
     {
       title: 'Advanced AP',
       href: '/reports/ap/advanced',
-      description: 'Supplier Analysis, Payment Reports'
+      description: 'Supplier Analysis, Payment Reports',
+      icon: BarChart3,
+      color: 'bg-orange-100 text-orange-600'
     }
   ];
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Report Management</h1>
-        <p className="text-lg text-gray-600">
-          Manage report templates, schedules, and system-wide reporting configurations.
-        </p>
-      </div>
-
+    <ReportPageLayout
+      title="Report Management"
+      description="Manage report templates, schedules, and system-wide reporting configurations."
+    >
       {/* Management Tools */}
-      <div className="mb-12">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Management Tools</h2>
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Management Tools</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {managementTools.map((tool) => {
-            const IconComponent = tool.icon;
-            return (
-              <Link
-                key={tool.href}
-                href={tool.href}
-                className="block group"
-              >
-                <div className={`border-2 rounded-lg p-6 transition-all duration-200 hover:shadow-lg hover:scale-105 ${tool.color}`}>
-                  <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0">
-                      <IconComponent className="w-8 h-8" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold mb-2 group-hover:underline">
-                        {tool.title}
-                      </h3>
-                      <p className="text-sm opacity-80">
-                        {tool.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+          {managementTools.map((tool, index) => (
+            <ReportCard
+              key={index}
+              title={tool.title}
+              description={tool.description}
+              icon={tool.icon}
+              color={tool.color}
+              buttonText="Manage"
+              onClick={() => router.push(tool.href)}
+            />
+          ))}
         </div>
       </div>
 
       {/* Quick Access to Reports */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-          <BarChart3 className="w-6 h-6 mr-2" />
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <BarChart3 className="h-5 w-5" />
           Quick Access to Reports
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {quickAccess.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="block p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow duration-200"
-            >
-              <h3 className="font-semibold text-gray-900 mb-2 hover:text-indigo-600">
-                {item.title}
-              </h3>
-              <p className="text-sm text-gray-600">
-                {item.description}
-              </p>
-            </Link>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {quickAccess.map((item, index) => (
+            <ReportCard
+              key={index}
+              title={item.title}
+              description={item.description}
+              icon={item.icon}
+              color={item.color}
+              buttonText="View Reports"
+              onClick={() => router.push(item.href)}
+            />
           ))}
         </div>
       </div>
 
       {/* System Information */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-          <Settings className="w-5 h-5 mr-2" />
+      <Card className="p-6 bg-blue-50 border-blue-200">
+        <h2 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
+          <Settings className="h-5 w-5" />
           System Information
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -131,7 +120,7 @@ export default function ReportManagementPage() {
             <span className="text-blue-700 ml-2">Daily, Weekly, Monthly</span>
           </div>
         </div>
-      </div>
-    </div>
+      </Card>
+    </ReportPageLayout>
   );
 }

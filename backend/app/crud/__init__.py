@@ -43,8 +43,9 @@ from .bom import (
     create_bom_header, get_bom_headers_by_company, get_bom_header, get_bom_header_by_item,
     update_bom_header, delete_bom_header, create_manufacturing_order, get_manufacturing_orders_by_company,
     get_manufacturing_order, update_manufacturing_order, release_manufacturing_order,
-    process_manufacturing_order, cancel_manufacturing_order, calculate_mrp, get_bom_cost_analysis,
-    get_or_create_bom_defaults, get_bom_defaults, update_bom_defaults, get_bom_where_used, copy_bom
+    complete_manufacturing_order, calculate_mrp, calculate_bom_cost,
+    get_or_create_bom_defaults, get_bom_defaults, update_bom_defaults, get_bom_where_used, 
+    explode_bom, copy_bom
 )
 
 # POS imports

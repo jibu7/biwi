@@ -6,32 +6,52 @@ import {
   MRPRequest, MRPResult
 } from '@/types/bom';
 
+// Type aliases for consistency with the interface expectations
+export type BOMHeaderRead = BOMHeader;
+export type ManufacturingOrderRead = ManufacturingOrder;
+export type ProductionEntryCreate = any; // Define this type as needed
+
 export const bomService = {
   // BOM Headers
-  async createBOMHeader(data: BOMHeaderCreate): Promise<BOMHeader> {
+  async createBOM(data: BOMHeaderCreate): Promise<BOMHeader> {
     const response = await axiosInstance.post('/bom/bom-headers', data);
     return response.data;
   },
 
-  async getBOMHeaders(skip = 0, limit = 100): Promise<BOMHeader[]> {
-    const response = await axiosInstance.get('/bom/bom-headers', {
-      params: { skip, limit }
-    });
+  async getBOMs(params?: {
+    skip?: number;
+    limit?: number;
+    item_id?: number;
+    status?: string;
+  }): Promise<BOMHeader[]> {
+    const response = await axiosInstance.get('/bom/bom-headers', { params });
     return response.data;
   },
 
-  async getBOMHeader(id: number): Promise<BOMHeader> {
+  async getBOM(id: number): Promise<BOMHeader> {
     const response = await axiosInstance.get(`/bom/bom-headers/${id}`);
     return response.data;
   },
 
-  async updateBOMHeader(id: number, data: BOMHeaderUpdate): Promise<BOMHeader> {
+  async updateBOM(id: number, data: BOMHeaderUpdate): Promise<BOMHeader> {
     const response = await axiosInstance.put(`/bom/bom-headers/${id}`, data);
     return response.data;
   },
 
-  async deleteBOMHeader(id: number): Promise<void> {
+  async deleteBOM(id: number): Promise<void> {
     await axiosInstance.delete(`/bom/bom-headers/${id}`);
+  },
+
+  async calculateBOMCost(id: number): Promise<any> {
+    const response = await axiosInstance.post(`/bom/bom-headers/${id}/calculate-cost`);
+    return response.data;
+  },
+
+  async explodeBOM(id: number, quantity: number = 1): Promise<any[]> {
+    const response = await axiosInstance.post(`/bom/bom-headers/${id}/explode`, null, {
+      params: { quantity }
+    });
+    return response.data;
   },
 
   async getBOMByItem(itemId: number): Promise<BOMHeader> {
@@ -53,10 +73,13 @@ export const bomService = {
     return response.data;
   },
 
-  async getManufacturingOrders(status?: string, skip = 0, limit = 100): Promise<ManufacturingOrder[]> {
-    const response = await axiosInstance.get('/bom/manufacturing-orders', {
-      params: { status, skip, limit }
-    });
+  async getManufacturingOrders(params?: {
+    skip?: number;
+    limit?: number;
+    status?: string;
+    warehouse_id?: number;
+  }): Promise<ManufacturingOrder[]> {
+    const response = await axiosInstance.get('/bom/manufacturing-orders', { params });
     return response.data;
   },
 
@@ -66,7 +89,17 @@ export const bomService = {
   },
 
   async releaseManufacturingOrder(id: number): Promise<void> {
-    await axiosInstance.post(`/bom/manufacturing-orders/${id}/release`);
+    await axiosInstance.put(`/bom/manufacturing-orders/${id}/release`);
+  },
+
+  async issueMaterials(orderId: number): Promise<any> {
+    const response = await axiosInstance.post(`/bom/manufacturing-orders/${orderId}/issue-materials`);
+    return response.data;
+  },
+
+  async getMaterialRequisitions(orderId: number): Promise<any[]> {
+    const response = await axiosInstance.get(`/bom/manufacturing-orders/${orderId}/requisitions`);
+    return response.data;
   },
 
   async processManufacturingOrder(id: number): Promise<void> {
@@ -75,6 +108,18 @@ export const bomService = {
 
   async cancelManufacturingOrder(id: number): Promise<void> {
     await axiosInstance.post(`/bom/manufacturing-orders/${id}/cancel`);
+  },
+
+  // Production Entry
+  async recordProduction(data: any): Promise<any> {
+    const response = await axiosInstance.post('/bom/production-entries', data);
+    return response.data;
+  },
+
+  // MRP
+  async runMRP(data: MRPRequest): Promise<MRPResult[]> {
+    const response = await axiosInstance.post('/bom/mrp/run', data);
+    return response.data;
   },
 
   // BOM Defaults
@@ -88,9 +133,9 @@ export const bomService = {
     return response.data;
   },
 
-  // Reports and Analytics
-  async calculateMRP(data: MRPRequest): Promise<MRPResult[]> {
-    const response = await axiosInstance.post('/bom/reports/mrp', data);
+  // Reports
+  async getWhereUsedReport(itemId: number): Promise<any[]> {
+    const response = await axiosInstance.get(`/bom/reports/bom-where-used/${itemId}`);
     return response.data;
   },
 

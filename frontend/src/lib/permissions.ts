@@ -80,8 +80,10 @@ export const REPORTING_BANK_RECONCILIATION = REPORTING_BANK_RECONCILIATION_MANAG
 
 // BOM Permissions
 export const BOM_SETUP_MANAGE = "bom:setup_manage";
+export const BOM_MANUFACTURING_CREATE = "bom:manufacturing_create";
 export const BOM_MANUFACTURING_PROCESS = "bom:manufacturing_process";
 export const BOM_REPORTS_VIEW = "bom:reports_view";
+export const BOM_MRP_RUN = "bom:mrp_run";
 
 // POS Permissions
 export const POS_SETUP_MANAGE = "pos:setup_manage";

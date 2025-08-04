@@ -1,7 +1,8 @@
 'use client';
 
-
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Card } from '@/components/ui/card';
+import { ReportCard, ReportPageLayout } from '@/components/reports';
 import { BarChart3, FileText, TrendingUp, DollarSign } from 'lucide-react';
 
 const reportItems = [
@@ -35,78 +36,80 @@ const reportItems = [
   },
 ];
 
+const quickAccessItems = [
+  {
+    title: 'Account Transactions',
+    href: '/reports/gl/account-transactions',
+  },
+  {
+    title: 'Trial Balance',
+    href: '/reports/gl/trial-balance',
+  },
+];
+
+const financialStatements = [
+  {
+    title: 'Balance Sheet',
+    href: '/reports/financial/balance-sheet',
+  },
+  {
+    title: 'Income Statement',
+    href: '/reports/financial/income-statement',
+  },
+];
+
 export default function FinancialReportsPage() {
+  const router = useRouter();
+
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Financial Reports</h1>
-        <p className="text-gray-600 mt-2">
-          Generate comprehensive financial statements and analysis reports for your organization.
-        </p>
+    <ReportPageLayout
+      title="Financial Reports"
+      description="Generate comprehensive financial statements and analysis reports for your organization."
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {reportItems.map((item, index) => (
+          <ReportCard
+            key={index}
+            title={item.title}
+            description={item.description}
+            icon={item.icon}
+            color={item.color}
+            onClick={() => router.push(item.href)}
+          />
+        ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {reportItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow border border-gray-200 hover:border-blue-300"
-            >
-              <div className="flex items-center mb-4">
-                <div className={`p-3 rounded-lg ${item.color}`}>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 ml-3">
-                  {item.title}
-                </h3>
-              </div>
-              <p className="text-gray-600 text-sm">
-                {item.description}
-              </p>
-            </Link>
-          );
-        })}
-      </div>
-
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-blue-50 p-6 rounded-lg">
-          <h3 className="text-lg font-medium text-blue-900 mb-2">Quick Access</h3>
+        <Card className="p-6 bg-blue-50">
+          <h3 className="text-lg font-medium text-blue-900 mb-4">Quick Access</h3>
           <div className="space-y-2">
-            <Link
-              href="/reports/gl/account-transactions"
-              className="block text-blue-800 hover:text-blue-600 text-sm font-medium"
-            >
-              → Account Transactions
-            </Link>
-            <Link
-              href="/reports/gl/trial-balance"
-              className="block text-blue-800 hover:text-blue-600 text-sm font-medium"
-            >
-              → Trial Balance
-            </Link>
+            {quickAccessItems.map((item, index) => (
+              <button
+                key={index}
+                onClick={() => router.push(item.href)}
+                className="block w-full text-left text-blue-800 hover:text-blue-600 text-sm font-medium p-2 rounded hover:bg-blue-100 transition-colors"
+              >
+                → {item.title}
+              </button>
+            ))}
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-green-50 p-6 rounded-lg">
-          <h3 className="text-lg font-medium text-green-900 mb-2">Financial Statements</h3>
+        <Card className="p-6 bg-green-50">
+          <h3 className="text-lg font-medium text-green-900 mb-4">Financial Statements</h3>
           <div className="space-y-2">
-            <Link
-              href="/reports/financial/balance-sheet"
-              className="block text-green-800 hover:text-green-600 text-sm font-medium"
-            >
-              → Balance Sheet
-            </Link>
-            <Link
-              href="/reports/financial/income-statement"
-              className="block text-green-800 hover:text-green-600 text-sm font-medium"
-            >
-              → Income Statement
-            </Link>
+            {financialStatements.map((item, index) => (
+              <button
+                key={index}
+                onClick={() => router.push(item.href)}
+                className="block w-full text-left text-green-800 hover:text-green-600 text-sm font-medium p-2 rounded hover:bg-green-100 transition-colors"
+              >
+                → {item.title}
+              </button>
+            ))}
           </div>
-        </div>
+        </Card>
       </div>
-    </div>
+    </ReportPageLayout>
   );
 }

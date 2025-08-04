@@ -27,7 +27,7 @@ from .oe import SalesOrder, SalesOrderLine, PurchaseOrder, PurchaseOrderLine, Go
 from .common import Currency, TaxType, Branch
 
 # BOM models
-from .bom import BOMHeader, BOMComponent, ManufacturingOrder, ManufacturingOrderComponent, BOMDefaults
+from .bom import BOMHeader, BOMComponent, ManufacturingOrder, ManufacturingOrderComponent, BOMDefaults, MaterialRequisition, ProductionEntry
 
 # POS models
 from .pos import Till, POSTransactionType, POSSession, POSTransaction, POSTransactionLine, POSCashMovement, POSDefaults
