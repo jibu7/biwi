@@ -75,7 +75,8 @@ def upgrade() -> None:
         try:
             if not index_exists('ix_company_subscriptions_id'):
 
-                op.create_index('ix_company_subscriptions_id', 'company_subscriptions', ['id'], unique=False)
+                if not index_exists('ix_company_subscriptions_id'):
+                    op.create_index('ix_company_subscriptions_id', 'company_subscriptions', ['id'], unique=False)
         except Exception as e:
             print(f"Warning: Could not create index: {e}")
             

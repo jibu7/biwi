@@ -161,10 +161,12 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
         sa.PrimaryKeyConstraint('id')
         )
-        op.create_index(op.f('ix_company_subscriptions_company_id'), 'company_subscriptions', ['company_id'], unique=False)
+        if not index_exists('ix_company_subscriptions_company_id'):
+            op.create_index(op.f('ix_company_subscriptions_company_id'), 'company_subscriptions', ['company_id'], unique=False)
         if not index_exists('ix_company_subscriptions_id'):
 
-            op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
+            if not index_exists('ix_company_subscriptions_id'):
+                op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
     
     op.create_table('system_configurations',
         sa.Column('id', sa.Integer(), nullable=False),
