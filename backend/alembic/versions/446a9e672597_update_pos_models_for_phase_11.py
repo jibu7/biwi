@@ -18,7 +18,6 @@ down_revision: Union[str, None] = 'b37dba45024b'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-
 def table_exists(table_name: str) -> bool:
     """Check if a table exists in the database."""
     try:
@@ -39,8 +38,6 @@ def index_exists(index_name: str) -> bool:
         return result.scalar()
     except Exception:
         return False
-
-
 
 def upgrade() -> None:
     """Upgrade schema."""
@@ -155,9 +152,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
         sa.PrimaryKeyConstraint('id')
         )
-        # Create index only if it doesn't exist
-        if not index_exists('ix_company_subscriptions_id'):
-            op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
+        # Create index only if it doesn't exist, 'company_subscriptions', ['id'], unique=False)
     op.create_table('feedback_categories',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('company_id', sa.Integer(), nullable=True),
@@ -725,7 +720,6 @@ def upgrade() -> None:
     op.create_index(op.f('ix_warehouses_warehouse_code'), 'warehouses', ['warehouse_code'], unique=False)
     op.create_unique_constraint('uq_warehouse_code_company', 'warehouses', ['warehouse_code', 'company_id'])
     # ### end Alembic commands ###
-
 
 def downgrade() -> None:
     """Downgrade schema."""

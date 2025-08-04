@@ -17,7 +17,6 @@ down_revision: Union[str, None] = '62436246ee6e'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-
 def upgrade() -> None:
     """Upgrade schema."""
     # First, remove the default value from the column
@@ -37,7 +36,6 @@ def upgrade() -> None:
 
     # Set the new default value
     op.alter_column('companies', 'subscription_status', server_default='trial')
-
 
 def downgrade() -> None:
     """Downgrade schema."""

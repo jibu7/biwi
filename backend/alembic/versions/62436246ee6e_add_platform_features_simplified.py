@@ -16,7 +16,6 @@ down_revision = 'ff859d8ad766'
 branch_labels = None
 depends_on = None
 
-
 def table_exists(table_name: str) -> bool:
     """Check if a table exists in the database."""
     try:
@@ -37,8 +36,6 @@ def index_exists(index_name: str) -> bool:
         return result.scalar()
     except Exception:
         return False
-
-
 
 def upgrade() -> None:
     # Get database connection
@@ -103,11 +100,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.Column('last_login', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id')
-    )
-    if not index_exists('ix_company_subscriptions_company_id'):
-
-        if not index_exists('ix_company_subscriptions_company_id'):
-
+    )        if not index_exists('ix_company_subscriptions_company_id'):
 
             op.create_index(op.f('ix_platform_admins_email'), 'platform_admins', ['email'], unique=True)
     op.create_index(op.f('ix_platform_admins_id'), 'platform_admins', ['id'], unique=False)
@@ -161,12 +154,6 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['company_id'], ['companies.id'], ),
         sa.PrimaryKeyConstraint('id')
         )
-        if not index_exists('ix_company_subscriptions_company_id'):
-            op.create_index(op.f('ix_company_subscriptions_company_id'), 'company_subscriptions', ['company_id'], unique=False)
-        if not index_exists('ix_company_subscriptions_id'):
-
-            if not index_exists('ix_company_subscriptions_id'):
-                op.create_index(op.f('ix_company_subscriptions_id'), 'company_subscriptions', ['id'], unique=False)
     
     op.create_table('system_configurations',
         sa.Column('id', sa.Integer(), nullable=False),
@@ -178,12 +165,10 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.ForeignKeyConstraint(['updated_by_admin_id'], ['platform_admins.id'], ),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('key')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('key')
     )
-    if not index_exists('ix_company_subscriptions_id'):
-
-        op.create_index(op.f('ix_system_configurations_id'), 'system_configurations', ['id'], unique=False)
+    op.create_index(op.f('ix_system_configurations_id'), 'system_configurations', ['id'], unique=False)
     
     op.create_table('system_health',
         sa.Column('id', sa.Integer(), nullable=False),
@@ -284,7 +269,6 @@ def upgrade() -> None:
     op.create_index(op.f('ix_usage_metrics_id'), 'usage_metrics', ['id'], unique=False)
     op.create_index(op.f('ix_usage_metrics_metric_type'), 'usage_metrics', ['metric_type'], unique=False)
     op.create_index(op.f('ix_usage_metrics_recorded_at'), 'usage_metrics', ['recorded_at'], unique=False)
-
 
 def downgrade() -> None:
     # Drop tables in reverse order
