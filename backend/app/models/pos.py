@@ -126,6 +126,9 @@ class TillReconciliation(Base):
     reconciliation_time = Column(DateTime, nullable=False)
     reconciled_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     notes = Column(Text, nullable=True)
+    
+    # Relationships
+    session = relationship("TillSession", back_populates="reconciliation_details")
 
 class POSCashMovement(Base):
     __tablename__ = "pos_cash_movements"
