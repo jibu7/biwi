@@ -15,6 +15,7 @@ export interface DashboardModule {
 // Color mappings for consistent dashboard appearance
 const moduleColors: Record<string, string> = {
   'organization-setup': 'bg-blue-500',
+  'formatting-settings': 'bg-cyan-500',
   'financial-setup': 'bg-green-500', 
   'accounts-receivable-setup': 'bg-purple-500',
   'accounts-payable-setup': 'bg-red-500',

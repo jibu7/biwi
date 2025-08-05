@@ -67,6 +67,72 @@ export default function SettingsPage() {
   const sampleDate = new Date();
   const sampleAmount = 1234567.89;
 
+  // Preview formatting functions based on current form settings
+  const formatPreviewDate = (date: Date, settings: typeof companySettings) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    switch (settings.date_format) {
+      case 'DD/MM/YYYY': return `${day}/${month}/${year}`;
+      case 'MM/DD/YYYY': return `${month}/${day}/${year}`;
+      case 'YYYY-MM-DD': return `${year}-${month}-${day}`;
+      case 'DD.MM.YYYY': return `${day}.${month}.${year}`;
+      case 'DD-MM-YYYY': return `${day}-${month}-${year}`;
+      case 'YYYY/MM/DD': return `${year}/${month}/${day}`;
+      default: return `${year}-${month}-${day}`;
+    }
+  };
+
+  const formatPreviewDateTime = (date: Date, settings: typeof companySettings) => {
+    const dateStr = formatPreviewDate(date, settings);
+    const hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    let timeStr: string;
+    if (settings.time_format === '12h') {
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      timeStr = `${displayHours}:${minutes} ${period}`;
+    } else {
+      timeStr = `${String(hours).padStart(2, '0')}:${minutes}`;
+    }
+    
+    return `${dateStr} ${timeStr}`;
+  };
+
+  const formatPreviewCurrency = (amount: number, settings: typeof companySettings) => {
+    const parts = amount.toFixed(2).split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, settings.thousand_separator);
+    const formattedNumber = parts.length > 1 
+      ? integerPart + settings.decimal_separator + parts[1]
+      : integerPart;
+    
+    const symbol = company?.default_currency?.symbol || '$';
+    return settings.currency_position === 'prefix' 
+      ? `${symbol}${formattedNumber}`
+      : `${formattedNumber} ${symbol}`;
+  };
+
+  const formatPreviewNumber = (amount: number, settings: typeof companySettings) => {
+    const parts = amount.toFixed(2).split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, settings.thousand_separator);
+    return parts.length > 1 
+      ? integerPart + settings.decimal_separator + parts[1]
+      : integerPart;
+  };
+
+  // Personal preview formatting with user overrides
+  const formatPersonalPreviewDate = (date: Date, userOpts: { date_format_override: string }, companyOpts: { date_format: string }) => {
+    const effectiveDateFormat = userOpts.date_format_override || companyOpts.date_format;
+    return formatPreviewDate(date, { ...companySettings, date_format: effectiveDateFormat });
+  };
+
+  const formatPersonalPreviewDateTime = (date: Date, userOpts: { date_format_override: string }, companyOpts: { date_format: string, time_format: string }) => {
+    const effectiveDateFormat = userOpts.date_format_override || companyOpts.date_format;
+    return formatPreviewDateTime(date, { ...companySettings, date_format: effectiveDateFormat });
+  };
+
   // Mutations
   const updateCompanyMutation = useMutation({
     mutationFn: (data: any) => companyService.updateCompanyFormatting(company!.id, data),
@@ -233,10 +299,10 @@ export default function SettingsPage() {
                 <Label>Preview</Label>
                 <Card className="p-4 bg-muted">
                   <div className="space-y-2">
-                    <div>Date: <DateDisplay date={sampleDate} /></div>
-                    <div>Date & Time: <DateDisplay date={sampleDate} showTime /></div>
-                    <div>Currency: <CurrencyDisplay amount={sampleAmount} /></div>
-                    <div>Number: <CurrencyDisplay amount={sampleAmount} showCurrency={false} /></div>
+                    <div>Date: {formatPreviewDate(sampleDate, companySettings)}</div>
+                    <div>Date & Time: {formatPreviewDateTime(sampleDate, companySettings)}</div>
+                    <div>Currency: {formatPreviewCurrency(sampleAmount, companySettings)}</div>
+                    <div>Number: {formatPreviewNumber(sampleAmount, companySettings)}</div>
                   </div>
                 </Card>
               </div>
@@ -330,6 +396,18 @@ export default function SettingsPage() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Preview with Your Preferences</Label>
+                <Card className="p-4 bg-muted">
+                  <div className="space-y-2">
+                    <div>Date: {formatPersonalPreviewDate(sampleDate, userSettings, companySettings)}</div>
+                    <div>Date & Time: {formatPersonalPreviewDateTime(sampleDate, userSettings, companySettings)}</div>
+                    <div>Currency: {formatPreviewCurrency(sampleAmount, companySettings)}</div>
+                    <div>Number: {formatPreviewNumber(sampleAmount, companySettings)}</div>
+                  </div>
+                </Card>
               </div>
 
               <Button 
