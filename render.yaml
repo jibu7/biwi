@@ -2,7 +2,7 @@ services:
   - type: web
     name: channelzap-backend
     runtime: python
-    buildCommand: "./backend/render-build.sh"
+    buildCommand: "./backend/render-build-production.sh"
     startCommand: "./backend/render-start.sh"
     plan: free
     region: ohio
